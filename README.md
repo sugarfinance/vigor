@@ -1,0 +1,2 @@
+# eosusd
+eosUSD
