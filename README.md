@@ -1,3 +1,3 @@
 # eosusd
-Website: https://eosUSD.com
+Website: https://eosUSD.com  
 Whitepaper: https://eosUSD.com/eosUSD.pdf
