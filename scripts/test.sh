@@ -23,7 +23,7 @@ cleos push action eosio.token create '[ "eosio", "1000000000.0000 EOS"]' -p eosi
 ##############################################
 
 ##############################################
-# create the eosusdcom111 account, set the contract, create UVD stablecoins
+# create the eosusdcom111 account, set the contract, create UZD stablecoins
 #cleos create key --to-console
 #cleos wallet import -n testwallet --private-key 5KNgPef5eY7EBCNHbbm2egiTXfACxSPW3YSiktMkMFVmpqJbRGT
 cleos create account eosio eosusdcom111 EOS6gn7ZtKFNRS2WS6oAgcf5QWfmU1CwQEnof6FrBRCTPMBbSMKCY EOS6gn7ZtKFNRS2WS6oAgcf5QWfmU1CwQEnof6FrBRCTPMBbSMKCY
@@ -32,8 +32,8 @@ cleos set account permission eosusdcom111 active '{"threshold":1,"keys":[{"key":
 cd ~/contracts1.6.0/eosusdcom
 eosio-cpp -I . -abigen eosusdcom.cpp -o eosusdcom.wasm
 cleos set contract eosusdcom111 ~/contracts1.6.0/eosusdcom eosusdcom.wasm eosusdcom.abi -p eosusdcom111@active
-cleos push action eosusdcom111 create '[ "eosusdcom111", "1000000000.0000 UVD"]' -p eosusdcom111@active
-cleos push action eosusdcom111 setsupply '[ "eosusdcom111", "1000000000.0000 UVD"]' -p eosusdcom111@active
+cleos push action eosusdcom111 create '[ "eosusdcom111", "1000000000.0000 UZD"]' -p eosusdcom111@active
+cleos push action eosusdcom111 setsupply '[ "eosusdcom111", "1000000000.0000 UZD"]' -p eosusdcom111@active
 ##############################################
 
 ##############################################
@@ -155,8 +155,8 @@ cleos push action dummytokens1 transfer '{"from":"testinsure12","to":"eosusdcom1
 cleos push action dummytokens1 transfer '{"from":"testinsure12","to":"eosusdcom111","quantity":"1000.0000 PTI","memo":"insurance"}' -p testinsure12@active
 cleos push action dummytokens1 transfer '{"from":"testinsure12","to":"eosusdcom111","quantity":"1000.0000 OWN","memo":"insurance"}' -p testinsure12@active
 
-cleos push action eosusdcom111 borrow '{"usern":"testborrow11","debt":"24.0000 UVD"}' -p testborrow11@active
-cleos push action eosusdcom111 borrow '{"usern":"testborrow12","debt":"24.0000 UVD"}' -p testborrow12@active
+cleos push action eosusdcom111 borrow '{"usern":"testborrow11","debt":"24.0000 UZD"}' -p testborrow11@active
+cleos push action eosusdcom111 borrow '{"usern":"testborrow12","debt":"24.0000 UZD"}' -p testborrow12@active
 
 cleos push action eosusdcom111 assetout '{"usern":"testborrow11","assetout":"1.0000 EOS","memo":"collateral"}' -p testborrow11@active
 cleos push action eosusdcom111 assetout '{"usern":"testborrow12","assetout":"1.0000 EOS","memo":"collateral"}' -p testborrow12@active
@@ -164,8 +164,8 @@ cleos push action eosusdcom111 assetout '{"usern":"testborrow12","assetout":"1.0
 cleos push action eosusdcom111 assetout '{"usern":"testinsure11","assetout":"1.0000 EOS","memo":"insurance"}' -p testinsure11@active
 cleos push action eosusdcom111 assetout '{"usern":"testinsure12","assetout":"1.0000 EOS","memo":"insurance"}' -p testinsure12@active
 
-cleos push action eosusdcom111 transfer '{"from":"testborrow11","to":"eosusdcom111","quantity":"5.0000 UVD","memo":"payoff debt"}' -p testborrow11@active
-cleos push action eosusdcom111 transfer '{"from":"testborrow12","to":"eosusdcom111","quantity":"5.0000 UVD","memo":"payoff debt"}' -p testborrow12@active
+cleos push action eosusdcom111 transfer '{"from":"testborrow11","to":"eosusdcom111","quantity":"5.0000 UZD","memo":"payoff debt"}' -p testborrow11@active
+cleos push action eosusdcom111 transfer '{"from":"testborrow12","to":"eosusdcom111","quantity":"5.0000 UZD","memo":"payoff debt"}' -p testborrow12@active
 
 # doupdate action does the following:
 # pull prices from oracle
@@ -177,7 +177,7 @@ cleos push action eosusdcom111 doupdate '{}' -p eosusdcom111@active
 # get all the user data
 cleos get table eosusdcom111 eosusdcom111 user
 
-cleos get table eosusdcom111 UVD stat
+cleos get table eosusdcom111 UZD stat
 cleos get table eosio.token eosusdcom111 accounts
 cleos get table eosio.token testborrow11 accounts
 cleos get table eosusdcom111 testborrow11 accounts

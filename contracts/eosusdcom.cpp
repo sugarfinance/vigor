@@ -126,7 +126,7 @@ void eosusdcom::transfer(name    from,
 
     if (to == _self){
       auto &user = _user.get(from.value,"User not found");
-      eosio_assert(quantity.symbol == symbol("UVD",4), "Debt asset type must be UVD");
+      eosio_assert(quantity.symbol == symbol("UZD",4), "Debt asset type must be UZD");
       update(from);
       eosio_assert(user.debt.amount - quantity.amount >= 0, "Payment too high");
       // Transfer stablecoin into user
@@ -252,14 +252,14 @@ void eosusdcom::assetin(name    from,
   if (itr == _user.end()) {
     itr = _user.emplace(_self,  [&](auto& new_user) {
       new_user.usern = from;
-      new_user.debt = asset(0,symbol("UVD", 4));
+      new_user.debt = asset(0,symbol("UZD", 4));
     });
 
       action(
         permission_level{_self, name("active")},
         _self, 
         name("open"),
-        std::make_tuple(from, symbol("UVD", 4), _self)
+        std::make_tuple(from, symbol("UZD", 4), _self)
       ).send();
   }
 
@@ -383,7 +383,7 @@ void eosusdcom::borrow(name usern, asset debt) {
   require_auth(usern);
   update(usern);
   auto &user = _user.get(usern.value,"User not found");
-  eosio_assert(debt.symbol == symbol("UVD",4), "Debt asset type must be UVD");
+  eosio_assert(debt.symbol == symbol("UZD",4), "Debt asset type must be UZD");
   eosio_assert(user.valueofcol >= 1.01*((user.debt.amount + debt.amount)/std::pow(10.0,4)),
     "Dollar value of collateral would become less than dollar value of debt");
 
@@ -392,12 +392,12 @@ void eosusdcom::borrow(name usern, asset debt) {
     modified_user.debt += debt;
   });
 
- // issue(usern, debt,std::string("UVD issued to ") + usern.to_string());
+ // issue(usern, debt,std::string("UZD issued to ") + usern.to_string());
     action(
         permission_level{_self, name("active")},
         _self, 
         name("issue"),
-        std::make_tuple(usern, debt, std::string("UVD issued to ") + usern.to_string())
+        std::make_tuple(usern, debt, std::string("UZD issued to ") + usern.to_string())
     ).send();
     update(usern);
 }
