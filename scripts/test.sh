@@ -23,33 +23,83 @@ cleos push action eosio.token create '[ "eosio", "1000000000.0000 EOS"]' -p eosi
 ##############################################
 
 ##############################################
-# create the vigor1111111 account, set the contract, create UVD stablecoins
+# create the eosusdcom111 account, set the contract, create UVD stablecoins
 #cleos create key --to-console
 #cleos wallet import -n testwallet --private-key 5KNgPef5eY7EBCNHbbm2egiTXfACxSPW3YSiktMkMFVmpqJbRGT
-cleos create account eosio vigor1111111 EOS6gn7ZtKFNRS2WS6oAgcf5QWfmU1CwQEnof6FrBRCTPMBbSMKCY EOS6gn7ZtKFNRS2WS6oAgcf5QWfmU1CwQEnof6FrBRCTPMBbSMKCY
-cleos set account permission vigor1111111 active '{"threshold":1,"keys":[{"key":"EOS6gn7ZtKFNRS2WS6oAgcf5QWfmU1CwQEnof6FrBRCTPMBbSMKCY","weight":1}],"accounts":[{"permission":{"actor":"vigor1111111","permission":"eosio.code"},"weight":1}],"waits":[]}' owner -p vigor1111111@owner
+cleos create account eosio eosusdcom111 EOS6gn7ZtKFNRS2WS6oAgcf5QWfmU1CwQEnof6FrBRCTPMBbSMKCY EOS6gn7ZtKFNRS2WS6oAgcf5QWfmU1CwQEnof6FrBRCTPMBbSMKCY
+cleos set account permission eosusdcom111 active '{"threshold":1,"keys":[{"key":"EOS6gn7ZtKFNRS2WS6oAgcf5QWfmU1CwQEnof6FrBRCTPMBbSMKCY","weight":1}],"accounts":[{"permission":{"actor":"eosusdcom111","permission":"eosio.code"},"weight":1}],"waits":[]}' owner -p eosusdcom111@owner
 
-cd ~/contracts1.6.0/vigor
-eosio-cpp -I . -abigen vigor.cpp -o vigor.wasm
-cleos set contract vigor1111111 ~/contracts1.6.0/vigor vigor.wasm vigor.abi -p vigor1111111@active
-cleos push action vigor1111111 create '[ "vigor1111111", "1000000000.0000 UVD"]' -p vigor1111111@active
-cleos push action vigor1111111 setsupply '[ "vigor1111111", "1000000000.0000 UVD"]' -p vigor1111111@active
+cd ~/contracts1.6.0/eosusdcom
+eosio-cpp -I . -abigen eosusdcom.cpp -o eosusdcom.wasm
+cleos set contract eosusdcom111 ~/contracts1.6.0/eosusdcom eosusdcom.wasm eosusdcom.abi -p eosusdcom111@active
+cleos push action eosusdcom111 create '[ "eosusdcom111", "1000000000.0000 UVD"]' -p eosusdcom111@active
+cleos push action eosusdcom111 setsupply '[ "eosusdcom111", "1000000000.0000 UVD"]' -p eosusdcom111@active
 ##############################################
 
 ##############################################
-# create a testuser1111
+# create 2 borrowers and 2 insurers
 #cleos wallet create -n testwallet2 --to-console
 cleos wallet unlock -n testwallet2 --password PW5HuDfHm4wznVknC6Bewug4VtJNfsFsxRH2yendtdvDZ9Lt9F5nR
 #cleos create key --to-console
 #cleos wallet import -n testwallet2 --private-key 5J7UbUYpJfywWRtvq94b3RBzQvKYfRcUA3NSi1ApRsh8HuKfCy3
-cleos create account eosio testuser1111 EOS6RYBoZJzGFR35mdQMyb7SBUuZQuupM2ZuqGnbtFJ4wLW3fXbb8 EOS6RYBoZJzGFR35mdQMyb7SBUuZQuupM2ZuqGnbtFJ4wLW3fXbb8
-#cleos set account permission testuser1111 active '{"threshold":1,"keys":[{"key":"EOS6K42yrrMETmx2rXFJeKtaGrQAwgCDBYUVY7PGCVfhWFykqvhVR","weight":1}],"accounts":[{"permission":{"actor":"vigor1111111","permission":"eosio.code"},"weight":1}],"waits":[]}' owner -p testuser1111@active
-cleos push action eosio.token issue '[ "testuser1111", "100000.0000 EOS", "m" ]' -p eosio@active
-cleos get currency balance eosio.token testuser1111
+cleos create account eosio testborrow11 EOS6RYBoZJzGFR35mdQMyb7SBUuZQuupM2ZuqGnbtFJ4wLW3fXbb8 EOS6RYBoZJzGFR35mdQMyb7SBUuZQuupM2ZuqGnbtFJ4wLW3fXbb8
+cleos create account eosio testborrow12 EOS6RYBoZJzGFR35mdQMyb7SBUuZQuupM2ZuqGnbtFJ4wLW3fXbb8 EOS6RYBoZJzGFR35mdQMyb7SBUuZQuupM2ZuqGnbtFJ4wLW3fXbb8
+cleos create account eosio testinsure11 EOS6RYBoZJzGFR35mdQMyb7SBUuZQuupM2ZuqGnbtFJ4wLW3fXbb8 EOS6RYBoZJzGFR35mdQMyb7SBUuZQuupM2ZuqGnbtFJ4wLW3fXbb8
+cleos create account eosio testinsure12 EOS6RYBoZJzGFR35mdQMyb7SBUuZQuupM2ZuqGnbtFJ4wLW3fXbb8 EOS6RYBoZJzGFR35mdQMyb7SBUuZQuupM2ZuqGnbtFJ4wLW3fXbb8
+cleos push action eosio.token issue '[ "testborrow11", "100000.0000 EOS", "m" ]' -p eosio@active
+cleos push action eosio.token issue '[ "testborrow12", "100000.0000 EOS", "m" ]' -p eosio@active
+cleos push action eosio.token issue '[ "testinsure11", "100000.0000 EOS", "m" ]' -p eosio@active
+cleos push action eosio.token issue '[ "testinsure12", "100000.0000 EOS", "m" ]' -p eosio@active
 ##############################################
 
 ##############################################
-# oracle feeders for running on local testnet
+# create the VIG token
+cleos create account eosio vig111111111 EOS6RYBoZJzGFR35mdQMyb7SBUuZQuupM2ZuqGnbtFJ4wLW3fXbb8 EOS6RYBoZJzGFR35mdQMyb7SBUuZQuupM2ZuqGnbtFJ4wLW3fXbb8
+cd ~/contracts1.6.0/eosio.contracts/contracts/eosio.token
+#eosio-cpp -I include -o eosio.token.wasm src/eosio.token.cpp --abigen
+cleos set contract vig111111111 ~/contracts1.6.0/eosio.contracts/contracts/eosio.token --abi eosio.token.abi -p vig111111111@active
+cleos push action vig111111111 create '[ "vig111111111", "1000000000.0000 VIG"]' -p vig111111111@active
+cleos push action vig111111111 issue '[ "testborrow11", "100000.0000 VIG", "m" ]' -p vig111111111@active
+cleos push action vig111111111 issue '[ "testborrow12", "100000.0000 VIG", "m" ]' -p vig111111111@active
+cleos push action vig111111111 issue '[ "testinsure11", "100000.0000 VIG", "m" ]' -p vig111111111@active
+cleos push action vig111111111 issue '[ "testinsure12", "100000.0000 VIG", "m" ]' -p vig111111111@active
+##############################################
+
+##############################################
+# create dummy tokens
+cleos create account eosio dummytokens1 EOS6RYBoZJzGFR35mdQMyb7SBUuZQuupM2ZuqGnbtFJ4wLW3fXbb8 EOS6RYBoZJzGFR35mdQMyb7SBUuZQuupM2ZuqGnbtFJ4wLW3fXbb8
+cd ~/contracts1.6.0/eosio.contracts/contracts/eosio.token
+#eosio-cpp -I include -o eosio.token.wasm src/eosio.token.cpp --abigen
+cleos set contract dummytokens1 ~/contracts1.6.0/eosio.contracts/contracts/eosio.token --abi eosio.token.abi -p dummytokens1@active
+cleos push action dummytokens1 create '[ "dummytokens1", "1000000000.0000 IQ"]' -p dummytokens1@active
+cleos push action dummytokens1 create '[ "dummytokens1", "1000000000.0000 UTG"]' -p dummytokens1@active
+cleos push action dummytokens1 create '[ "dummytokens1", "1000000000.0000 PTI"]' -p dummytokens1@active
+cleos push action dummytokens1 create '[ "dummytokens1", "1000000000.0000 OWN"]' -p dummytokens1@active
+
+cleos push action dummytokens1 issue '[ "testborrow11", "100000.0000 IQ", "m" ]' -p dummytokens1@active
+cleos push action dummytokens1 issue '[ "testborrow11", "100000.0000 UTG", "m" ]' -p dummytokens1@active
+cleos push action dummytokens1 issue '[ "testborrow11", "100000.0000 PTI", "m" ]' -p dummytokens1@active
+cleos push action dummytokens1 issue '[ "testborrow11", "100000.0000 OWN", "m" ]' -p dummytokens1@active
+
+cleos push action dummytokens1 issue '[ "testborrow12", "100000.0000 IQ", "m" ]' -p dummytokens1@active
+cleos push action dummytokens1 issue '[ "testborrow12", "100000.0000 UTG", "m" ]' -p dummytokens1@active
+cleos push action dummytokens1 issue '[ "testborrow12", "100000.0000 PTI", "m" ]' -p dummytokens1@active
+cleos push action dummytokens1 issue '[ "testborrow12", "100000.0000 OWN", "m" ]' -p dummytokens1@active
+
+cleos push action dummytokens1 issue '[ "testinsure11", "100000.0000 IQ", "m" ]' -p dummytokens1@active
+cleos push action dummytokens1 issue '[ "testinsure11", "100000.0000 UTG", "m" ]' -p dummytokens1@active
+cleos push action dummytokens1 issue '[ "testinsure11", "100000.0000 PTI", "m" ]' -p dummytokens1@active
+cleos push action dummytokens1 issue '[ "testinsure11", "100000.0000 OWN", "m" ]' -p dummytokens1@active
+
+cleos push action dummytokens1 issue '[ "testinsure12", "100000.0000 IQ", "m" ]' -p dummytokens1@active
+cleos push action dummytokens1 issue '[ "testinsure12", "100000.0000 UTG", "m" ]' -p dummytokens1@active
+cleos push action dummytokens1 issue '[ "testinsure12", "100000.0000 PTI", "m" ]' -p dummytokens1@active
+cleos push action dummytokens1 issue '[ "testinsure12", "100000.0000 OWN", "m" ]' -p dummytokens1@active
+#cleos get currency balance dummytokens1 testborrow11
+##############################################
+
+##############################################
+# create the oracle contract (for EOS only for now)
 cleos create account eosio oracle111111 EOS6RYBoZJzGFR35mdQMyb7SBUuZQuupM2ZuqGnbtFJ4wLW3fXbb8 EOS6RYBoZJzGFR35mdQMyb7SBUuZQuupM2ZuqGnbtFJ4wLW3fXbb8
 cleos create account eosio eostitanprod EOS6RYBoZJzGFR35mdQMyb7SBUuZQuupM2ZuqGnbtFJ4wLW3fXbb8 EOS6RYBoZJzGFR35mdQMyb7SBUuZQuupM2ZuqGnbtFJ4wLW3fXbb8
 cleos create account eosio feeder111111 EOS6RYBoZJzGFR35mdQMyb7SBUuZQuupM2ZuqGnbtFJ4wLW3fXbb8 EOS6RYBoZJzGFR35mdQMyb7SBUuZQuupM2ZuqGnbtFJ4wLW3fXbb8
@@ -61,9 +111,10 @@ cleos -u http://api.eosnewyork.io:80 get code delphioracle --abi delphioracle.ab
 cleos set contract oracle111111 ~/contracts1.6.0/delphioracle/contract delphioracle.wasm delphioracle.abi -p oracle111111@active
 
 cleos push action oracle111111 setoracles '{"oracleslist":["feeder111111","feeder211111"]}' -p eostitanprod@active
-#cleos push action oracle111111 write '{"owner":"feeder111111", "value":63800}' -p feeder111111@active
-#cleos push action oracle111111 write '{"owner":"feeder211111", "value":64800}' -p feeder211111@active
+cleos push action oracle111111 write '{"owner":"feeder111111", "value":63800}' -p feeder111111@active
+##############################################
 
+###### OPTIONAL FOR LOCAL TESTNET #############
 # launch two oracle feeders
 #in a new shell
 cd ~/contracts1.6.0/delphioracle/scripts
@@ -77,28 +128,59 @@ nodeosurl='http://127.0.0.1:8888' interval=15000 account="oracle111111" defaultP
 ##############################################
 
 ##############################################
-# exposed actions for vigor demo starts here
+# exposed actions for eosusdcom demo starts here
+cleos push action eosio.token transfer '{"from":"testborrow11","to":"eosusdcom111","quantity":"6.0000 EOS","memo":"collateral"}' -p testborrow11@active
+cleos push action dummytokens1 transfer '{"from":"testborrow11","to":"eosusdcom111","quantity":"1000.0000 IQ","memo":"collateral"}' -p testborrow11@active
+cleos push action dummytokens1 transfer '{"from":"testborrow11","to":"eosusdcom111","quantity":"1000.0000 UTG","memo":"collateral"}' -p testborrow11@active
+cleos push action dummytokens1 transfer '{"from":"testborrow11","to":"eosusdcom111","quantity":"1000.0000 PTI","memo":"collateral"}' -p testborrow11@active
+cleos push action dummytokens1 transfer '{"from":"testborrow11","to":"eosusdcom111","quantity":"1000.0000 OWN","memo":"collateral"}' -p testborrow11@active
+cleos push action vig111111111 transfer '{"from":"testborrow11","to":"eosusdcom111","quantity":"1000.0000 VIG","memo":"collateral"}' -p testborrow11@active
 
-#cleos push action vigor1111111 deleteuser '{"name":testuser1111}' -p testuser1111@active
-cleos push action eosio.token transfer '{"from":"testuser1111","to":"vigor1111111","quantity":"6.0000 EOS","memo":"collateral"}' -p testuser1111@active
-cleos push action eosio.token transfer '{"from":"testuser1111","to":"vigor1111111","quantity":"5.0000 EOS","memo":"insurance"}' -p testuser1111@active
+cleos push action eosio.token transfer '{"from":"testborrow12","to":"eosusdcom111","quantity":"6.0000 EOS","memo":"collateral"}' -p testborrow12@active
+cleos push action dummytokens1 transfer '{"from":"testborrow12","to":"eosusdcom111","quantity":"1000.0000 IQ","memo":"collateral"}' -p testborrow12@active
+cleos push action dummytokens1 transfer '{"from":"testborrow12","to":"eosusdcom111","quantity":"1000.0000 UTG","memo":"collateral"}' -p testborrow12@active
+cleos push action dummytokens1 transfer '{"from":"testborrow12","to":"eosusdcom111","quantity":"1000.0000 PTI","memo":"collateral"}' -p testborrow12@active
+cleos push action dummytokens1 transfer '{"from":"testborrow12","to":"eosusdcom111","quantity":"1000.0000 OWN","memo":"collateral"}' -p testborrow12@active
+cleos push action vig111111111 transfer '{"from":"testborrow12","to":"eosusdcom111","quantity":"1000.0000 VIG","memo":"collateral"}' -p testborrow12@active
 
-cleos push action vigor1111111 borrow '{"usern":"testuser1111","debt":"24.0000 UVD"}' -p testuser1111@active
-cleos push action vigor1111111 assetout '{"usern":"testuser1111","assetout":"1.0000 EOS","memo":"collateral"}' -p testuser1111@active
-cleos push action vigor1111111 assetout '{"usern":"testuser1111","assetout":"2.0000 EOS","memo":"insurance"}' -p testuser1111@active
-cleos push action vigor1111111 transfer '{"from":"testuser1111","to":"vigor1111111","quantity":"5.0000 UVD","memo":"payoff debt"}' -p testuser1111@active
+cleos push action eosio.token transfer '{"from":"testinsure11","to":"eosusdcom111","quantity":"6.0000 EOS","memo":"insurance"}' -p testinsure11@active
+cleos push action dummytokens1 transfer '{"from":"testinsure11","to":"eosusdcom111","quantity":"1000.0000 IQ","memo":"insurance"}' -p testinsure11@active
+cleos push action dummytokens1 transfer '{"from":"testinsure11","to":"eosusdcom111","quantity":"1000.0000 UTG","memo":"insurance"}' -p testinsure11@active
+cleos push action dummytokens1 transfer '{"from":"testinsure11","to":"eosusdcom111","quantity":"1000.0000 PTI","memo":"insurance"}' -p testinsure11@active
+cleos push action dummytokens1 transfer '{"from":"testinsure11","to":"eosusdcom111","quantity":"1000.0000 OWN","memo":"insurance"}' -p testinsure11@active
 
-# run the doupdate action to update prices from the oracle and monitor collateral levels on all loans, and pay VIG premiums from borrower to lender
-# custodians may run this action from a script, or instead delphioracle may begin calling this action from the oracle itself when BP's push prices, calling require_receiver(vigor1111111)
-cleos push action vigor1111111 doupdate '{}' -p vigor1111111@active
+cleos push action eosio.token transfer '{"from":"testinsure12","to":"eosusdcom111","quantity":"6.0000 EOS","memo":"insurance"}' -p testinsure12@active
+cleos push action dummytokens1 transfer '{"from":"testinsure12","to":"eosusdcom111","quantity":"1000.0000 IQ","memo":"insurance"}' -p testinsure12@active
+cleos push action dummytokens1 transfer '{"from":"testinsure12","to":"eosusdcom111","quantity":"1000.0000 UTG","memo":"insurance"}' -p testinsure12@active
+cleos push action dummytokens1 transfer '{"from":"testinsure12","to":"eosusdcom111","quantity":"1000.0000 PTI","memo":"insurance"}' -p testinsure12@active
+cleos push action dummytokens1 transfer '{"from":"testinsure12","to":"eosusdcom111","quantity":"1000.0000 OWN","memo":"insurance"}' -p testinsure12@active
 
-cleos get table vigor1111111 UVD stat
-cleos get table vigor1111111 vigor1111111 user
-cleos get table eosio.token vigor1111111 accounts
-cleos get table eosio.token testuser1111 accounts
-cleos get table vigor1111111 testuser1111 accounts
-#cleos get currency balance vigor1111111 testuser1111
-#cleos get currency balance eosio.token vigor1111111
+cleos push action eosusdcom111 borrow '{"usern":"testborrow11","debt":"24.0000 UVD"}' -p testborrow11@active
+cleos push action eosusdcom111 borrow '{"usern":"testborrow12","debt":"24.0000 UVD"}' -p testborrow12@active
+
+cleos push action eosusdcom111 assetout '{"usern":"testborrow11","assetout":"1.0000 EOS","memo":"collateral"}' -p testborrow11@active
+cleos push action eosusdcom111 assetout '{"usern":"testborrow12","assetout":"1.0000 EOS","memo":"collateral"}' -p testborrow12@active
+
+cleos push action eosusdcom111 assetout '{"usern":"testinsure11","assetout":"1.0000 EOS","memo":"insurance"}' -p testinsure11@active
+cleos push action eosusdcom111 assetout '{"usern":"testinsure12","assetout":"1.0000 EOS","memo":"insurance"}' -p testinsure12@active
+
+cleos push action eosusdcom111 transfer '{"from":"testborrow11","to":"eosusdcom111","quantity":"5.0000 UVD","memo":"payoff debt"}' -p testborrow11@active
+cleos push action eosusdcom111 transfer '{"from":"testborrow12","to":"eosusdcom111","quantity":"5.0000 UVD","memo":"payoff debt"}' -p testborrow12@active
+
+# doupdate action does the following:
+# pull prices from oracle
+# update loan pricing
+# monitor for bailouts
+# pay insurance premiums
+cleos push action eosusdcom111 doupdate '{}' -p eosusdcom111@active
+
+# get all the user data
+cleos get table eosusdcom111 eosusdcom111 user
+
+cleos get table eosusdcom111 UVD stat
+cleos get table eosio.token eosusdcom111 accounts
+cleos get table eosio.token testborrow11 accounts
+cleos get table eosusdcom111 testborrow11 accounts
+#cleos get currency balance eosusdcom111 testborrow11
+#cleos get currency balance eosio.token eosusdcom111
 ##############################################
-
-

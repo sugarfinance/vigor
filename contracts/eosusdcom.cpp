@@ -1,7 +1,7 @@
-#include "vigor.hpp"
+#include "eosusdcom.hpp"
 #include <cmath>
 
-void vigor::doupdate()
+void eosusdcom::doupdate()
 {
    require_auth( _self );
 
@@ -17,7 +17,7 @@ void vigor::doupdate()
    };
 }
 
-void vigor::create( name   issuer,
+void eosusdcom::create( name   issuer,
                     asset  maximum_supply )
 {
     require_auth( _self );
@@ -38,7 +38,7 @@ void vigor::create( name   issuer,
     });
 }
 
-void vigor::setsupply( name issuer, asset maximum_supply )
+void eosusdcom::setsupply( name issuer, asset maximum_supply )
 {
     auto sym = maximum_supply.symbol;
     eosio_assert( sym.is_valid(), "invalid symbol name" );
@@ -60,7 +60,7 @@ void vigor::setsupply( name issuer, asset maximum_supply )
     });
 }
 
-void vigor::issue( name to, asset quantity, string memo )
+void eosusdcom::issue( name to, asset quantity, string memo )
 {
     auto sym = quantity.symbol;
     eosio_assert( sym.is_valid(), "invalid symbol name" );
@@ -91,7 +91,7 @@ void vigor::issue( name to, asset quantity, string memo )
     }
 }
 
-void vigor::retire( asset quantity, string memo )
+void eosusdcom::retire( asset quantity, string memo )
 {
     auto sym = quantity.symbol;
     eosio_assert( sym.is_valid(), "invalid symbol name" );
@@ -115,7 +115,7 @@ void vigor::retire( asset quantity, string memo )
     sub_balance( st.issuer, quantity );
 }
 
-void vigor::transfer(name    from,
+void eosusdcom::transfer(name    from,
                       name    to,
                       asset   quantity,
                       string  memo )
@@ -176,7 +176,7 @@ void vigor::transfer(name    from,
     }
 }
 
-void vigor::sub_balance( name owner, asset value ) {
+void eosusdcom::sub_balance( name owner, asset value ) {
    accounts from_acnts( _self, owner.value );
 
    const auto& from = from_acnts.get( value.symbol.code().raw(), "no balance object found" );
@@ -187,7 +187,7 @@ void vigor::sub_balance( name owner, asset value ) {
       });
 }
 
-void vigor::add_balance( name owner, asset value, name ram_payer )
+void eosusdcom::add_balance( name owner, asset value, name ram_payer )
 {
    accounts to_acnts( _self, owner.value );
    auto to = to_acnts.find( value.symbol.code().raw() );
@@ -202,7 +202,7 @@ void vigor::add_balance( name owner, asset value, name ram_payer )
    }
 }
 
-void vigor::open( name owner, const symbol& symbol, name ram_payer )
+void eosusdcom::open( name owner, const symbol& symbol, name ram_payer )
 {
    require_auth( ram_payer );
 
@@ -223,7 +223,7 @@ void vigor::open( name owner, const symbol& symbol, name ram_payer )
    }
 }
 
-void vigor::close( name owner, const symbol& symbol )
+void eosusdcom::close( name owner, const symbol& symbol )
 {
    require_auth( owner );
    accounts acnts( _self, owner.value );
@@ -233,7 +233,7 @@ void vigor::close( name owner, const symbol& symbol )
    acnts.erase( it );
 }
 
-void vigor::assetin(name    from,
+void eosusdcom::assetin(name    from,
                       name    to,
                       asset   assetin,
                       string  memo ) {
@@ -303,7 +303,7 @@ void vigor::assetin(name    from,
     update(from);
 }
 
-void vigor::assetout(name usern, asset assetout, string memo) {
+void eosusdcom::assetout(name usern, asset assetout, string memo) {
 
   require_auth(usern);
 
@@ -377,7 +377,7 @@ void vigor::assetout(name usern, asset assetout, string memo) {
 
 }
 
-void vigor::borrow(name usern, asset debt) {
+void eosusdcom::borrow(name usern, asset debt) {
 
 // todo: make this vectorized for multicollateral
   require_auth(usern);
@@ -403,9 +403,9 @@ void vigor::borrow(name usern, asset debt) {
 }
 
 
-double vigor::pricingmodel(double scale, double collateral, asset debt, double stdev, uint64_t creditscore) {
+double eosusdcom::pricingmodel(double scale, double collateral, asset debt, double stdev, uint64_t creditscore) {
 
-// a digital option that delivers a payoff in the event that a price threshhold is breached
+// premium payments in exchange for contingient payoff in the event that a price threshhold is breached
 // todo: make this vectorized for multicollateral
 double impliedvol = stdev * scale;
 double valueatrisk = std::min(3.0*impliedvol,1.0);
@@ -418,7 +418,7 @@ return tesprice;
 
 }
 
-void vigor::update(name usern){
+void eosusdcom::update(name usern){
 
   auto &user = _user.get(usern.value,"User not found");
 
@@ -455,39 +455,14 @@ void vigor::update(name usern){
 
 extern "C" {
   [[noreturn]] void apply(uint64_t receiver, uint64_t code, uint64_t action) {
-    if((code==name("eosio.token").value || 
-        code==name("eosblackteam").value ||
-        code==name("everipediaiq").value ||
-        code==name("betdicetoken").value ||
-        code==name("prospectorsg").value ||
-        code==name("eosiotptoken").value ||
-        code==name("ptitokenhome").value ||
-        code==name("eosiochaince").value ||
-        code==name("parslseed123").value ||
-        code==name("octtothemoon").value ||
-        code==name("eosiomeetone").value ||
-        code==name("eosdactokens").value ||
-        code==name("horustokenio").value ||
-        code==name("therealkarma").value ||
-        code==name("infinicoinio").value ||
-        code==name("trybenetwork").value ||
-        code==name("eoscancancan").value ||
-        code==name("eospokercoin").value ||
-        code==name("psidicetoken").value ||
-        code==name("aeronaerozzz").value ||
-        code==name("eosiotokener").value ||
-        code==name("epraofficial").value ||
-        code==name("ectchaincoin").value ||
-        code==name("chyyshayysha").value ||
-        code==name("eatscience14").value ||
-        code==name("llgonebtotal").value ||
-        code==name("eosgetgtoken").value ||
-        code==name("eosadddddddd").value) && action==name("transfer").value) {
-      eosio::execute_action(name(receiver),name(code), &vigor::assetin);
+    if((code==name("eosio.token").value ||
+        code==name("vig111111111").value ||
+        code==name("dummytokens1").value) && action==name("transfer").value) {
+      eosio::execute_action(name(receiver),name(code), &eosusdcom::assetin);
     }
     if (code == receiver) {
             switch (action) { 
-                EOSIO_DISPATCH_HELPER(vigor, (create)(assetout)(borrow)(issue)(transfer)(open)(close)(retire)(setsupply)(doupdate)) 
+                EOSIO_DISPATCH_HELPER(eosusdcom, (create)(assetout)(borrow)(issue)(transfer)(open)(close)(retire)(setsupply)(doupdate)) 
             }    
     }
         eosio_exit(0);

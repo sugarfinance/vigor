@@ -12,7 +12,7 @@ namespace eosiosystem {
    class system_contract;
 }
 
-CONTRACT vigor : public eosio::contract {
+CONTRACT eosusdcom : public eosio::contract {
 
 private:
 
@@ -77,73 +77,29 @@ private:
 
     map <symbol, name> issueracct {
     {symbol("SYS",4),	    name("eosio.token")},
+    {symbol("VIG",4),	    name("vig111111111")},
+    {symbol("IQ",4),	    name("dummytokens1")},
+    {symbol("UTG",4),	    name("dummytokens1")},
+    {symbol("PTI",4),	    name("dummytokens1")},
+    {symbol("OWN",4),	    name("dummytokens1")},
     {symbol("EOS",4),	    name("eosio.token")},
-    {symbol("BLACK",4),	    name("eosblackteam")},
-    {symbol("IQ",3),	    name("everipediaiq")},
-    {symbol("DICE",4),	    name("betdicetoken")},
-    {symbol("PGL",4),	    name("prospectorsg")},
-    {symbol("TPT",4),	    name("eosiotptoken")},
-    {symbol("PTI",4),	    name("ptitokenhome")},
-    {symbol("CET",4),	    name("eosiochaince")},
-    {symbol("SEED",4),	    name("parslseed123")},
-    {symbol("OCT",4),	    name("octtothemoon")},
-    {symbol("MEETONE",4),	name("eosiomeetone")},
-    {symbol("EOSDAC",4),	name("eosdactokens")},
-    {symbol("HORUS",4),	    name("horustokenio")},
-    {symbol("KARMA",4),	    name("therealkarma")},
-    {symbol("INF",4),	    name("infinicoinio")},
-    {symbol("TRYBE",4),	    name("trybenetwork")},
-    {symbol("CAN",4),	    name("eoscancancan")},
-    {symbol("POKER",4),	    name("eospokercoin")},
-    {symbol("PSI",4),	    name("psidicetoken")},
-    {symbol("ARN",8),	    name("aeronaerozzz")},
-    {symbol("EGT",4),	    name("eosiotokener")},
-    {symbol("EPRA",4),	    name("epraofficial")},
-    {symbol("ECTT",4),	    name("ectchaincoin")},
-    {symbol("LKT",4),	    name("chyyshayysha")},
-    {symbol("EATCOIN",4),	name("eatscience14")},
-    {symbol("LLG",4),	    name("llgonebtotal")},
-    {symbol("GT",4),	    name("eosgetgtoken")},
-    {symbol("ADD",4),	    name("eosadddddddd")}
     };
 
     map <symbol, uint64_t> fxrate {
     {symbol("SYS",4),	    54000},
+    {symbol("VIG",4),	    200},
+    {symbol("IQ",4),	    39},
+    {symbol("UTG",4),	    2},
+    {symbol("PTI",4),	    63},
+    {symbol("OWN",4),	    198},
     {symbol("EOS",4),	    54000},
-    {symbol("BLACK",4),	  1},
-    {symbol("IQ",3),	    1},
-    {symbol("DICE",4),	    1},
-    {symbol("PGL",4),	    1},
-    {symbol("TPT",4),	    1},
-    {symbol("PTI",4),	    1},
-    {symbol("CET",4),	    1},
-    {symbol("SEED",4),	    1},
-    {symbol("OCT",4),	    1},
-    {symbol("MEETONE",4),	1},
-    {symbol("EOSDAC",4),	1},
-    {symbol("HORUS",4),	    1},
-    {symbol("KARMA",4),	    1},
-    {symbol("INF",4),	    1},
-    {symbol("TRYBE",4),	    1},
-    {symbol("CAN",4),	    1},
-    {symbol("POKER",4),	    1},
-    {symbol("PSI",4),	    1},
-    {symbol("ARN",8),	    1},
-    {symbol("EGT",4),	    1},
-    {symbol("EPRA",4),	    1},
-    {symbol("ECTT",4),	    1},
-    {symbol("LKT",4),	    1},
-    {symbol("EATCOIN",4),	1},
-    {symbol("LLG",4),	    1},
-    {symbol("GT",4),	    1},
-    {symbol("ADD",4),	    1}
     };
 
 public:
 
     using contract::contract;
 
-    vigor(name receiver, name code, datastream<const char*> ds):contract(receiver, code, ds),_user(receiver, receiver.value),_eosusd(receiver, receiver.value){}
+    eosusdcom(name receiver, name code, datastream<const char*> ds):contract(receiver, code, ds),_user(receiver, receiver.value),_eosusd(receiver, receiver.value){}
     float dollar_conversion = 3.51; // from oracle
 
     //ACTION deleteuser(name user);
