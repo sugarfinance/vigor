@@ -18,7 +18,7 @@ void eosusdcom::doupdate()
 }
 
 void eosusdcom::create( name   issuer,
-                    asset  maximum_supply )
+                        asset  maximum_supply )
 {
     require_auth( _self );
 
@@ -35,6 +35,8 @@ void eosusdcom::create( name   issuer,
        s.supply.symbol = maximum_supply.symbol;
        s.max_supply    = maximum_supply;
        s.issuer        = issuer;
+       s.volatility    = 0.42;
+       s.correlation_matrix = dummy_corr;
     });
 }
 
@@ -402,12 +404,61 @@ void eosusdcom::borrow(name usern, asset debt) {
     update(usern);
 }
 
+/* Portfolio variance is a measurement of how the aggregate actual returns
+ * of a set of securities making up a portfolio fluctuate over time. This
+ * portfolio variance statistic is calculated using the standard deviations
+ * of each security in the portfolio as well as the correlations of each 
+ * security pair in the portfolio.
+*/
 
-double eosusdcom::pricingmodel(double scale, double collateral, asset debt, double stdev, uint64_t creditscore) {
+double eosusdcom::pricingmodel(name usern) {
+//double eosusdcom::pricingmodel(double scale, double collateral, asset debt, double stdev, uint64_t creditscore) {
+
+auto &user = _user.get(usern.value,"User not found"); 
+
+/* E.g. for two assets Variance = 
+   [(weight_asset1)^2 x (stdev_asset1)^2] +  
+   [(weight_asset2)^2 x (stdev_asset2)^2] +  
+   (2 x weight_asset1 x stdev_asset1 x 
+        weight_asset2 x stdev_asset2 x 
+   the correlation between the two assets 
+*/
+
+std::vector<double> weightsq_x_stdevsq = std::vector<double>(); 
+double n_x_weightN_x_stdevN = 1;
+uint64_t n = 0;
+
+auto it = user.collateral.begin();
+while ( it != user.collateral.end()) 
+{
+  auto sym_code_raw = it->symbol.code().raw();
+  stats statstable( _self, sym_code_raw );
+  const auto& st = statstable.get( sym_code_raw, "symbol does not exist" );
+
+  n += 1;
+
+  double stdevsq = std::pow(st.volatility, 2);
+  double value = (it->amount)/std::pow(10.0, it->symbol.precision()) * (fxrate[it->symbol]/std::pow(10.0, 4));
+  
+  double weight = value / user.valueofcol;
+  double weightsq = std::pow(weight, 2);  
+
+  weightsq_x_stdevsq.push_back(weightsq * stdevsq);
+
+  n_x_weightN_x_stdevN *= weight * st.volatility;
+  
+  auto itr = it;
+
+  while(++itr != user.collateral.end())
+    n_x_weightN_x_stdevN *= st.correlation_matrix[itr->symbol];
+}
 
 // premium payments in exchange for contingient payoff in the event that a price threshhold is breached
 // todo: make this vectorized for multicollateral
 double impliedvol = stdev * scale;
+
+
+
 double valueatrisk = std::min(3.0*impliedvol,1.0);
 double payoff = std::max(1.0*(debt.amount/std::pow(10.0,4)) - collateral*(1-valueatrisk),0.0);
 uint32_t T = 1;
@@ -450,6 +501,21 @@ void eosusdcom::update(name usern){
       });
   }
  // payfee(name,tesprice);
+
+
+  //BAILOUT
+  //assign the debt and impaired collateral to the insurers
+  
+  /* insurers may start of with zero debt but in a bailout 
+  * they get some. When that happens, some of their insurance
+  * assets will be assigned to their collateral bucket so that
+  * it overcollateralizes their debt at some default setting like 1.5.
+  * insurers receive premium in exchange for agreeing to bailout loans
+  * so they willfully take it, a bailout means that the insurer is assigned
+  * a small piece of debt and impaired collateral. All users have three stacks
+  * of tokens: collateral, insurance, debt.
+  */
+
 }
 
 

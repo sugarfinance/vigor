@@ -24,17 +24,37 @@ private:
       double valueofins = 0.0;
       asset debt;
       double tesprice = 0.0;
-      uint64_t creditscore = 500; //out of 800
+      
+      /* measured by how much VIG was paid in the past
+       * relative to number of late payments and collections
+      */ uint64_t creditscore = 500; //out of 800
+      
       double feespaid = 0.0;
       uint64_t recaps = 0;
       uint64_t latepayments = 0;
       
+      /* Own Funds = amount of crypto collateral 
+       * pledged by insurers minus our best estimate
+       * normal market value of the TES contracts.
+      */
+
       auto primary_key() const { return usern.value; }
     };
 
-    typedef eosio::multi_index<name("user"), user_s> user_t;
-    user_t _user;
+   typedef eosio::multi_index<name("user"), user_s> user_t;
+   user_t _user;
 
+   TABLE swap_s {
+      name buyer;
+      name seller;
+      double protection; // the cost to bail-out an under-collateralized loan
+      bool triggered; // value of collateral falling below the value of debt
+      
+      time nextPayment; // buyer makes a periodic premium payment at this timestamp
+      time created; 
+   } typedef eosio::multi_index<name("swap"), swap_s> swap_t;
+   swap_t _swap;   
+   
    TABLE eosusd {
     uint64_t id;
     name owner; 
@@ -47,7 +67,6 @@ private:
     uint64_t by_value() const {return value;}
 
     EOSLIB_SERIALIZE( eosusd, (id)(owner)(value)(average)(timestamp))
-
   };
 
     typedef eosio::multi_index<name("eosusd"), eosusd,
@@ -66,6 +85,13 @@ private:
        asset    supply;
        asset    max_supply;
        name     issuer;
+       uint64_t solvency;
+       uint64_t volatility; // stdev, scale factor for price discovery
+       /*
+       * Coefficients of correlation between this asset and all other
+       * assets tracked by the contract
+       */ map <symbol, double> correlation_matrix;
+
        uint64_t primary_key()const { return supply.symbol.code().raw(); }
     };
 
@@ -75,24 +101,34 @@ private:
     void sub_balance( name owner, asset value );
     void add_balance( name owner, asset value, name ram_payer );
 
+   map <symbol, double> dummy_corr {
+   {symbol("SYS",4), 0.42},
+   {symbol("VIG",4), 0.42},
+   {symbol("IQ",4), 0.42},
+   {symbol("UTG",4), 0.42},
+   {symbol("PTI",4), 0.42},
+   {symbol("OWN",4),	0.42},
+   {symbol("EOS",4),	0,42}
+   };
+
     map <symbol, name> issueracct {
     {symbol("SYS",4),	    name("eosio.token")},
     {symbol("VIG",4),	    name("vig111111111")},
-    {symbol("IQ",4),	    name("dummytokens1")},
+    {symbol("IQ",4),	       name("dummytokens1")},
     {symbol("UTG",4),	    name("dummytokens1")},
     {symbol("PTI",4),	    name("dummytokens1")},
     {symbol("OWN",4),	    name("dummytokens1")},
-    {symbol("EOS",4),	    name("eosio.token")},
+    {symbol("EOS",4),	    name("eosio.token")}
     };
 
     map <symbol, uint64_t> fxrate {
     {symbol("SYS",4),	    54000},
     {symbol("VIG",4),	    200},
-    {symbol("IQ",4),	    39},
+    {symbol("IQ",4),	       39},
     {symbol("UTG",4),	    2},
     {symbol("PTI",4),	    63},
     {symbol("OWN",4),	    198},
-    {symbol("EOS",4),	    54000},
+    {symbol("EOS",4),	    54000}
     };
 
 public:
@@ -101,7 +137,7 @@ public:
 
     eosusdcom(name receiver, name code, datastream<const char*> ds):contract(receiver, code, ds),_user(receiver, receiver.value),_eosusd(receiver, receiver.value){}
     float dollar_conversion = 3.51; // from oracle
-
+   
     //ACTION deleteuser(name user);
     ACTION assetin(  name       from,
                       name       to,
@@ -114,7 +150,8 @@ public:
  //   void payfee(name user, double tesprice);
     void update(name usern);
 
-    double pricingmodel(double scale, double collateral, asset debt, double stdev, uint64_t creditscore);
+    //double pricingmodel(double scale, double collateral, asset debt, double stdev, uint64_t creditscore);
+    void pricingmodel(name usern);
 
     ACTION doupdate();
 
