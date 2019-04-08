@@ -151,7 +151,7 @@ public:
     void update(name usern);
 
     //double pricingmodel(double scale, double collateral, asset debt, double stdev, uint64_t creditscore);
-    void pricingmodel(name usern);
+    double pricingmodel(name usern);
 
     ACTION doupdate();
 

@@ -424,7 +424,7 @@ auto &user = _user.get(usern.value,"User not found");
    the correlation between the two assets 
 */
 
-std::vector<double> weightsq_x_stdevsq = std::vector<double>(); 
+double weightsq_x_stdevsq = 0; 
 double n_x_weightN_x_stdevN = 1;
 uint64_t n = 0;
 
@@ -443,8 +443,7 @@ while ( it != user.collateral.end())
   double weight = value / user.valueofcol;
   double weightsq = std::pow(weight, 2);  
 
-  weightsq_x_stdevsq.push_back(weightsq * stdevsq);
-
+  weightsq_x_stdev += weightsq * stdevsq;
   n_x_weightN_x_stdevN *= weight * st.volatility;
   
   auto itr = it;
@@ -452,6 +451,9 @@ while ( it != user.collateral.end())
   while(++itr != user.collateral.end())
     n_x_weightN_x_stdevN *= st.correlation_matrix[itr->symbol];
 }
+
+return weightsq_x_stdev + n_x_weightN_x_stdevN;
+  
 
 // premium payments in exchange for contingient payoff in the event that a price threshhold is breached
 // todo: make this vectorized for multicollateral
