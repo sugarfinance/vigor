@@ -440,7 +440,7 @@ double eosusdcom::pricingmodel(name usern) {
     double weight = value / user.valueofcol;
     double weightsq = std::pow(weight, 2);  
 
-    weightsq_x_stdev += weightsq * stdevsq;
+    weightsq_x_stdevsq += weightsq * stdevsq;
     weightN_x_stdevN *= weight * st.volatility;
     
     auto itr = it;
@@ -449,7 +449,7 @@ double eosusdcom::pricingmodel(name usern) {
       weightN_x_stdevN *= st.correlation_matrix[itr->symbol];
   }
 
-  double iportVariance = weightsq_x_stdev + n * weightN_x_stdevN;
+  double iportVariance = weightsq_x_stdevsq + n * weightN_x_stdevN;
 
   // premium payments in exchange for contingient payoff in the event that a price threshhold is breached
   
