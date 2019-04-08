@@ -409,65 +409,65 @@ void eosusdcom::borrow(name usern, asset debt) {
  * portfolio variance statistic is calculated using the standard deviations
  * of each security in the portfolio as well as the correlations of each 
  * security pair in the portfolio.
-*/
-
-double eosusdcom::pricingmodel(name usern) {
-//double eosusdcom::pricingmodel(double scale, double collateral, asset debt, double stdev, uint64_t creditscore) {
-
-auto &user = _user.get(usern.value,"User not found"); 
-
-/* E.g. for two assets Variance = 
+ E.g. for two assets Variance = 
    [(weight_asset1)^2 x (stdev_asset1)^2] +  
    [(weight_asset2)^2 x (stdev_asset2)^2] +  
    (2 x weight_asset1 x stdev_asset1 x 
         weight_asset2 x stdev_asset2 x 
    the correlation between the two assets 
 */
+//double eosusdcom::pricingmodel(double scale, double collateral, asset debt, double stdev, uint64_t creditscore) {
+double eosusdcom::pricingmodel(name usern) {
 
-double weightsq_x_stdevsq = 0; 
-double n_x_weightN_x_stdevN = 1;
-uint64_t n = 0;
 
-auto it = user.collateral.begin();
-while ( it != user.collateral.end()) 
-{
-  auto sym_code_raw = it->symbol.code().raw();
-  stats statstable( _self, sym_code_raw );
-  const auto& st = statstable.get( sym_code_raw, "symbol does not exist" );
+  auto &user = _user.get(usern.value,"User not found"); 
 
-  n += 1;
+  double weightsq_x_stdevsq = 0; 
+  double weightN_x_stdevN = 1;
+  uint64_t n = 0;
 
-  double stdevsq = std::pow(st.volatility, 2);
-  double value = (it->amount)/std::pow(10.0, it->symbol.precision()) * (fxrate[it->symbol]/std::pow(10.0, 4));
+  auto it = user.collateral.begin();
+  while ( it != user.collateral.end()) 
+  { n += 1;
+    auto sym_code_raw = it->symbol.code().raw();
+    stats statstable( _self, sym_code_raw );
+    const auto& st = statstable.get( sym_code_raw, "symbol does not exist" );
+
+    double stdevsq = std::pow(st.volatility, 2);
+    
+    double value = (it->amount)/std::pow(10.0, it->symbol.precision()) * (fxrate[it->symbol]/std::pow(10.0, 4));
+    
+    double weight = value / user.valueofcol;
+    double weightsq = std::pow(weight, 2);  
+
+    weightsq_x_stdev += weightsq * stdevsq;
+    weightN_x_stdevN *= weight * st.volatility;
+    
+    auto itr = it;
+
+    while ( ++itr != user.collateral.end() )
+      weightN_x_stdevN *= st.correlation_matrix[itr->symbol];
+  }
+
+  double iportVariance = weightsq_x_stdev + n * weightN_x_stdevN;
+
+  // premium payments in exchange for contingient payoff in the event that a price threshhold is breached
   
-  double weight = value / user.valueofcol;
-  double weightsq = std::pow(weight, 2);  
+  // double impliedvol = stdev * scale;
+  // double valueatrisk = std::min(3.0*impliedvol,1.0);
+  double iportVaR = std::min(3.0*iportVariance,1.0);
 
-  weightsq_x_stdev += weightsq * stdevsq;
-  n_x_weightN_x_stdevN *= weight * st.volatility;
+  // double payoff = std::max(1.0*(debt.amount/std::pow(10.0,4)) - collateral*(1-valueatrisk),0.0);
+  double payoff = std::max(1.0*(debt.amount/std::pow(10.0,4)) - collateral*(1-iportVaR),0.0);
+
+  uint32_t T = 1;
   
-  auto itr = it;
+  //double d = ((std::log(collateral / (debt.amount/std::pow(10.0,4)))) + (-std::pow(impliedvol,2)/2) * T)/ (impliedvol * std::sqrt(T));
+  double d = ((std::log(collateral / (debt.amount/std::pow(10.0,4)))) + (-std::pow(iportVariance,2)/2) * T)/ (iportVariance * std::sqrt(T));
 
-  while(++itr != user.collateral.end())
-    n_x_weightN_x_stdevN *= st.correlation_matrix[itr->symbol];
-}
-
-return weightsq_x_stdev + n_x_weightN_x_stdevN;
-  
-
-// premium payments in exchange for contingient payoff in the event that a price threshhold is breached
-// todo: make this vectorized for multicollateral
-double impliedvol = stdev * scale;
-
-
-
-double valueatrisk = std::min(3.0*impliedvol,1.0);
-double payoff = std::max(1.0*(debt.amount/std::pow(10.0,4)) - collateral*(1-valueatrisk),0.0);
-uint32_t T = 1;
-double d = ((std::log(collateral / (debt.amount/std::pow(10.0,4)))) + (-std::pow(impliedvol,2)/2) * T)/ (impliedvol * std::sqrt(T));
-double tesprice = std::max((payoff * std::erfc(-d/std::sqrt(2))/2)/(debt.amount/std::pow(10.0,4)),0.01*scale);
-tesprice = tesprice/(1.6*(creditscore/800.0)); // credit score of 500 means no discount or penalty.
-return tesprice;
+  double tesprice = std::max((payoff * std::erfc(-d/std::sqrt(2))/2)/(debt.amount/std::pow(10.0,4)),0.01*scale);
+  tesprice = tesprice/(1.6*(creditscore/800.0)); // credit score of 500 means no discount or penalty.
+  return tesprice;
 
 }
 
