@@ -36,7 +36,7 @@ void eosusdcom::create( name   issuer,
        s.max_supply    = maximum_supply;
        s.issuer        = issuer;
        s.volatility    = 0.42;
-       s.correlation_matrix = dummy_corr;
+       s.correlation_matrix = correlation_matrix;
     });
 }
 
@@ -422,8 +422,8 @@ double eosusdcom::pricingmodel(name usern) {
 
   auto &user = _user.get(usern.value,"User not found"); 
 
-  double weightsq_x_stdevsq = 0; 
-  double weightN_x_stdevN = 1;
+  double weightsq_x_stdevsq = 0.0; 
+  double weightN_x_stdevN = 1.0;
   uint64_t n = 0;
 
   auto it = user.collateral.begin();
@@ -446,7 +446,7 @@ double eosusdcom::pricingmodel(name usern) {
     auto itr = it;
 
     while ( ++itr != user.collateral.end() )
-      weightN_x_stdevN *= st.correlation_matrix[itr->symbol];
+      weightN_x_stdevN *= st.correlation_matrix.at(itr->symbol);
   }
 
   double iportVariance = weightsq_x_stdevsq + n * weightN_x_stdevN;
@@ -458,15 +458,15 @@ double eosusdcom::pricingmodel(name usern) {
   double iportVaR = std::min(3.0*iportVariance,1.0);
 
   // double payoff = std::max(1.0*(debt.amount/std::pow(10.0,4)) - collateral*(1-valueatrisk),0.0);
-  double payoff = std::max(1.0*(debt.amount/std::pow(10.0,4)) - collateral*(1-iportVaR),0.0);
+  double payoff = std::max(1.0*(user.debt.amount/std::pow(10.0,4)) - user.valueofcol*(1-iportVaR),0.0);
 
   uint32_t T = 1;
   
   //double d = ((std::log(collateral / (debt.amount/std::pow(10.0,4)))) + (-std::pow(impliedvol,2)/2) * T)/ (impliedvol * std::sqrt(T));
-  double d = ((std::log(collateral / (debt.amount/std::pow(10.0,4)))) + (-std::pow(iportVariance,2)/2) * T)/ (iportVariance * std::sqrt(T));
+  double d = ((std::log(user.valueofcol / (user.debt.amount/std::pow(10.0,4)))) + (-std::pow(iportVariance,2)/2) * T)/ (iportVariance * std::sqrt(T));
 
-  double tesprice = std::max((payoff * std::erfc(-d/std::sqrt(2))/2)/(debt.amount/std::pow(10.0,4)),0.01*scale);
-  tesprice = tesprice/(1.6*(creditscore/800.0)); // credit score of 500 means no discount or penalty.
+  double tesprice = std::max((payoff * std::erfc(-d/std::sqrt(2))/2)/(user.debt.amount/std::pow(10.0,4)),0.01*scale);
+  tesprice = tesprice/(1.6*(user.creditscore/800.0)); // credit score of 500 means no discount or penalty.
   return tesprice;
 
 }
@@ -496,7 +496,7 @@ void eosusdcom::update(name usern){
 
   double tesprice = 0.0;
   if (user.valueofcol>0.0 && user.debt.amount>0){
-  double tesprice = pricingmodel(this->scale, user.valueofcol, user.debt, .1, user.creditscore);
+  double tesprice = pricingmodel(usern);
     // Update tesprice
     _user.modify(user, _self, [&]( auto& modified_user) {
       modified_user.tesprice = tesprice;

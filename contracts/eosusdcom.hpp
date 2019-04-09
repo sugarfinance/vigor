@@ -50,9 +50,12 @@ private:
       double protection; // the cost to bail-out an under-collateralized loan
       bool triggered; // value of collateral falling below the value of debt
       
-      time nextPayment; // buyer makes a periodic premium payment at this timestamp
-      time created; 
-   } typedef eosio::multi_index<name("swap"), swap_s> swap_t;
+      uint32_t nextPayment; // buyer makes a periodic premium payment at this timestamp
+      uint32_t created; 
+      auto primary_key() const { return buyer.value; }
+   }; 
+   
+   typedef eosio::multi_index<name("swap"), swap_s> swap_t;
    swap_t _swap;   
    
    TABLE eosusd {
@@ -101,14 +104,14 @@ private:
     void sub_balance( name owner, asset value );
     void add_balance( name owner, asset value, name ram_payer );
 
-   map <symbol, double> dummy_corr {
+   map <symbol, double> correlation_matrix {
    {symbol("SYS",4), 0.42},
    {symbol("VIG",4), 0.42},
    {symbol("IQ",4), 0.42},
    {symbol("UTG",4), 0.42},
    {symbol("PTI",4), 0.42},
    {symbol("OWN",4),	0.42},
-   {symbol("EOS",4),	0,42}
+   {symbol("EOS",4),	0.42}
    };
 
     map <symbol, name> issueracct {
@@ -135,7 +138,7 @@ public:
 
     using contract::contract;
 
-    eosusdcom(name receiver, name code, datastream<const char*> ds):contract(receiver, code, ds),_user(receiver, receiver.value),_eosusd(receiver, receiver.value){}
+    eosusdcom(name receiver, name code, datastream<const char*> ds):contract(receiver, code, ds),_user(receiver, receiver.value),_eosusd(receiver, receiver.value),_swap(receiver, receiver.value){}
     float dollar_conversion = 3.51; // from oracle
    
     //ACTION deleteuser(name user);
@@ -152,7 +155,7 @@ public:
 
     //double pricingmodel(double scale, double collateral, asset debt, double stdev, uint64_t creditscore);
     double pricingmodel(name usern);
-
+    double tmp1;
     ACTION doupdate();
 
     ACTION create( name   issuer,
