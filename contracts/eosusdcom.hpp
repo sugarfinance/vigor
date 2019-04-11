@@ -1,9 +1,11 @@
 #pragma once
 
+#include <eosiolib/transaction.hpp>
 #include <eosiolib/asset.hpp>
 #include <eosiolib/eosio.hpp>
 
 #include <string>
+#include <cmath>
 
 using namespace std;
 using namespace eosio;
@@ -43,20 +45,6 @@ private:
 
    typedef eosio::multi_index<name("user"), user_s> user_t;
    user_t _user;
-
-   TABLE swap_s {
-      name buyer;
-      name seller;
-      double protection; // the cost to bail-out an under-collateralized loan
-      bool triggered; // value of collateral falling below the value of debt
-      
-      uint32_t nextPayment; // buyer makes a periodic premium payment at this timestamp
-      uint32_t created; 
-      auto primary_key() const { return buyer.value; }
-   }; 
-   
-   typedef eosio::multi_index<name("swap"), swap_s> swap_t;
-   swap_t _swap;   
    
    TABLE eosusd {
     uint64_t id;
@@ -78,6 +66,7 @@ private:
     usdtable _eosusd;
 
     double scale = 1.0;
+    double totalins = 0.0;
 
     TABLE account {
        asset    balance;
@@ -88,8 +77,8 @@ private:
        asset    supply;
        asset    max_supply;
        name     issuer;
-       uint64_t solvency;
-       uint64_t volatility; // stdev, scale factor for price discovery
+       double solvency;
+       double volatility; // stdev, scale factor for price discovery
        /*
        * Coefficients of correlation between this asset and all other
        * assets tracked by the contract
@@ -103,6 +92,11 @@ private:
 
     void sub_balance( name owner, asset value );
     void add_balance( name owner, asset value, name ram_payer );
+    
+    void bailout(name usern);
+    void update(name usern); 
+    double pricingmodel(name usern);
+    void payfee(name usern, double tesprice);
 
    map <symbol, double> correlation_matrix {
    {symbol("SYS",4), 0.42},
@@ -138,24 +132,16 @@ public:
 
     using contract::contract;
 
-    eosusdcom(name receiver, name code, datastream<const char*> ds):contract(receiver, code, ds),_user(receiver, receiver.value),_eosusd(receiver, receiver.value),_swap(receiver, receiver.value){}
+    eosusdcom(name receiver, name code, datastream<const char*> ds):contract(receiver, code, ds),
+    _user(receiver, receiver.value), _eosusd(receiver, receiver.value) {}
     float dollar_conversion = 3.51; // from oracle
    
     //ACTION deleteuser(name user);
-    ACTION assetin(  name       from,
-                      name       to,
-                      asset      assetin,
-                      string     memo);
+    ACTION assetin( name   from,
+                    asset  assetin,
+                    string memo);
     ACTION assetout(name usern, asset assetout, string memo);
-    //ACTION cleardebt(name usern, asset debt);
-    ACTION borrow(name usern, asset debt);
-  //  ACTION recap(name user);
- //   void payfee(name user, double tesprice);
-    void update(name usern);
 
-    //double pricingmodel(double scale, double collateral, asset debt, double stdev, uint64_t creditscore);
-    double pricingmodel(name usern);
-    double tmp1;
     ACTION doupdate();
 
     ACTION create( name   issuer,

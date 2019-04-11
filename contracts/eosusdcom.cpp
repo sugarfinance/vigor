@@ -1,10 +1,8 @@
 #include "eosusdcom.hpp"
-#include <cmath>
 
 void eosusdcom::doupdate()
 {
-   require_auth( _self );
-
+   require_auth(_self);
    usdtable eosusdtable(name("oracle111111"),name("oracle111111").value);
    auto iterator = eosusdtable.begin();
    fxrate[symbol("EOS",4)] = iterator->average;
@@ -15,6 +13,13 @@ void eosusdcom::doupdate()
     update(it->usern);
     eosio::print( "update complete for: ", eosio::name{it->usern}, "\n");
    };
+
+   transaction txn{};
+   txn.actions.emplace_back(  permission_level { _self, "active"_n },
+                              _self, "doupdate"_n, make_tuple()
+                           ); txn.delay_sec = 60;
+   uint128_t txid = (uint128_t(_self.value) << 64) | now();
+   txn.send(txid, _self); 
 }
 
 void eosusdcom::create( name   issuer,
@@ -125,16 +130,23 @@ void eosusdcom::transfer(name    from,
     eosio_assert( from != to, "cannot transfer to self" );
     require_auth( from );
     eosio_assert( is_account( to ), "to account does not exist");
+    eosio_assert( quantity.is_valid(), "invalid quantity" );
+    eosio_assert( quantity.amount > 0, "must transfer positive quantity" );
+    eosio_assert( memo.size() <= 256, "memo has more than 256 bytes" );
 
-    if (to == _self){
+    if (to == _self) {
       auto &user = _user.get(from.value,"User not found");
-      eosio_assert(quantity.symbol == symbol("UZD",4), "Debt asset type must be UZD");
+      eosio_assert( quantity.symbol == symbol("UZD", 4), 
+                    "Debt asset type must be UZD"
+                  );
       update(from);
-      eosio_assert(user.debt.amount - quantity.amount >= 0, "Payment too high");
-      // Transfer stablecoin into user
-      _user.modify(user, _self, [&]( auto& modified_user) {
-      modified_user.debt -= quantity;
+      
+      eosio_assert(user.debt.amount >= quantity.amount, "Payment too high");
+      
+      _user.modify(user, _self, [&]( auto& modified_user) { // Transfer stablecoin into user
+        modified_user.debt -= quantity;
       });
+     
       auto sym = quantity.symbol.code();
       stats statstable( _self, sym.raw() );
       const auto& st = statstable.get( sym.raw() );
@@ -151,30 +163,24 @@ void eosusdcom::transfer(name    from,
       sub_balance( from, quantity );
       add_balance( to, quantity, payer );
 
-      action(
-        permission_level{_self, name("active")},
-        _self, 
-        name("retire"),
-        std::make_tuple(quantity, memo)
+      action(permission_level{_self, name("active")}, _self, 
+        name("retire"), std::make_tuple(quantity, memo)
       ).send();
-    } else {
+    } 
+    else {
+      auto sym = quantity.symbol.code();
+      stats statstable( _self, sym.raw() );
+      const auto& st = statstable.get( sym.raw() );
 
-    auto sym = quantity.symbol.code();
-    stats statstable( _self, sym.raw() );
-    const auto& st = statstable.get( sym.raw() );
+      eosio_assert( quantity.symbol == st.supply.symbol, "symbol precision mismatch" );
 
-    require_recipient( from );
-    require_recipient( to );
+      require_recipient( from );
+      require_recipient( to );
+      
+      auto payer = has_auth( to ) ? to : from;
 
-    eosio_assert( quantity.is_valid(), "invalid quantity" );
-    eosio_assert( quantity.amount > 0, "must transfer positive quantity" );
-    eosio_assert( quantity.symbol == st.supply.symbol, "symbol precision mismatch" );
-    eosio_assert( memo.size() <= 256, "memo has more than 256 bytes" );
-
-    auto payer = has_auth( to ) ? to : from;
-
-    sub_balance( from, quantity );
-    add_balance( to, quantity, payer );
+      sub_balance( from, quantity );
+      add_balance( to, quantity, payer );
     }
 }
 
@@ -235,48 +241,38 @@ void eosusdcom::close( name owner, const symbol& symbol )
    acnts.erase( it );
 }
 
-void eosusdcom::assetin(name    from,
-                      name    to,
-                      asset   assetin,
-                      string  memo ) {
-
-  if (from == _self){
-    return;
-  }
-
-  require_auth(from);
+void eosusdcom::assetin( name   from,
+                         asset  assetin,
+                         string memo ) {
+  require_auth( from );
+  eosio_assert( from == _self, "from cannot be self" );
   eosio_assert(assetin.symbol.is_valid(), "Symbol must be valid.");
   eosio_assert(assetin.amount > 0, "Amount must be > 0.");
   eosio_assert(memo.c_str()==string("collateral") || memo.c_str()==string("insurance"), "memo must be composed of either word: insurance or collateral");
   
      // Create user, if not exist
   auto itr = _user.find(from.value);
-  if (itr == _user.end()) {
+  if ( itr == _user.end() ) {
     itr = _user.emplace(_self,  [&](auto& new_user) {
       new_user.usern = from;
       new_user.debt = asset(0,symbol("UZD", 4));
     });
-
-      action(
-        permission_level{_self, name("active")},
-        _self, 
-        name("open"),
-        std::make_tuple(from, symbol("UZD", 4), _self)
-      ).send();
+    action(permission_level{_self, name("active")},
+      _self, name("open"), std::make_tuple(
+        from, symbol("UZD", 4), _self
+      )).send();
   }
+  auto &user = *itr;
 
-  auto &user = _user.get(from.value,"User not found");
-
-  if (memo.c_str() == string("collateral")){
+  if (memo.c_str() == string("collateral")) {
     for (std::vector<asset>::const_iterator it = user.collateral.begin() ; it <= user.collateral.end(); ++it){
       if (it == user.collateral.end()){
         //User collateral type not found
         _user.modify(user, _self, [&]( auto& modified_user) {
           modified_user.collateral.push_back(assetin);
         });
-        break;
       }
-      if (it->symbol == assetin.symbol){
+      else if (it->symbol == assetin.symbol) {
         //User collateral type found
         _user.modify(user, _self, [&]( auto& modified_user) {
           modified_user.collateral[it - user.collateral.begin()].amount += assetin.amount;
@@ -284,16 +280,15 @@ void eosusdcom::assetin(name    from,
         break;
       }
     }
-  } else if (memo.c_str() == string("insurance")){
+  } else if (memo.c_str() == string("insurance")) {
     for (std::vector<asset>::const_iterator it = user.insurance.begin() ; it <= user.insurance.end(); ++it){
-      if (it == user.insurance.end()){
+      if (it == user.insurance.end()) {
         //User insurance type not found
         _user.modify(user, _self, [&]( auto& modified_user) {
           modified_user.insurance.push_back(assetin);
         });
-        break;
       }
-      if (it->symbol == assetin.symbol){
+      else if (it->symbol == assetin.symbol) {
         //User insurance type found
         _user.modify(user, _self, [&]( auto& modified_user) {
           modified_user.insurance[it - user.insurance.begin()].amount += assetin.amount;
@@ -301,6 +296,16 @@ void eosusdcom::assetin(name    from,
         break;
       }
     }
+  } else if (memo.c_str() == string("payoffdebt")) {
+    eosio_assert( assetin.symbol == user.debt.symbol, 
+                  "must payoff debt with same asset as debt"
+                );
+    eosio_assert( user.debt.amount >= assetin.amount, 
+                  "erasing more debt than available" 
+                );
+    _user.modify(user, _self, [&]( auto& modified_user) {
+      modified_user.debt -= assetin;
+    });
   }
     update(from);
 }
@@ -309,99 +314,78 @@ void eosusdcom::assetout(name usern, asset assetout, string memo) {
 
   require_auth(usern);
 
-  auto &user = _user.get(usern.value,"User not found");
-  eosio_assert(assetout.symbol.is_valid(), "Symbol must be valid.");
-  eosio_assert(assetout.amount > 0, "Amount must be > 0.");
-  eosio_assert(memo.c_str()==string("collateral") || memo.c_str()==string("insurance"), "memo must be composed of either word: insurance or collateral");
-
-  if (memo.c_str() == string("collateral")){
+  auto &user = _user.get( usern.value,"User not found" );
+  eosio_assert( assetout.symbol.is_valid(), "Symbol must be valid." );
+  eosio_assert( assetout.amount > 0, "Amount must be > 0." );
+  eosio_assert( memo.c_str() == string("collateral") || 
+                memo.c_str() == string("insurance") || 
+                memo.c_str() == string("borrow"), 
+                "memo must be composed of either word: insurance | collateral | borrow"
+              );
+  if (memo.c_str() == string("collateral")) {
     eosio_assert(!user.collateral.empty(), "User does not have any collateral");
-    for (std::vector<asset>::const_iterator it = user.collateral.begin() ; it < user.collateral.end(); ++it){
-
-      if (it->symbol == assetout.symbol){
-        //User collateral type found
-
+    for (std::vector<asset>::const_iterator it = user.collateral.begin(); it != user.collateral.end(); ++it)
+      if (it->symbol == assetout.symbol) { //User collateral type found
         eosio_assert((it->amount >= assetout.amount),"Insufficient collateral available.");
-        eosio_assert(((user.valueofcol) - ((assetout.amount/std::pow(10.0,it->symbol.precision())) * (fxrate[assetout.symbol]/std::pow(10.0,4)))) >= 1.01*(user.debt.amount/std::pow(10.0,4)),
+        
+        double valueofasset = assetout.amount / std::pow(10.0,it->symbol.precision());
+        valueofasset *= fxrate[assetout.symbol] / std::pow(10.0,4);
+        double valueofcol = user.valueofcol - valueofasset;
 
-        "Dollar value of collateral would become less than dollar value of debt");
-
-        if (it->amount - assetout.amount == 0){
+        eosio_assert( valueofcol >= 1.01 * ( user.debt.amount / std::pow(10.0,4) ),
+        "Dollar value of collateral would become less than dollar value of debt" );
+        if (it->amount - assetout.amount == 0)
           _user.modify(user, _self, [&]( auto& modified_user) {
             modified_user.collateral.erase(it);
           });
-        } else {
+        else
           _user.modify(user, _self, [&]( auto& modified_user) {
             modified_user.collateral[it - user.collateral.begin()].amount -= assetout.amount;
           });
-        }
-
-      action(
-        permission_level{_self, name("active")},
-        issueracct[assetout.symbol], 
-        name("transfer"),
-        std::make_tuple(_self, usern, assetout,std::string("Transfer loan collateral out: ") + usern.to_string())
-      ).send();
-      update(usern);
-      break;
+        action( permission_level{_self, name("active")}, 
+          issueracct[assetout.symbol], name("transfer"),
+          std::make_tuple( _self, usern, assetout,
+            std::string("Transfer loan collateral out: ") + usern.to_string()
+          )).send();
+        break;
       }
-    }
-  } else if (memo.c_str() == string("insurance")){
+  } 
+  else if (memo.c_str() == string("insurance")) {
     eosio_assert(!user.insurance.empty(), "User does not have any insurance asset");
-    for (std::vector<asset>::const_iterator it = user.insurance.begin() ; it < user.insurance.end(); ++it){
-
-      if (it->symbol == assetout.symbol){
-        //User insurance type found
-
-        eosio_assert((it->amount >= assetout.amount),"Insufficient insurance asset available.");
-
-        if (it->amount - assetout.amount == 0){
+    for (std::vector<asset>::const_iterator it = user.insurance.begin() ; it < user.insurance.end(); ++it)
+      if (it->symbol == assetout.symbol) {//User insurance type found
+        eosio_assert( it->amount >= assetout.amount,
+        "Insufficient insurance asset available." );
+        if (it->amount - assetout.amount == 0)
           _user.modify(user, _self, [&]( auto& modified_user) {
             modified_user.insurance.erase(it);
           });
-        } else {
+        else 
           _user.modify(user, _self, [&]( auto& modified_user) {
             modified_user.insurance[it - user.insurance.begin()].amount -= assetout.amount;
           });
-        }
-
-      action(
-        permission_level{_self, name("active")},
-        issueracct[assetout.symbol], 
-        name("transfer"),
-        std::make_tuple(_self, usern, assetout,std::string("Transfer insurance assets out: ") + usern.to_string())
-      ).send();
-      update(usern);
-      break;
+        action( permission_level{_self, name("active")},
+          issueracct[assetout.symbol], name("transfer"),
+          std::make_tuple(_self, usern, assetout,
+            std::string("Transfer insurance assets out: ") + usern.to_string()
+        )).send();
+        break;
       }
-    }
+  } 
+  else {
+    eosio_assert( assetout.symbol == symbol("UZD",4), "Borrow asset type must be UZD" );
+    asset debt = user.debt + assetout;
+    eosio_assert( user.valueofcol >= 1.01 * ( debt.amount / std::pow(10.0,4) ),
+    "Dollar value of collateral would become less than dollar value of debt" );
+    _user.modify(user, _self, [&]( auto& modified_user) {
+      modified_user.debt = debt;
+    });
+    action( permission_level{_self, name("active")},
+      _self, name("issue"), std::make_tuple(
+        usern, debt, std::string("UZD issued to ") + usern.to_string()
+      )).send();
   }
-
-}
-
-void eosusdcom::borrow(name usern, asset debt) {
-
-// todo: make this vectorized for multicollateral
-  require_auth(usern);
   update(usern);
-  auto &user = _user.get(usern.value,"User not found");
-  eosio_assert(debt.symbol == symbol("UZD",4), "Debt asset type must be UZD");
-  eosio_assert(user.valueofcol >= 1.01*((user.debt.amount + debt.amount)/std::pow(10.0,4)),
-    "Dollar value of collateral would become less than dollar value of debt");
-
-  // Transfer stablecoin out of user
-  _user.modify(user, _self, [&]( auto& modified_user) {
-    modified_user.debt += debt;
-  });
-
- // issue(usern, debt,std::string("UZD issued to ") + usern.to_string());
-    action(
-        permission_level{_self, name("active")},
-        _self, 
-        name("issue"),
-        std::make_tuple(usern, debt, std::string("UZD issued to ") + usern.to_string())
-    ).send();
-    update(usern);
 }
 
 /* Portfolio variance is a measurement of how the aggregate actual returns
@@ -414,13 +398,11 @@ void eosusdcom::borrow(name usern, asset debt) {
    [(weight_asset2)^2 x (stdev_asset2)^2] +  
    (2 x weight_asset1 x stdev_asset1 x 
         weight_asset2 x stdev_asset2 x 
-   the correlation between the two assets 
+        correlation between the two assets) 
 */
-//double eosusdcom::pricingmodel(double scale, double collateral, asset debt, double stdev, uint64_t creditscore) {
 double eosusdcom::pricingmodel(name usern) {
 
-
-  auto &user = _user.get(usern.value,"User not found"); 
+  const auto& user = _user.get( usern.value, "User not found" ); 
 
   double weightsq_x_stdevsq = 0.0; 
   double weightN_x_stdevN = 1.0;
@@ -433,7 +415,7 @@ double eosusdcom::pricingmodel(name usern) {
     stats statstable( _self, sym_code_raw );
     const auto& st = statstable.get( sym_code_raw, "symbol does not exist" );
 
-    double stdevsq = std::pow(st.volatility, 2);
+    double stdevsq = std::pow(this->scale * st.volatility, 2);
     
     double value = (it->amount)/std::pow(10.0, it->symbol.precision()) * (fxrate[it->symbol]/std::pow(10.0, 4));
     
@@ -441,7 +423,7 @@ double eosusdcom::pricingmodel(name usern) {
     double weightsq = std::pow(weight, 2);  
 
     weightsq_x_stdevsq += weightsq * stdevsq;
-    weightN_x_stdevN *= weight * st.volatility;
+    weightN_x_stdevN *= weight * this->scale * st.volatility;
     
     auto itr = it;
 
@@ -453,73 +435,141 @@ double eosusdcom::pricingmodel(name usern) {
 
   // premium payments in exchange for contingient payoff in the event that a price threshhold is breached
   
-  // double impliedvol = stdev * scale;
-  // double valueatrisk = std::min(3.0*impliedvol,1.0);
-  double iportVaR = std::min(3.0*iportVariance,1.0);
+  double iportVaR = std::min(3.0*iportVariance,1.0); // value at risk
 
-  // double payoff = std::max(1.0*(debt.amount/std::pow(10.0,4)) - collateral*(1-valueatrisk),0.0);
   double payoff = std::max(1.0*(user.debt.amount/std::pow(10.0,4)) - user.valueofcol*(1-iportVaR),0.0);
 
   uint32_t T = 1;
   
-  //double d = ((std::log(collateral / (debt.amount/std::pow(10.0,4)))) + (-std::pow(impliedvol,2)/2) * T)/ (impliedvol * std::sqrt(T));
   double d = ((std::log(user.valueofcol / (user.debt.amount/std::pow(10.0,4)))) + (-std::pow(iportVariance,2)/2) * T)/ (iportVariance * std::sqrt(T));
 
-  double tesprice = std::max((payoff * std::erfc(-d/std::sqrt(2))/2)/(user.debt.amount/std::pow(10.0,4)),0.01*scale);
+  double tesprice = std::max((payoff * std::erfc(-d/std::sqrt(2))/2)/(user.debt.amount/std::pow(10.0,4)),0.01*this->scale);
   tesprice = tesprice/(1.6*(user.creditscore/800.0)); // credit score of 500 means no discount or penalty.
   return tesprice;
-
 }
 
-void eosusdcom::update(name usern){
+void eosusdcom::payfee(name usern, double tesprice) {
+  auto &user = _user.get( usern.value, "User not found" );
 
-  auto &user = _user.get(usern.value,"User not found");
+  uint64_t amt = 0;
+  for ( auto it = user.collateral.begin(); it != user.collateral.end(); ++it )
+    if (it->symbol == symbol("VIG",4)) {
+      amt = (tesprice * std::pow(10.0,4)) / (fxrate[it->symbol]/std::pow(10.0,4));
+      if (it->amount >= amt)
+        _user.modify(user, _self, [&]( auto& modified_user) { // withdraw fee
+          modified_user.feespaid += tesprice;
+          modified_user.collateral[it - user.collateral.begin()].amount -= amt;
+        });
+      else 
+        amt = 0;
+      break;
+    }
+  if (!amt)
+    _user.modify(user, _self, [&]( auto& modified_user) { // withdraw fee
+      modified_user.latepayments += 1;
+    });
+  else 
+    for ( auto itr = _user.begin(); itr != _user.end(); ++itr )
+      if (itr->valueofins > 0) {
+        double weight = itr->valueofins / this->totalins;
+        for ( auto it = itr->insurance.begin(); it != itr->insurance.end(); ++it )
+          if (it->symbol == symbol("VIG",4)) {
+            _user.modify(itr, _self, [&]( auto& modified_user) { // weighted fee deposit
+              modified_user.insurance[it - itr->insurance.begin()].amount += amt * weight;
+            });
+            break;
+          } 
+      }
+}
+
+void eosusdcom::update(name usern) {
+
+  auto &user = _user.get( usern.value, "User not found" );
 
   double valueofcol = 0.0;
-    for (std::vector<asset>::const_iterator it = user.collateral.begin() ; it != user.collateral.end(); ++it){
-      valueofcol += (it->amount)/std::pow(10.0,it->symbol.precision()) * (fxrate[it->symbol]/std::pow(10.0,4));
-    }
-    // Update value of collateral
-    _user.modify(user, _self, [&]( auto& modified_user) {
-      modified_user.valueofcol = valueofcol;
-      });
+  for ( auto it = user.collateral.begin(); it != user.collateral.end(); ++it )
+    valueofcol += (it->amount)/std::pow(10.0,it->symbol.precision()) * (fxrate[it->symbol]/std::pow(10.0,4));
+  
+  _user.modify(user, _self, [&]( auto& modified_user) { // Update value of collateral
+    modified_user.valueofcol = valueofcol;
+  });
 
   double valueofins = 0.0;
-    for (std::vector<asset>::const_iterator it = user.insurance.begin() ; it != user.insurance.end(); ++it){
-      valueofins += (it->amount)/std::pow(10.0,it->symbol.precision()) * (fxrate[it->symbol]/std::pow(10.0,4));
-    }
-
-    // Update value of insurance
-    _user.modify(user, _self, [&]( auto& modified_user) {
-      modified_user.valueofins = valueofins;
-      });
+  this->totalins -= user.valueofins;
+  
+  for ( auto it = user.insurance.begin(); it != user.insurance.end(); ++it )
+    valueofins += (it->amount)/std::pow(10.0,it->symbol.precision()) * (fxrate[it->symbol]/std::pow(10.0,4));
+  
+  this->totalins += valueofins;
+  
+  _user.modify(user, _self, [&]( auto& modified_user) { // Update value of insurance
+    modified_user.valueofins = valueofins;
+  });
 
   double tesprice = 0.0;
-  if (user.valueofcol>0.0 && user.debt.amount>0){
-  double tesprice = pricingmodel(usern);
-    // Update tesprice
+  if ( user.valueofcol > 0.0 && user.debt.amount > 0 ) { // Update tesprice
+    tesprice = pricingmodel(usern);
     _user.modify(user, _self, [&]( auto& modified_user) {
       modified_user.tesprice = tesprice;
-      });
+    });
+    payfee(usern, tesprice);
   }
- // payfee(name,tesprice);
-
-
-  //BAILOUT
-  //assign the debt and impaired collateral to the insurers
-  
-  /* insurers may start of with zero debt but in a bailout 
-  * they get some. When that happens, some of their insurance
-  * assets will be assigned to their collateral bucket so that
-  * it overcollateralizes their debt at some default setting like 1.5.
-  * insurers receive premium in exchange for agreeing to bailout loans
-  * so they willfully take it, a bailout means that the insurer is assigned
-  * a small piece of debt and impaired collateral. All users have three stacks
-  * of tokens: collateral, insurance, debt.
-  */
-
+  if (user.latepayments > 4) {
+    _user.modify(user, _self, [&]( auto& modified_user) {
+      modified_user.latepayments = 0; 
+      modified_user.recaps += 1;
+    });
+    bailout(usern);
+  } else if ( 1.01 * ( user.debt.amount / std::pow(10.0,4) ) > valueofcol ) {
+    _user.modify(user, _self, [&]( auto& modified_user) {
+      modified_user.recaps += 1;
+    });
+    bailout(usern);
+  }
 }
 
+
+/* illiquidity risk is offloaded to insurers who are compensated
+ * to take this risk. insurers may start of with zero debt but in
+ * a bailout they acquire it, along with a failed loan's remaining 
+ * collateral. some of their insurance assets will be assigned to 
+ * their collateral bucket so that it overcollateralizes their debt
+ * at some default setting like 1.5
+*/
+void eosusdcom::bailout(name usern) {
+  auto user = _user.find(usern.value);
+  eosio_assert(user != _user.end(), "User not found");
+
+  for ( auto itr = _user.begin(); itr != _user.end(); ++itr ) {
+    if (itr->valueofins > 0) {
+      double weight = itr->valueofins / this->totalins;
+
+      for ( auto c = user->collateral.begin(); c != user->collateral.end(); ++c ) {
+        uint64_t amt = c->amount * weight;
+        _user.modify(user, _self, [&]( auto& modified_user) { // weighted fee withdrawl
+            modified_user.collateral[c - user->collateral.begin()].amount -= amt;
+        });
+        for ( auto it = itr->collateral.begin(); it != itr->collateral.end(); ++it )
+          if (it->symbol == c->symbol) {
+            _user.modify(itr, _self, [&]( auto& modified_user) { // weighted fee deposit
+              modified_user.collateral[it - itr->collateral.begin()].amount += amt;
+            });
+            amt = 0;
+            break;
+          } 
+        if (amt > 0) 
+          _user.modify(itr, _self, [&]( auto& modified_user) { // weighted fee deposit
+            modified_user.collateral.push_back(asset(amt, c->symbol));
+          });
+      }
+      _user.modify(itr, _self, [&]( auto& modified_user) { // weighted fee deposit
+          modified_user.debt.amount += user->debt.amount * weight;
+      });
+      //TODO: loop through insurances and assign some portion to collaterals
+    }
+  }
+
+}
 
 extern "C" {
   [[noreturn]] void apply(uint64_t receiver, uint64_t code, uint64_t action) {
@@ -530,7 +580,7 @@ extern "C" {
     }
     if (code == receiver) {
             switch (action) { 
-                EOSIO_DISPATCH_HELPER(eosusdcom, (create)(assetout)(borrow)(issue)(transfer)(open)(close)(retire)(setsupply)(doupdate)) 
+                EOSIO_DISPATCH_HELPER(eosusdcom, (create)(assetout)(issue)(transfer)(open)(close)(retire)(setsupply)(doupdate)) 
             }    
     }
         eosio_exit(0);
