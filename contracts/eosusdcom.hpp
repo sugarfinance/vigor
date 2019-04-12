@@ -135,9 +135,11 @@ public:
     eosusdcom(name receiver, name code, datastream<const char*> ds):contract(receiver, code, ds),
     _user(receiver, receiver.value), _eosusd(receiver, receiver.value) {}
     float dollar_conversion = 3.51; // from oracle
-   
+    float volatility = 0.1;
+    float correlation = 0.4;
     //ACTION deleteuser(name user);
     ACTION assetin( name   from,
+                    name to,
                     asset  assetin,
                     string memo);
     ACTION assetout(name usern, asset assetout, string memo);

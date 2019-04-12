@@ -2,16 +2,16 @@
 
 void eosusdcom::doupdate()
 {
-   require_auth(_self);
+   //require_auth(_self);
    usdtable eosusdtable(name("oracle111111"),name("oracle111111").value);
    auto iterator = eosusdtable.begin();
    fxrate[symbol("EOS",4)] = iterator->average;
-   eosio::print( "EOS fxrate updated: ", iterator->average, "\n");
+   eosio::print( "EOS fxrate updated : ", iterator->average, "\n");
 
    user_t _user(_self, _self.value);
    for (auto it = _user.begin(); it != _user.end(); it++){
     update(it->usern);
-    eosio::print( "update complete for: ", eosio::name{it->usern}, "\n");
+   // eosio::print( "update complete for: ", eosio::name{it->usern}, "\n");
    };
 
    transaction txn{};
@@ -242,10 +242,14 @@ void eosusdcom::close( name owner, const symbol& symbol )
 }
 
 void eosusdcom::assetin( name   from,
+                         name to,
                          asset  assetin,
                          string memo ) {
+  
+    if (from == _self){
+    return;
+  }
   require_auth( from );
-  eosio_assert( from == _self, "from cannot be self" );
   eosio_assert(assetin.symbol.is_valid(), "Symbol must be valid.");
   eosio_assert(assetin.amount > 0, "Amount must be > 0.");
   eosio_assert(memo.c_str()==string("collateral") || memo.c_str()==string("insurance"), "memo must be composed of either word: insurance or collateral");
@@ -401,47 +405,45 @@ void eosusdcom::assetout(name usern, asset assetout, string memo) {
         correlation between the two assets) 
 */
 double eosusdcom::pricingmodel(name usern) {
-
+eosio::print( "Hello " "\n");
   const auto& user = _user.get( usern.value, "User not found" ); 
-
-  double weightsq_x_stdevsq = 0.0; 
-  double weightN_x_stdevN = 1.0;
+ 
   uint64_t n = 0;
-
-  auto it = user.collateral.begin();
-  while ( it != user.collateral.end()) 
-  { n += 1;
-    auto sym_code_raw = it->symbol.code().raw();
-    stats statstable( _self, sym_code_raw );
-    const auto& st = statstable.get( sym_code_raw, "symbol does not exist" );
-
-    double stdevsq = std::pow(this->scale * st.volatility, 2);
-    
-    double value = (it->amount)/std::pow(10.0, it->symbol.precision()) * (fxrate[it->symbol]/std::pow(10.0, 4));
-    
-    double weight = value / user.valueofcol;
-    double weightsq = std::pow(weight, 2);  
-
-    weightsq_x_stdevsq += weightsq * stdevsq;
-    weightN_x_stdevN *= weight * this->scale * st.volatility;
-    
-    auto itr = it;
-
-    while ( ++itr != user.collateral.end() )
-      weightN_x_stdevN *= st.correlation_matrix.at(itr->symbol);
+  double wsig[user.collateral.size()-1];
+  for (std::vector<asset>::const_iterator it = user.collateral.begin() ; it < user.collateral.end(); ++it){
+    for (std::vector<asset>::const_iterator jt = user.collateral.begin() ; jt < user.collateral.end(); ++jt){
+      if (it==jt) {
+         wsig[n] += (jt->amount)/std::pow(10.0, jt->symbol.precision()) * (fxrate[jt->symbol]/std::pow(10.0, 4)) * std::pow(this->volatility,2);
+      } 
+      else{
+         wsig[n] += (jt->amount)/std::pow(10.0, jt->symbol.precision()) * (fxrate[jt->symbol]/std::pow(10.0, 4)) * this->correlation * std::pow(this->volatility,2);
+      }
+    }
+    //eosio::print( "symbol, ", it->symbol, "\n");
+    //eosio::print( "amount ", (it->amount)/std::pow(10.0, it->symbol.precision()), "\n");  
+    //eosio::print( "weight ", ((it->amount)/std::pow(10.0, it->symbol.precision()) * (fxrate[it->symbol]/std::pow(10.0, 4)))/user.valueofcol, "\n");  
+    n+=1;
   }
-
-  double iportVariance = weightsq_x_stdevsq + n * weightN_x_stdevN;
+  n = 0;
+  double portVariance = 0;
+  for (std::vector<asset>::const_iterator it = user.collateral.begin() ; it < user.collateral.end(); ++it){
+    portVariance += (it->amount)/std::pow(10.0, it->symbol.precision()) * (fxrate[it->symbol]/std::pow(10.0, 4)) * wsig[n];
+    n+=1;
+  }
+  portVariance /= std::pow(user.valueofcol,2);
+  //eosio::print( "portVariance ", portVariance, "\n");
 
   // premium payments in exchange for contingient payoff in the event that a price threshhold is breached
-  
-  double iportVaR = std::min(3.0*iportVariance,1.0); // value at risk
+
+  double impliedvol = sqrt(portVariance) * this->scale; 
+
+  double iportVaR = std::min(3.0*impliedvol,1.0); // value at risk
 
   double payoff = std::max(1.0*(user.debt.amount/std::pow(10.0,4)) - user.valueofcol*(1-iportVaR),0.0);
 
   uint32_t T = 1;
   
-  double d = ((std::log(user.valueofcol / (user.debt.amount/std::pow(10.0,4)))) + (-std::pow(iportVariance,2)/2) * T)/ (iportVariance * std::sqrt(T));
+  double d = ((std::log(user.valueofcol / (user.debt.amount/std::pow(10.0,4)))) + (-std::pow(impliedvol,2)/2) * T)/ (impliedvol * std::sqrt(T));
 
   double tesprice = std::max((payoff * std::erfc(-d/std::sqrt(2))/2)/(user.debt.amount/std::pow(10.0,4)),0.01*this->scale);
   tesprice = tesprice/(1.6*(user.creditscore/800.0)); // credit score of 500 means no discount or penalty.
@@ -512,8 +514,9 @@ void eosusdcom::update(name usern) {
     _user.modify(user, _self, [&]( auto& modified_user) {
       modified_user.tesprice = tesprice;
     });
-    payfee(usern, tesprice);
+ //   payfee(usern, tesprice);
   }
+  /*
   if (user.latepayments > 4) {
     _user.modify(user, _self, [&]( auto& modified_user) {
       modified_user.latepayments = 0; 
@@ -526,6 +529,7 @@ void eosusdcom::update(name usern) {
     });
     bailout(usern);
   }
+*/
 }
 
 
@@ -576,7 +580,7 @@ extern "C" {
     if((code==name("eosio.token").value ||
         code==name("vig111111111").value ||
         code==name("dummytokens1").value) && action==name("transfer").value) {
-      eosio::execute_action(name(receiver),name(code), &eosusdcom::assetin);
+      eosio::execute_action(name(receiver), name(code), &eosusdcom::assetin);
     }
     if (code == receiver) {
             switch (action) { 
