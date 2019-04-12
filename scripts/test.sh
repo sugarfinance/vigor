@@ -186,7 +186,7 @@ cleos push action eosusdcom111 transfer '{"from":"testborrow12","to":"eosusdcom1
 cleos push action eosusdcom111 doupdate '{}' -p eosusdcom111@active
 
 # get all the user data
-cleos get table eosusdcom111 eosusdcom111 user -limit
+cleos get table eosusdcom111 eosusdcom111 user --limit 1
 
 cleos get table eosusdcom111 UZD stat
 cleos get table eosio.token eosusdcom111 accounts
