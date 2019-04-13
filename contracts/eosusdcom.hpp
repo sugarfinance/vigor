@@ -69,7 +69,7 @@ private:
       indexed_by<name("timestamp"), const_mem_fun<eosusd, uint64_t, &eosusd::by_timestamp>>> usdtable;
     usdtable _eosusd;
 
-    TABLE global_stats {
+    TABLE globalstats {
       double valueofcol = 0.0;
       double valueofins = 0.0;
       
@@ -84,8 +84,8 @@ private:
       double solvency = 0.0;
       vector<asset> support;
  
-      EOSLIB_SERIALIZE(global_stats, (valueofcol)(valueofins)(iportVaRcol)(iportVaRins)(mva_s)(bel_n)(solvency)(support))
-    }; typedef eosio::singleton<"globals"_n, global_stats> globals;
+      EOSLIB_SERIALIZE(globalstats, (valueofcol)(valueofins)(iportVaRcol)(iportVaRins)(mva_s)(bel_n)(solvency)(support))
+    }; typedef eosio::singleton<"globals"_n, globalstats> globals;
 
     void update(name usern); 
     void payfee(name usern);

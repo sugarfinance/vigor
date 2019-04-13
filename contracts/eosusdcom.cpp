@@ -267,7 +267,7 @@ void eosusdcom::assetin( name   from,
   auto &user = *itr;
 
   globals globals_table( _self, _self.value );
-  global_stats stats;
+  globalstats stats;
   if (globals_table.exists())
     stats = globals_table.get();
 
@@ -337,7 +337,7 @@ void eosusdcom::assetout(name usern, asset assetout, string memo) {
                 "memo must be composed of either word: support | collateral | borrow"
               );
   globals globals_table( _self, _self.value );
-  global_stats stats;
+  globalstats stats;
   if (globals_table.exists())
     stats = globals_table.get();
 
@@ -450,7 +450,7 @@ void eosusdcom::pricingmodel(name usern) {
 
   globals globals_table( _self, _self.value );
   eosio_assert(globals_table.exists(), "No support yet");
-  global_stats stats = globals_table.get();
+  globalstats stats = globals_table.get();
   
   for ( auto it = user.collateral.begin() ; it < user.collateral.end(); ++it ) {
     for ( auto jt = user.collateral.begin() ; jt < user.collateral.end(); ++jt ) {
@@ -503,7 +503,7 @@ void eosusdcom::calcStats(double delta_iportVaRcol)
 {  
   globals globals_table( _self, _self.value );
   eosio_assert(globals_table.exists(), "No support yet");
-  global_stats stats = globals_table.get();
+  globalstats stats = globals_table.get();
   
   uint64_t n = 0;
   double portVariance = 0.0;
@@ -550,7 +550,7 @@ void eosusdcom::payfee(name usern) {
   
   globals globals_table( _self, _self.value );
   eosio_assert(globals_table.exists(), "No support yet");
-  global_stats stats = globals_table.get();
+  globalstats stats = globals_table.get();
 
   uint64_t amt = 0;
   uint64_t T = 360*24*60;
@@ -592,7 +592,7 @@ void eosusdcom::update(name usern) {
 
   auto &user = _user.get( usern.value, "User not found" );
   globals globals_table( _self, _self.value );
-  global_stats stats;
+  globalstats stats;
   
   if (globals_table.exists())
     stats = globals_table.get();
@@ -652,7 +652,7 @@ void eosusdcom::bailout(name usern) {
   auto user = _user.find(usern.value);
   eosio_assert(user != _user.end(), "User not found");
   globals globals_table( _self, _self.value );
-  global_stats stats = globals_table.get();
+  globalstats stats = globals_table.get();
 
   for ( auto itr = _user.begin(); itr != _user.end(); ++itr ) {
     if (itr->valueofins > 0) {
