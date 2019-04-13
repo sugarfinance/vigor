@@ -84,7 +84,7 @@ private:
       double solvency = 0.0;
       vector<asset> support;
  
-      EOSLIB_SERIALIZE(globalstats, (valueofcol)(valueofins)(iportVaRcol)(iportVaRins)(mva_s)(bel_n)(solvency)(support))
+     // EOSLIB_SERIALIZE(globalstats, (valueofcol)(valueofins)(iportVaRcol)(iportVaRins)(mva_s)(bel_n)(solvency)(support))
     }; typedef eosio::singleton<"globals"_n, globalstats> globals;
                                                           globals globalstab;
 
