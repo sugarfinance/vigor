@@ -39,7 +39,7 @@ private:
       
       double feespaid = 0.0;
       uint64_t recaps = 0;
-      uint64_t latepayments = 0;
+      uint64_t latepays = 0;
       
       /* Own Funds = amount of crypto collateral 
        * pledged by supporters minus our best estimate
@@ -47,7 +47,7 @@ private:
       */
       auto primary_key() const { return usern.value; }
 
-      EOSLIB_SERIALIZE(user_s, (usern)(debt)(collateral)(support)(valueofcol)(valueofins)(tesvalue)(tesprice)(iportVaR)(feespaid)(recaps)(latepayments))
+      EOSLIB_SERIALIZE(user_s, (usern)(debt)(collateral)(support)(valueofcol)(valueofins)(tesvalue)(tesprice)(iportVaR)(creditscore)(feespaid)(recaps)(latepays))
     }; typedef eosio::multi_index<name("user"), user_s> user_t;
                                                         user_t _user;
    TABLE eosusd {
@@ -86,6 +86,7 @@ private:
  
       EOSLIB_SERIALIZE(globalstats, (valueofcol)(valueofins)(iportVaRcol)(iportVaRins)(mva_s)(bel_n)(solvency)(support))
     }; typedef eosio::singleton<"globals"_n, globalstats> globals;
+                                                          globals globalstab;
 
     void update(name usern); 
     void payfee(name usern);
@@ -149,7 +150,7 @@ public:
     using contract::contract;
 
     eosusdcom(name receiver, name code, datastream<const char*> ds):contract(receiver, code, ds),
-    _user(receiver, receiver.value), _eosusd(receiver, receiver.value) {}
+    _user(receiver, receiver.value), _eosusd(receiver, receiver.value), globalstab(receiver, receiver.value)  {}
     
     //TODO: consts to be vars
     const float scale = 1.0;
