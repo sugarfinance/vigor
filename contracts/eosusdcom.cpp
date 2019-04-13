@@ -307,6 +307,14 @@ void eosusdcom::assetin( name   from,
         break;
       }
     }
+    for ( auto it = stats.collateral.begin(); it <= stats.collateral.end(); ++it ) {
+      if ( it == stats.collateral.end() )
+        stats.collateral.push_back(assetin);
+      else if ( it->symbol == assetin.symbol ) {
+        stats.collateral[it - stats.collateral.begin()] += assetin;
+        break;
+      }
+    }
   } 
   else {
     eosio_assert( assetin.symbol == user.debt.symbol, 
@@ -319,6 +327,8 @@ void eosusdcom::assetin( name   from,
       modified_user.debt -= assetin;
     });
     stats.bel_n -= assetin.amount / 10000; //TODO
+    stats.bel_n = 0;
+
   }
   globalstab.set(stats, _self);
   update(from);
@@ -405,6 +415,15 @@ void eosusdcom::assetout(name usern, asset assetout, string memo) {
       }
     }
     eosio_assert(found, "support asset not found");
+    found = false;
+    for ( auto it = stats.collateral.begin(); it < stats.collateral.end(); ++it ) {
+      if ( it->symbol == assetout.symbol ) {
+        stats.collateral[it - stats.collateral.begin()] -= assetout;
+        found = true;
+        break;
+      }
+    }
+    eosio_assert(found, "collateral asset not found");
   } 
   else {
     eosio_assert( assetout.symbol == symbol("UZD", 4), 
@@ -441,56 +460,79 @@ void eosusdcom::assetout(name usern, asset assetout, string memo) {
 */
 void eosusdcom::pricingmodel(name usern) {
 
-  const auto& user = _user.get( usern.value, "User not found" ); 
-  
-  uint64_t n = 0;
-  double portVariance = 0.0;
-  double wsig[user.collateral.size()];
-  double volsq = std::pow(this->volatility, 2);
+const auto& user = _user.get( usern.value, "User not found" ); 
+   
 
   globals globalstab( _self, _self.value );
   eosio_assert(globalstab.exists(), "No support yet");
   globalstats stats = globalstab.get();
-  
-  for ( auto it = user.collateral.begin() ; it < user.collateral.end(); ++it ) {
-    for ( auto jt = user.collateral.begin() ; jt < user.collateral.end(); ++jt ) {
-      if ( it == jt )
-         wsig[n] += (jt->amount) / std::pow(10.0, jt->symbol.precision()) * 
-                    (fxrate[jt->symbol] / std::pow(10.0, 4)) * volsq;
-      else
-         wsig[n] += (jt->amount) / std::pow(10.0, jt->symbol.precision()) * 
-                    (fxrate[jt->symbol] / std::pow(10.0, 4)) * this->correlation * volsq;
-    }
-    portVariance += (it->amount) / std::pow(10.0, it->symbol.precision()) * 
-                    (fxrate[it->symbol] / std::pow(10.0, 4)) * wsig[n];
-    n += 1;
-  } portVariance /= std::pow(user.valueofcol, 2);
-  
-  double impliedvol = sqrt(portVariance) * this->scale;
-  double iportVaR = std::min(3.0 * impliedvol, 1.0); // value at risk
-  double payoff = std::max(
-    1.0 * (user.debt.amount / std::pow(10.0, 4)) - 
-    user.valueofcol * (1 - iportVaR), 0.0
-  );
-  uint32_t T = 1;
-  double d = (
-    ( std::log(user.valueofcol / (user.debt.amount / std::pow(10.0, 4))) ) + 
-    ( -std::pow(impliedvol, 2) / 2 ) * T
-  ) / ( impliedvol * std::sqrt(T) );
-  double tesvalue = std::max(
-    (payoff * std::erfc(-d / std::sqrt(2)) / 2 ),
-    0.01 * this->scale
-  );
-  double tesprice = std::max(
-    ( payoff * std::erfc(-d / std::sqrt(2)) / 2 ) / 
-    ( user.debt.amount / std::pow(10.0, 4) ), 
-    0.01 * this->scale
-  );
-  tesprice = tesprice / ( 1.6 * (user.creditscore / 800.0) ); // credit score of 500 means no discount or penalty.
-  
-  globalstab.set(stats, _self);
 
-  iportVaR = std::max(user.debt.amount - ((1 - iportVaR) * user.valueofcol),0.0); // for solvency
+double portVariance = 0.0;
+if (user.collateral.size()==3){
+
+std::vector<asset>::const_iterator it = user.collateral.begin();
+double w1 = ((it->amount)/std::pow(10.0, it->symbol.precision()) * (fxrate[it->symbol]/std::pow(10.0, 4))) / user.valueofcol;
+double sig1 = this->volatility;
+it++;
+double w2 = ((it->amount)/std::pow(10.0, it->symbol.precision()) * (fxrate[it->symbol]/std::pow(10.0, 4))) / user.valueofcol;
+double sig2 = this->volatility;
+it++;
+double w3 = ((it->amount)/std::pow(10.0, it->symbol.precision()) * (fxrate[it->symbol]/std::pow(10.0, 4))) / user.valueofcol;
+double sig3 = this->volatility;
+double corr12 = this->correlation;
+double corr13 = this->correlation;
+double corr23 = this->correlation;
+
+portVariance = std::pow(w1,2)*std::pow(sig1,2) + 
+std::pow(w2,2)*std::pow(sig2,2) + 
+std::pow(w3,2)*std::pow(sig3,2) + 
+2.0*w1*w1*corr12*sig1*sig2 +
+2.0*w1*w3*corr13*sig1*sig3 +
+2.0*w2*w3*corr23*sig2*sig3;
+
+} else if(user.collateral.size()==2){
+
+std::vector<asset>::const_iterator it = user.collateral.begin();
+double w1 = ((it->amount)/std::pow(10.0, it->symbol.precision()) * (fxrate[it->symbol]/std::pow(10.0, 4))) / user.valueofcol;
+double sig1 = this->volatility;
+it++;
+double w2 = ((it->amount)/std::pow(10.0, it->symbol.precision()) * (fxrate[it->symbol]/std::pow(10.0, 4))) / user.valueofcol;
+double sig2 = this->volatility;
+double corr12 = this->correlation;
+
+portVariance = std::pow(w1,2)*std::pow(sig1,2) + 
+std::pow(w2,2)*std::pow(sig2,2) + 
+2.0*w1*w1*corr12*sig1*sig2;
+
+}else if(user.collateral.size()==1){
+
+double sig1 = this->volatility;
+
+portVariance = std::pow(sig1,2);
+
+};
+
+  eosio::print( "portVariance : ", portVariance, "\n");
+
+  // premium payments in exchange for contingient payoff in the event that a price threshhold is breached
+
+  double impliedvol = sqrt(portVariance) * this->scale; 
+
+  double iportVaR = std::min(3.0*impliedvol,1.0); // value at risk
+
+  double payoff = std::max(1.0*(user.debt.amount/std::pow(10.0,4)) - user.valueofcol*(1-iportVaR),0.0);
+
+  uint32_t T = 1;
+  
+  double d = ((std::log(user.valueofcol / (user.debt.amount/std::pow(10.0,4)))) + (-std::pow(impliedvol,2)/2) * T)/ (impliedvol * std::sqrt(T));
+
+  double tesprice = std::max((payoff * std::erfc(-d/std::sqrt(2))/2)/(user.debt.amount/std::pow(10.0,4)),0.005*this->scale);
+  double tesvalue = std::max((payoff * std::erfc(-d/std::sqrt(2))/2),0.005*this->scale);
+  tesprice = tesprice/(1.6*(user.creditscore/800.0)); // credit score of 500 means no discount or penalty.
+  
+
+  globalstab.set(stats, _self);
+  iportVaR = std::max(user.debt.amount - ((1.0 - iportVaR) * user.valueofcol),0.0); // for solvency
 
   _user.modify(user, _self, [&]( auto& modified_user) { // Update value of collateral
     modified_user.iportVaR = iportVaR;
@@ -501,42 +543,156 @@ void eosusdcom::pricingmodel(name usern) {
 
 void eosusdcom::calcStats(double delta_iportVaRcol) 
 {  
+
+    symbol sst = symbol("UZD", 4);
+    auto sym_code_raw = sst.code().raw();
+    stats statstable( _self, sym_code_raw );
+    double totdebt = 0.0;
+    auto existing = statstable.find( sym_code_raw );
+    if (existing != statstable.end()){
+      totdebt = existing->supply.amount/std::pow(10.0,4);
+    };
+    eosio::print( "totdebt : ", totdebt, "\n");
+
   globals globalstab( _self, _self.value );
   eosio_assert(globalstab.exists(), "No support yet");
   globalstats stats = globalstab.get();
-  
-  uint64_t n = 0;
-  double portVariance = 0.0;
-  double wsig[stats.support.size()];
-  double volsq = std::pow(this->volatility, 2);
-  
-  for ( auto it = stats.support.begin() ; it < stats.support.end(); ++it ) {
-    for ( auto jt = stats.support.begin() ; jt < stats.support.end(); ++jt ) {
-      if ( it == jt )
-         wsig[n] += (jt->amount) / std::pow(10.0, jt->symbol.precision()) * 
-                    (fxrate[jt->symbol] / std::pow(10.0, 4)) * volsq;
-      else
-         wsig[n] += (jt->amount) / std::pow(10.0, jt->symbol.precision()) * 
-                    (fxrate[jt->symbol] / std::pow(10.0, 4)) * this->correlation * volsq;
-    }
-    portVariance += (it->amount) / std::pow(10.0, it->symbol.precision()) * 
-                    (fxrate[it->symbol] / std::pow(10.0, 4)) * wsig[n];
-    n += 1;
-  } portVariance /= std::pow(stats.valueofins, 2);
-  
-  double impliedvol = sqrt(portVariance);
+
+double portVariance = 0.0;
+if (stats.support.size()==3){
+
+auto it = stats.support.begin();
+double w1 = ((it->amount)/std::pow(10.0, it->symbol.precision()) * (fxrate[it->symbol]/std::pow(10.0, 4))) / stats.valueofins;
+double sig1 = this->volatility;
+it++;
+double w2 = ((it->amount)/std::pow(10.0, it->symbol.precision()) * (fxrate[it->symbol]/std::pow(10.0, 4))) / stats.valueofins;
+double sig2 = this->volatility;
+it++;
+double w3 = ((it->amount)/std::pow(10.0, it->symbol.precision()) * (fxrate[it->symbol]/std::pow(10.0, 4))) / stats.valueofins;
+double sig3 = this->volatility;
+double corr12 = this->correlation;
+double corr13 = this->correlation;
+double corr23 = this->correlation;
+
+portVariance = std::pow(w1,2)*std::pow(sig1,2) + 
+std::pow(w2,2)*std::pow(sig2,2) + 
+std::pow(w3,2)*std::pow(sig3,2) + 
+2.0*w1*w1*corr12*sig1*sig2 +
+2.0*w1*w3*corr13*sig1*sig3 +
+2.0*w2*w3*corr23*sig2*sig3;
+
+} else if(stats.support.size()==2){
+
+auto it = stats.support.begin();
+double w1 = ((it->amount)/std::pow(10.0, it->symbol.precision()) * (fxrate[it->symbol]/std::pow(10.0, 4))) / stats.valueofins;
+double sig1 = this->volatility;
+it++;
+double w2 = ((it->amount)/std::pow(10.0, it->symbol.precision()) * (fxrate[it->symbol]/std::pow(10.0, 4))) / stats.valueofins;
+double sig2 = this->volatility;
+double corr12 = this->correlation;
+
+portVariance = std::pow(w1,2)*std::pow(sig1,2) + 
+std::pow(w2,2)*std::pow(sig2,2) + 
+2.0*w1*w1*corr12*sig1*sig2;
+
+}else if(stats.support.size()==1){
+
+double sig1 = this->volatility;
+
+portVariance = std::pow(sig1,2);
+
+};
+
+
+  eosio::print( "portVarianceins : ", portVariance, "\n");
+  double impliedvol = std::sqrt(portVariance);
   double iportVaR = std::min(3.0 * impliedvol, 1.0); // value at risk 
+  stats.iportVaRins = (1.0 - iportVaR) * stats.valueofins;
+
   
-  stats.iportVaRins = (1 - iportVaR) * stats.valueofins;
-  stats.iportVaRcol += delta_iportVaRcol;
-  
+
+
+portVariance = 0.0;
+if (stats.collateral.size()==3){
+
+auto it = stats.collateral.begin();
+double w1 = ((it->amount)/std::pow(10.0, it->symbol.precision()) * (fxrate[it->symbol]/std::pow(10.0, 4))) / stats.valueofcol;
+double sig1 = this->volatility;
+it++;
+double w2 = ((it->amount)/std::pow(10.0, it->symbol.precision()) * (fxrate[it->symbol]/std::pow(10.0, 4))) / stats.valueofcol;
+double sig2 = this->volatility;
+it++;
+double w3 = ((it->amount)/std::pow(10.0, it->symbol.precision()) * (fxrate[it->symbol]/std::pow(10.0, 4))) / stats.valueofcol;
+double sig3 = this->volatility;
+double corr12 = this->correlation;
+double corr13 = this->correlation;
+double corr23 = this->correlation;
+
+portVariance = std::pow(w1,2)*std::pow(sig1,2) + 
+std::pow(w2,2)*std::pow(sig2,2) + 
+std::pow(w3,2)*std::pow(sig3,2) + 
+2.0*w1*w1*corr12*sig1*sig2 +
+2.0*w1*w3*corr13*sig1*sig3 +
+2.0*w2*w3*corr23*sig2*sig3;
+
+} else if(stats.collateral.size()==2){
+
+auto it = stats.collateral.begin();
+double w1 = ((it->amount)/std::pow(10.0, it->symbol.precision()) * (fxrate[it->symbol]/std::pow(10.0, 4))) / stats.valueofcol;
+double sig1 = this->volatility;
+it++;
+double w2 = ((it->amount)/std::pow(10.0, it->symbol.precision()) * (fxrate[it->symbol]/std::pow(10.0, 4))) / stats.valueofcol;
+double sig2 = this->volatility;
+double corr12 = this->correlation;
+
+portVariance = std::pow(w1,2)*std::pow(sig1,2) + 
+std::pow(w2,2)*std::pow(sig2,2) + 
+2.0*w1*w1*corr12*sig1*sig2;
+
+}else if(stats.collateral.size()==1){
+
+double sig1 = this->volatility;
+
+portVariance = std::pow(sig1,2);
+
+};
+
+
+  eosio::print( "portVariancol : ", portVariance, "\n");
+  impliedvol = std::sqrt(portVariance);
+  iportVaR = std::min(3.0 * impliedvol, 1.0); // value at risk 
+  //stats.iportVaRcol = (1.0 - iportVaR) * stats.valueofins;
+
+  stats.iportVaRcol = std::max(totdebt - ((1.0 - iportVaR) * stats.valueofcol),0.0); // for solvency
+  eosio::print( "portVariancol : ", portVariance, "\n");
+
+  // const auto& st = statstable.get( sym_code_raw, "symbol does not exist" );
+  /*
+  auto existing = statstable.find( sym.code().raw() );
+    if existing != statstable.end(){
+      double totdebt = existing.supply.symbol.amount/std::pow(10.0,4);
+    }
+    eosio::print( "totdebt : ", totdebt, "\n");
+*/
+  //stats.iportVaRcol += delta_iportVaRcol;
+
   double bel_s = stats.iportVaRcol;
   double mva_n = stats.valueofins;
   double mva_s = stats.iportVaRins;
+  eosio::print( "bel_s : ", bel_s, "\n");
+  eosio::print( "mva_n : ", mva_n, "\n");
+  eosio::print( "mva_s : ", mva_s, "\n");
+
 
   double own_n = mva_n;
   double own_s = mva_s - bel_s;
   double scr = own_n - own_s;
+
+  eosio::print( "own_n : ", own_n, "\n");
+
+  eosio::print( "own_s : ", own_s, "\n");
+
+  eosio::print( "scr : ", scr, "\n");
   
   stats.solvency = own_n / scr;
   globalstab.set(stats, _self);
@@ -622,7 +778,7 @@ void eosusdcom::update(name usern) {
     double iportVaRold = user.iportVaR;
     pricingmodel(usern); 
     calcStats(iportVaRold - user.iportVaR);
-    /*payfee(usern);
+  //  payfee(usern);
     
     if (user.latepays > 4) {
       _user.modify(user, _self, [&]( auto& modified_user) {
@@ -637,7 +793,7 @@ void eosusdcom::update(name usern) {
       });
       bailout(usern);
     }
-    */
+    
   }
 }
 

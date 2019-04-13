@@ -83,10 +83,16 @@ private:
 
       double solvency = 0.0;
       vector<asset> support;
+      vector<asset> collateral;
  
-     // EOSLIB_SERIALIZE(globalstats, (valueofcol)(valueofins)(iportVaRcol)(iportVaRins)(mva_s)(bel_n)(solvency)(support))
-    }; typedef eosio::singleton<"globals"_n, globalstats> globals;
+     //EOSLIB_SERIALIZE(globalstats, (valueofcol)(valueofins)(iportVaRcol)(iportVaRins)(mva_s)(bel_n)(solvency)(support))
+    }; 
+    
+       typedef eosio::singleton<"globals"_n, globalstats> globals;
+       typedef eosio::multi_index<"globals"_n, globalstats> globalsm;
                                                           globals globalstab;
+                                                          globalsm globalstabm;
+
 
     void update(name usern); 
     void payfee(name usern);
@@ -150,7 +156,7 @@ public:
     using contract::contract;
 
     eosusdcom(name receiver, name code, datastream<const char*> ds):contract(receiver, code, ds),
-    _user(receiver, receiver.value), _eosusd(receiver, receiver.value), globalstab(receiver, receiver.value)  {}
+    _user(receiver, receiver.value), _eosusd(receiver, receiver.value), globalstab(receiver, receiver.value), globalstabm(receiver, receiver.value)  {}
     
     //TODO: consts to be vars
     const float scale = 1.0;
