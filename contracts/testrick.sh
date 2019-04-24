@@ -103,41 +103,47 @@ cleos push action eosio.token transfer '[ "eosio", "testinsure12", "1000000.0000
 cleos system newaccount eosio vig111111111 $OWNER_KEY --stake-cpu "50 EOS" --stake-net "10 EOS" --buy-ram-kbytes 50000 --transfer
 
 cleos set contract vig111111111 $EOSIO_CONTRACTS_ROOT/eosio.token/ -p vig111111111@active
-cleos push action vig111111111 create '[ "vig111111111", "10000000000.0000 VIG"]' -p vig111111111@active
-cleos push action vig111111111 issue '[ "testborrow11", "1000000.0000 VIG", "m" ]' -p vig111111111@active
-cleos push action vig111111111 issue '[ "testborrow12", "1000000.0000 VIG", "m" ]' -p vig111111111@active
-cleos push action vig111111111 issue '[ "testinsure11", "1000000.0000 VIG", "m" ]' -p vig111111111@active
-cleos push action vig111111111 issue '[ "testinsure12", "1000000.0000 VIG", "m" ]' -p vig111111111@active
+cleos push action vig111111111 create '[ "vig111111111", "100000000000.0000 VIG"]' -p vig111111111@active
+cleos push action vig111111111 issue '[ "vig111111111", "10000000000.0000 VIG", "m"]' -p vig111111111@active
+cleos push action vig111111111 transfer '[ "vig111111111", "testborrow11", "1000000.0000 VIG", "m" ]' -p vig111111111@active
+cleos push action vig111111111 transfer '[ "vig111111111", "testborrow12", "1000000.0000 VIG", "m" ]' -p vig111111111@active
+cleos push action vig111111111 transfer '[ "vig111111111", "testinsure11", "1000000.0000 VIG", "m" ]' -p vig111111111@active
+cleos push action vig111111111 transfer '[ "vig111111111", "testinsure12", "1000000.0000 VIG", "m" ]' -p vig111111111@active
 
 #=================================================================================#
 # create dummy tokens
 cleos system newaccount eosio dummytokens1 $OWNER_KEY --stake-cpu "50 EOS" --stake-net "10 EOS" --buy-ram-kbytes 50000 --transfer
 cleos set contract dummytokens1 $EOSIO_CONTRACTS_ROOT/eosio.token/ -p dummytokens1@active
 
-cleos push action dummytokens1 create '[ "dummytokens1", "10000000000.0000 IQ"]' -p dummytokens1@active
-cleos push action dummytokens1 create '[ "dummytokens1", "10000000000.0000 UTG"]' -p dummytokens1@active
-cleos push action dummytokens1 create '[ "dummytokens1", "10000000000.0000 PTI"]' -p dummytokens1@active
-cleos push action dummytokens1 create '[ "dummytokens1", "10000000000.0000 OWN"]' -p dummytokens1@active
+cleos push action dummytokens1 create '[ "dummytokens1", "100000000000.0000 IQ"]' -p dummytokens1@active
+cleos push action dummytokens1 create '[ "dummytokens1", "100000000000.0000 UTG"]' -p dummytokens1@active
+cleos push action dummytokens1 create '[ "dummytokens1", "100000000000.0000 PTI"]' -p dummytokens1@active
+cleos push action dummytokens1 create '[ "dummytokens1", "100000000000.0000 OWN"]' -p dummytokens1@active
 
-cleos push action dummytokens1 issue '[ "testborrow11", "1000000.0000 IQ", "m" ]' -p dummytokens1@active
-cleos push action dummytokens1 issue '[ "testborrow11", "1000000.0000 UTG", "m" ]' -p dummytokens1@active
-cleos push action dummytokens1 issue '[ "testborrow11", "1000000.0000 PTI", "m" ]' -p dummytokens1@active
-cleos push action dummytokens1 issue '[ "testborrow11", "1000000.0000 OWN", "m" ]' -p dummytokens1@active
+cleos push action dummytokens1 issue '[ "dummytokens1", "10000000000.0000 IQ", "m"]' -p dummytokens1@active
+cleos push action dummytokens1 issue '[ "dummytokens1", "10000000000.0000 UTG", "m"]' -p dummytokens1@active
+cleos push action dummytokens1 issue '[ "dummytokens1", "10000000000.0000 PTI", "m"]' -p dummytokens1@active
+cleos push action dummytokens1 issue '[ "dummytokens1", "10000000000.0000 OWN", "m"]' -p dummytokens1@active
 
-cleos push action dummytokens1 issue '[ "testborrow12", "1000000.0000 IQ", "m" ]' -p dummytokens1@active
-cleos push action dummytokens1 issue '[ "testborrow12", "1000000.0000 UTG", "m" ]' -p dummytokens1@active
-cleos push action dummytokens1 issue '[ "testborrow12", "1000000.0000 PTI", "m" ]' -p dummytokens1@active
-cleos push action dummytokens1 issue '[ "testborrow12", "1000000.0000 OWN", "m" ]' -p dummytokens1@active
+cleos push action dummytokens1 transfer '[ "dummytokens1", "testborrow11", "100000.0000 IQ", "m" ]' -p dummytokens1@active
+cleos push action dummytokens1 transfer '[ "dummytokens1", "testborrow11", "100000.0000 UTG", "m" ]' -p dummytokens1@active
+cleos push action dummytokens1 transfer '[ "dummytokens1", "testborrow11", "100000.0000 PTI", "m" ]' -p dummytokens1@active
+cleos push action dummytokens1 transfer '[ "dummytokens1", "testborrow11", "100000.0000 OWN", "m" ]' -p dummytokens1@active
 
-cleos push action dummytokens1 issue '[ "testinsure11", "1000000.0000 IQ", "m" ]' -p dummytokens1@active
-cleos push action dummytokens1 issue '[ "testinsure11", "1000000.0000 UTG", "m" ]' -p dummytokens1@active
-cleos push action dummytokens1 issue '[ "testinsure11", "1000000.0000 PTI", "m" ]' -p dummytokens1@active
-cleos push action dummytokens1 issue '[ "testinsure11", "1000000.0000 OWN", "m" ]' -p dummytokens1@active
+cleos push action dummytokens1 transfer '[ "dummytokens1", "testborrow12", "100000.0000 IQ", "m" ]' -p dummytokens1@active
+cleos push action dummytokens1 transfer '[ "dummytokens1", "testborrow12", "100000.0000 UTG", "m" ]' -p dummytokens1@active
+cleos push action dummytokens1 transfer '[ "dummytokens1", "testborrow12", "100000.0000 PTI", "m" ]' -p dummytokens1@active
+cleos push action dummytokens1 transfer '[ "dummytokens1", "testborrow12", "100000.0000 OWN", "m" ]' -p dummytokens1@active
 
-cleos push action dummytokens1 issue '[ "testinsure12", "1000000.0000 IQ", "m" ]' -p dummytokens1@active
-cleos push action dummytokens1 issue '[ "testinsure12", "1000000.0000 UTG", "m" ]' -p dummytokens1@active
-cleos push action dummytokens1 issue '[ "testinsure12", "1000000.0000 PTI", "m" ]' -p dummytokens1@active
-cleos push action dummytokens1 issue '[ "testinsure12", "1000000.0000 OWN", "m" ]' -p dummytokens1@active
+cleos push action dummytokens1 transfer '[ "dummytokens1", "testinsure11", "100000.0000 IQ", "m" ]' -p dummytokens1@active
+cleos push action dummytokens1 transfer '[ "dummytokens1", "testinsure11", "100000.0000 UTG", "m" ]' -p dummytokens1@active
+cleos push action dummytokens1 transfer '[ "dummytokens1", "testinsure11", "100000.0000 PTI", "m" ]' -p dummytokens1@active
+cleos push action dummytokens1 transfer '[ "dummytokens1", "testinsure11", "100000.0000 OWN", "m" ]' -p dummytokens1@active
+
+cleos push action dummytokens1 transfer '[ "dummytokens1", "testinsure12", "100000.0000 IQ", "m" ]' -p dummytokens1@active
+cleos push action dummytokens1 transfer '[ "dummytokens1", "testinsure12", "100000.0000 UTG", "m" ]' -p dummytokens1@active
+cleos push action dummytokens1 transfer '[ "dummytokens1", "testinsure12", "100000.0000 PTI", "m" ]' -p dummytokens1@active
+cleos push action dummytokens1 transfer '[ "dummytokens1", "testinsure12", "100000.0000 OWN", "m" ]' -p dummytokens1@active
 
 #=================================================================================#
 # create the oracle contract (for EOS only for now)
@@ -155,7 +161,7 @@ cleos push action oracle111111 write '{"owner":"feeder111111", "value":63800}' -
 #=================================================================================#
 
 ###### OPTIONAL FOR LOCAL TESTNET #############
-nodeosurl='http://127.0.0.1:8888' interval=15000 account="oracle111111" defaultPrivateKey="5J3TQGkkiRQBKcg8Gg2a7Kk5a2QAQXsyGrkCnnq4krSSJSUkW12" feeder="feeder111111" node updater2.js
+# nodeosurl='http://127.0.0.1:8888' interval=15000 account="oracle111111" defaultPrivateKey="5J3TQGkkiRQBKcg8Gg2a7Kk5a2QAQXsyGrkCnnq4krSSJSUkW12" feeder="feeder111111" node updater2.js
 
 #cleos get table oracle111111 oracle111111 eosusd --limit 1
 #cleos get table oracle111111 oracle111111 oracles
@@ -184,33 +190,32 @@ cleos push action dummytokens1 transfer '{"from":"testborrow12","to":"eosusdcom1
 cleos push action vig111111111 transfer '{"from":"testborrow12","to":"eosusdcom111","quantity":"1000.0000 VIG","memo":"collateral"}' -p testborrow12@active
 
 cleos push action eosio.token transfer '{"from":"testinsure12","to":"eosusdcom111","quantity":"6.0000 EOS","memo":"support"}' -p testinsure12@active
-cleos push action dummytokens1 transfer '{"from":"testinsure12","to":"eosusdcom111","quantity":"1000.0000 IQ","memo":"support"}' -p testinsure12@active
-cleos push action dummytokens1 transfer '{"from":"testinsure12","to":"eosusdcom111","quantity":"1000.0000 UTG","memo":"support"}' -p testinsure12@active
-cleos push action dummytokens1 transfer '{"from":"testinsure12","to":"eosusdcom111","quantity":"1000.0000 PTI","memo":"support"}' -p testinsure12@active
-cleos push action dummytokens1 transfer '{"from":"testinsure12","to":"eosusdcom111","quantity":"1000.0000 OWN","memo":"support"}' -p testinsure12@active
+# cleos push action dummytokens1 transfer '{"from":"testinsure12","to":"eosusdcom111","quantity":"1000.0000 IQ","memo":"support"}' -p testinsure12@active
+# cleos push action dummytokens1 transfer '{"from":"testinsure12","to":"eosusdcom111","quantity":"1000.0000 UTG","memo":"support"}' -p testinsure12@active
+# cleos push action dummytokens1 transfer '{"from":"testinsure12","to":"eosusdcom111","quantity":"1000.0000 PTI","memo":"support"}' -p testinsure12@active
+# cleos push action dummytokens1 transfer '{"from":"testinsure12","to":"eosusdcom111","quantity":"1000.0000 OWN","memo":"support"}' -p testinsure12@active
 
-cleos push action eosusdcom111 assetout '{"usern":"testborrow11","assetout":"2.0000 UZD","memo":"borrow"}' -p testborrow11@active
-cleos push action eosusdcom111 assetout '{"usern":"testborrow12","assetout":"24.0000 UZD","memo":"borrow"}' -p testborrow12@active
+# cleos push action eosusdcom111 assetout '{"usern":"testborrow11","assetout":"2.0000 UZD","memo":"borrow"}' -p testborrow11@active
+# cleos push action eosusdcom111 assetout '{"usern":"testborrow12","assetout":"24.0000 UZD","memo":"borrow"}' -p testborrow12@active
 
-cleos push action eosusdcom111 assetout '{"usern":"testborrow11","assetout":"1.0000 EOS","memo":"collateral"}' -p testborrow11@active
-cleos push action eosusdcom111 assetout '{"usern":"testborrow12","assetout":"1.0000 EOS","memo":"collateral"}' -p testborrow12@active
+# cleos push action eosusdcom111 assetout '{"usern":"testborrow11","assetout":"1.0000 EOS","memo":"collateral"}' -p testborrow11@active
+# cleos push action eosusdcom111 assetout '{"usern":"testborrow12","assetout":"1.0000 EOS","memo":"collateral"}' -p testborrow12@active
 
-cleos push action eosusdcom111 assetout '{"usern":"testinsure11","assetout":"1.0000 EOS","memo":"support"}' -p testinsure11@active
-cleos push action eosusdcom111 assetout '{"usern":"testinsure12","assetout":"1.0000 EOS","memo":"support"}' -p testinsure12@active
+# cleos push action eosusdcom111 assetout '{"usern":"testinsure11","assetout":"1.0000 EOS","memo":"support"}' -p testinsure11@active
+# cleos push action eosusdcom111 assetout '{"usern":"testinsure12","assetout":"1.0000 EOS","memo":"support"}' -p testinsure12@active
 
-cleos push action eosusdcom111 transfer '{"from":"testborrow11","to":"eosusdcom111","quantity":"6.0000 UZD","memo":"payoff debt"}' -p testborrow11@active
-cleos push action eosusdcom111 transfer '{"from":"testborrow12","to":"eosusdcom111","quantity":"5.0000 UZD","memo":"payoff debt"}' -p testborrow12@active
+# cleos push action eosusdcom111 transfer '{"from":"testborrow11","to":"eosusdcom111","quantity":"6.0000 UZD","memo":"payoff debt"}' -p testborrow11@active
+# cleos push action eosusdcom111 transfer '{"from":"testborrow12","to":"eosusdcom111","quantity":"5.0000 UZD","memo":"payoff debt"}' -p testborrow12@active
 
 # doupdate action does the following:
 # pull prices from oracle
 # update loan pricing
 # monitor for bailouts
 # pay support premiums
-cleos push action eosusdcom111 doupdate '{}' -p eosusdcom111@active
+# cleos push action eosusdcom111 doupdate '{}' -p eosusdcom111@active
 
 # get all the user data
 cleos get table eosusdcom111 eosusdcom111 user --limit 1
-
 cleos get table eosusdcom111 UZD stat
 cleos get table eosio.token eosusdcom111 accounts
 cleos get table eosio.token testborrow11 accounts

@@ -443,7 +443,7 @@ void eosusdcom::assetout(name usern, asset assetout, string memo) {
       )).send();
   }
   globalstab.set(stats, _self);
-  update(usern);
+  //update(usern);
 }
 
 /* Portfolio variance is a measurement of how the aggregate actual returns
