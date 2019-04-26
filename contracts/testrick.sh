@@ -176,12 +176,6 @@ cleos push action dummytokens1 transfer '{"from":"testborrow11","to":"eosusdcom1
 cleos push action dummytokens1 transfer '{"from":"testborrow11","to":"eosusdcom111","quantity":"1000.0000 OWN","memo":"collateral"}' -p testborrow11@active
 cleos push action vig111111111 transfer '{"from":"testborrow11","to":"eosusdcom111","quantity":"1000.0000 VIG","memo":"collateral"}' -p testborrow11@active
 
-cleos push action eosio.token transfer '{"from":"testinsure11","to":"eosusdcom111","quantity":"6.0000 EOS","memo":"support"}' -p testinsure11@active
-cleos push action dummytokens1 transfer '{"from":"testinsure11","to":"eosusdcom111","quantity":"1000.0000 IQ","memo":"support"}' -p testinsure11@active
-cleos push action dummytokens1 transfer '{"from":"testinsure11","to":"eosusdcom111","quantity":"1000.0000 UTG","memo":"support"}' -p testinsure11@active
-cleos push action dummytokens1 transfer '{"from":"testinsure11","to":"eosusdcom111","quantity":"1000.0000 PTI","memo":"support"}' -p testinsure11@active
-cleos push action dummytokens1 transfer '{"from":"testinsure11","to":"eosusdcom111","quantity":"1000.0000 OWN","memo":"support"}' -p testinsure11@active
-
 cleos push action eosio.token transfer '{"from":"testborrow12","to":"eosusdcom111","quantity":"6.0000 EOS","memo":"collateral"}' -p testborrow12@active
 cleos push action dummytokens1 transfer '{"from":"testborrow12","to":"eosusdcom111","quantity":"1000.0000 IQ","memo":"collateral"}' -p testborrow12@active
 cleos push action dummytokens1 transfer '{"from":"testborrow12","to":"eosusdcom111","quantity":"1000.0000 UTG","memo":"collateral"}' -p testborrow12@active
@@ -189,23 +183,34 @@ cleos push action dummytokens1 transfer '{"from":"testborrow12","to":"eosusdcom1
 cleos push action dummytokens1 transfer '{"from":"testborrow12","to":"eosusdcom111","quantity":"1000.0000 OWN","memo":"collateral"}' -p testborrow12@active
 cleos push action vig111111111 transfer '{"from":"testborrow12","to":"eosusdcom111","quantity":"1000.0000 VIG","memo":"collateral"}' -p testborrow12@active
 
+cleos push action eosio.token transfer '{"from":"testinsure11","to":"eosusdcom111","quantity":"6.0000 EOS","memo":"support"}' -p testinsure11@active
+cleos push action dummytokens1 transfer '{"from":"testinsure11","to":"eosusdcom111","quantity":"1000.0000 IQ","memo":"support"}' -p testinsure11@active
+cleos push action dummytokens1 transfer '{"from":"testinsure11","to":"eosusdcom111","quantity":"1000.0000 UTG","memo":"support"}' -p testinsure11@active
+cleos push action dummytokens1 transfer '{"from":"testinsure11","to":"eosusdcom111","quantity":"1000.0000 PTI","memo":"support"}' -p testinsure11@active
+cleos push action dummytokens1 transfer '{"from":"testinsure11","to":"eosusdcom111","quantity":"1000.0000 OWN","memo":"support"}' -p testinsure11@active
+
 cleos push action eosio.token transfer '{"from":"testinsure12","to":"eosusdcom111","quantity":"6.0000 EOS","memo":"support"}' -p testinsure12@active
-# cleos push action dummytokens1 transfer '{"from":"testinsure12","to":"eosusdcom111","quantity":"1000.0000 IQ","memo":"support"}' -p testinsure12@active
-# cleos push action dummytokens1 transfer '{"from":"testinsure12","to":"eosusdcom111","quantity":"1000.0000 UTG","memo":"support"}' -p testinsure12@active
-# cleos push action dummytokens1 transfer '{"from":"testinsure12","to":"eosusdcom111","quantity":"1000.0000 PTI","memo":"support"}' -p testinsure12@active
-# cleos push action dummytokens1 transfer '{"from":"testinsure12","to":"eosusdcom111","quantity":"1000.0000 OWN","memo":"support"}' -p testinsure12@active
+cleos push action dummytokens1 transfer '{"from":"testinsure12","to":"eosusdcom111","quantity":"1000.0000 IQ","memo":"support"}' -p testinsure12@active
+cleos push action dummytokens1 transfer '{"from":"testinsure12","to":"eosusdcom111","quantity":"1000.0000 UTG","memo":"support"}' -p testinsure12@active
+cleos push action dummytokens1 transfer '{"from":"testinsure12","to":"eosusdcom111","quantity":"1000.0000 PTI","memo":"support"}' -p testinsure12@active
+cleos push action dummytokens1 transfer '{"from":"testinsure12","to":"eosusdcom111","quantity":"1000.0000 OWN","memo":"support"}' -p testinsure12@active
 
-# cleos push action eosusdcom111 assetout '{"usern":"testborrow11","assetout":"2.0000 UZD","memo":"borrow"}' -p testborrow11@active
-# cleos push action eosusdcom111 assetout '{"usern":"testborrow12","assetout":"24.0000 UZD","memo":"borrow"}' -p testborrow12@active
+cleos push action eosusdcom111 assetout '{"usern":"testborrow11","assetout":"2.0000 UZD","memo":"borrow"}' -p testborrow11@active
+cleos push action eosusdcom111 assetout '{"usern":"testborrow12","assetout":"24.0000 UZD","memo":"borrow"}' -p testborrow12@active
 
-# cleos push action eosusdcom111 assetout '{"usern":"testborrow11","assetout":"1.0000 EOS","memo":"collateral"}' -p testborrow11@active
-# cleos push action eosusdcom111 assetout '{"usern":"testborrow12","assetout":"1.0000 EOS","memo":"collateral"}' -p testborrow12@active
+cleos push action eosusdcom111 assetout '{"usern":"testborrow11","assetout":"1.0000 EOS","memo":"collateral"}' -p testborrow11@active
+cleos push action eosusdcom111 assetout '{"usern":"testborrow12","assetout":"1.0000 EOS","memo":"collateral"}' -p testborrow12@active
 
-# cleos push action eosusdcom111 assetout '{"usern":"testinsure11","assetout":"1.0000 EOS","memo":"support"}' -p testinsure11@active
-# cleos push action eosusdcom111 assetout '{"usern":"testinsure12","assetout":"1.0000 EOS","memo":"support"}' -p testinsure12@active
+cleos push action eosusdcom111 assetout '{"usern":"testinsure11","assetout":"1.0000 EOS","memo":"support"}' -p testinsure11@active
 
-# cleos push action eosusdcom111 transfer '{"from":"testborrow11","to":"eosusdcom111","quantity":"6.0000 UZD","memo":"payoff debt"}' -p testborrow11@active
-# cleos push action eosusdcom111 transfer '{"from":"testborrow12","to":"eosusdcom111","quantity":"5.0000 UZD","memo":"payoff debt"}' -p testborrow12@active
+cleos push action eosusdcom111 assetout '{"usern":"testinsure12","assetout":"1.0000 EOS","memo":"support"}' -p testinsure12@active
+
+cleos push action eosusdcom111 transfer '{"from":"testborrow11","to":"eosusdcom111","quantity":"6.0000 UZD","memo":"payoff debt"}' -p testborrow11@active
+cleos push action eosusdcom111 transfer '{"from":"testborrow12","to":"eosusdcom111","quantity":"5.0000 UZD","memo":"payoff debt"}' -p testborrow12@active
+
+cleos get table eosusdcom111 eosusdcom111 user
+
+cleos push action eosusdcom111 doupdate '{"up":"1"}' -p eosusdcom111@active
 
 # doupdate action does the following:
 # pull prices from oracle
@@ -215,11 +220,12 @@ cleos push action eosio.token transfer '{"from":"testinsure12","to":"eosusdcom11
 # cleos push action eosusdcom111 doupdate '{}' -p eosusdcom111@active
 
 # get all the user data
-cleos get table eosusdcom111 eosusdcom111 user --limit 1
-cleos get table eosusdcom111 UZD stat
-cleos get table eosio.token eosusdcom111 accounts
-cleos get table eosio.token testborrow11 accounts
-cleos get table eosusdcom111 testborrow11 accounts
-#cleos get currency balance eosusdcom111 testborrow11
-#cleos get currency balance eosio.token eosusdcom111
+cleos get table eosusdcom111 eosusdcom111 user
+# cleos get table eosusdcom111 eosusdcom111 globals
+# cleos get table eosusdcom111 UZD stat
+# cleos get table eosio.token eosusdcom111 accounts
+# cleos get table eosio.token testborrow11 accounts
+# cleos get table eosusdcom111 testborrow11 accounts
+# cleos get currency balance eosusdcom111 testborrow11
+# cleos get currency balance eosio.token eosusdcom111
 
