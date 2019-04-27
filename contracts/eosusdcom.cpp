@@ -490,8 +490,9 @@ void eosusdcom::pricingmodel(name usern) {
 
   // premium payments in exchange for contingient payoff in the event that a price threshhold is breached
 
-  double impliedvol = sqrt(portVariance) * this->scale; 
 
+  double unscaled =  std::min(3.0*sqrt(portVariance), 1.0);
+  double impliedvol = sqrt(portVariance) * this->scale; 
   double iportVaR = std::min(3.0*impliedvol, 1.0); // value at risk
 
   double payoff = std::max(1.0*(user.debt.amount/std::pow(10.0,4)) - user.valueofcol*(1-iportVaR),0.0);
@@ -505,14 +506,13 @@ void eosusdcom::pricingmodel(name usern) {
   
   tesprice = tesprice/(1.6*(user.creditscore/800.0)); // credit score of 500 means no discount or penalty.
 
-  iportVaR = std::max( user.debt.amount - 
-                       ((1.0 - iportVaR) * user.valueofcol), 0.0
-                     ); // for solvency
-  gstats.iportVaRcol += iportVaR - user.iportVaR;
+  iportVaR = ((1.0 - iportVaR) * user.valueofcol - user.debt.amount); 
+  
+  gstats.iportVaRcol += unscaled - user.iportVaR;
   globalstab.set(gstats, _self);
 
   _user.modify(user, _self, [&]( auto& modified_user) { // Update value of collateral
-    modified_user.iportVaR = iportVaR;
+    modified_user.iportVaR = unscaled;
     modified_user.tesvalue = tesvalue;
     modified_user.tesprice = tesprice;
   });
@@ -561,16 +561,8 @@ void eosusdcom::calcStats()
   
   gstats.iportVaRins = (1.0 - iportVaR) * gstats.valueofins;
 
-  double bel_s = gstats.iportVaRcol;
-  double mva_n = gstats.valueofins;
-  double mva_s = gstats.iportVaRins;
-  
-  eosio::print( "bel_s : ", bel_s, "\n");
-  eosio::print( "mva_n : ", mva_n, "\n");
-  eosio::print( "mva_s : ", mva_s, "\n");
-
-  double own_n = mva_n;
-  double own_s = mva_s - bel_s;
+  double own_n = gstats.valueofins + gstats.valueofcol - totdebt;
+  double own_s = gstats.iportVaRcol + gstats.iportVaRins;
   double scr = own_n - own_s;
 
   eosio::print( "own_n : ", own_n, "\n");
