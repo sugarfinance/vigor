@@ -163,20 +163,11 @@ void eosusdcom::transfer(name    from,
       update(from);
     } 
     else {
-      auto sym = quantity.symbol.code();
-      auto st = _stats.find( sym.raw());
-      if ( st == _stats.end() )        
-        _stats.emplace( _self, [&]( auto& s ) {
-          s.supply.symbol = quantity.symbol;
-          s.max_supply.symbol = quantity.symbol;
-          s.issuer = get_code();
-        });
-      else
-        eosio_assert( quantity.symbol == st->supply.symbol, "symbol precision mismatch" );
-
       sub_balance( from, quantity );
+      action(permission_level{_self, name("active")}, _self, 
+        name("assetout"), std::make_tuple(from, quantity, memo)
+      ).send();
       add_balance( to, quantity, payer );
-
       action(permission_level{_self, name("active")}, _self, 
         name("assetin"), std::make_tuple(from, to, quantity, memo)
       ).send();
@@ -469,7 +460,6 @@ void eosusdcom::pricingmodel(name usern) {
   double portVariance = 0.0;
   for ( auto i = user.collateral.begin(); i != user.collateral.end(); ++i ) {
     auto sym_code_raw = i->symbol.code().raw();
-    eosio::print( "pricingmodelSYMBOL : ", sym_code_raw, "\n");
     const auto& iV = _stats.get( sym_code_raw, "symbol does not exist" );
 
     double iW = (((i->amount)/std::pow(10.0, i->symbol.precision())) * (fxrate[i->symbol]/std::pow(10.0, 4))) / user.valueofcol;
