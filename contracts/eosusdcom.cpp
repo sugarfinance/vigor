@@ -40,11 +40,10 @@ void eosusdcom::create( name   issuer,
     eosio_assert( maximum_supply.is_valid(), "invalid supply");
     eosio_assert( maximum_supply.amount > 0, "max-supply must be positive");
 
-    stats statstable( _self, sym.code().raw() );
-    auto existing = statstable.find( sym.code().raw() );
-    eosio_assert( existing == statstable.end(), "token with symbol already exists" );
+    auto existing = _stats.find( sym.code().raw() );
+    eosio_assert( existing == _stats.end(), "token with symbol already exists" );
 
-    statstable.emplace( _self, [&]( auto& s ) {
+    _stats.emplace( _self, [&]( auto& s ) {
        s.supply.symbol = maximum_supply.symbol;
        s.max_supply    = maximum_supply;
        s.issuer        = issuer;
@@ -58,9 +57,8 @@ void eosusdcom::setsupply( name issuer, asset maximum_supply )
     auto sym = maximum_supply.symbol;
     eosio_assert( sym.is_valid(), "invalid symbol name" );
 
-    stats statstable( _self, sym.code().raw() );
-    auto existing = statstable.find( sym.code().raw() );
-    eosio_assert( existing != statstable.end(), "token with symbol does not exist, create token before setting supply" );
+    auto existing = _stats.find( sym.code().raw() );
+    eosio_assert( existing != _stats.end(), "token with symbol does not exist, create token before setting supply" );
     const auto& st = *existing;
 
     require_auth( st.issuer );
@@ -70,7 +68,7 @@ void eosusdcom::setsupply( name issuer, asset maximum_supply )
     eosio_assert( maximum_supply.symbol == st.supply.symbol, "symbol precision mismatch" );
     eosio_assert( maximum_supply.amount >= st.supply.amount, "cannot set max_supply to less than available supply");
 
-    statstable.modify( st, same_payer, [&]( auto& s ) {
+    _stats.modify( st, same_payer, [&]( auto& s ) {
        s.max_supply = maximum_supply;
     });
 }
@@ -81,9 +79,8 @@ void eosusdcom::issue( name to, asset quantity, string memo )
     eosio_assert( sym.is_valid(), "invalid symbol name" );
     eosio_assert( memo.size() <= 256, "memo has more than 256 bytes" );
 
-    stats statstable( _self, sym.code().raw() );
-    auto existing = statstable.find( sym.code().raw() );
-    eosio_assert( existing != statstable.end(), "token with symbol does not exist, create token before issue" );
+    auto existing = _stats.find( sym.code().raw() );
+    eosio_assert( existing != _stats.end(), "token with symbol does not exist, create token before issue" );
     const auto& st = *existing;
 
     require_auth( st.issuer );
@@ -93,7 +90,7 @@ void eosusdcom::issue( name to, asset quantity, string memo )
     eosio_assert( quantity.symbol == st.supply.symbol, "symbol precision mismatch" );
     eosio_assert( quantity.amount <= st.max_supply.amount - st.supply.amount, "quantity exceeds available supply");
 
-    statstable.modify( st, same_payer, [&]( auto& s ) {
+    _stats.modify( st, same_payer, [&]( auto& s ) {
        s.supply += quantity;
     });
 
@@ -112,9 +109,8 @@ void eosusdcom::retire( asset quantity, string memo )
     eosio_assert( sym.is_valid(), "invalid symbol name" );
     eosio_assert( memo.size() <= 256, "memo has more than 256 bytes" );
 
-    stats statstable( _self, sym.code().raw() );
-    auto existing = statstable.find( sym.code().raw() );
-    eosio_assert( existing != statstable.end(), "token with symbol does not exist" );
+    auto existing = _stats.find( sym.code().raw() );
+    eosio_assert( existing != _stats.end(), "token with symbol does not exist" );
     const auto& st = *existing;
 
     require_auth( st.issuer );
@@ -123,7 +119,7 @@ void eosusdcom::retire( asset quantity, string memo )
 
     eosio_assert( quantity.symbol == st.supply.symbol, "symbol precision mismatch" );
 
-    statstable.modify( st, same_payer, [&]( auto& s ) {
+    _stats.modify( st, same_payer, [&]( auto& s ) {
        s.supply -= quantity;
     });
 
@@ -153,9 +149,9 @@ void eosusdcom::transfer(name    from,
       add_balance( to, quantity, payer ); //TODO: why if we are retiring it?
 
       globals globalstab( _self, _self.value );
-      globalstats stats;
+      globalstats gstats;
       if (globalstab.exists())
-        stats = globalstab.get();
+        gstats = globalstab.get();
 
       _user.modify(user, _self, [&]( auto& modified_user) { // Transfer stablecoin into user
         modified_user.debt -= quantity;
@@ -164,17 +160,19 @@ void eosusdcom::transfer(name    from,
       action(permission_level{_self, name("active")}, _self, 
         name("retire"), std::make_tuple(quantity, memo)
       ).send();
-
-      stats.bel_n -= quantity.amount / 10000;
-      globalstab.set(stats, _self);
       update(from);
     } 
     else {
       auto sym = quantity.symbol.code();
-      stats statstable( _self, sym.raw() );
-      const auto& st = statstable.get( sym.raw() );
-
-      eosio_assert( quantity.symbol == st.supply.symbol, "symbol precision mismatch" );
+      auto st = _stats.find( sym.raw());
+      if ( st == _stats.end() )        
+        _stats.emplace( _self, [&]( auto& s ) {
+          s.supply.symbol = quantity.symbol;
+          s.max_supply.symbol = quantity.symbol;
+          s.issuer = get_code();
+        });
+      else
+        eosio_assert( quantity.symbol == st->supply.symbol, "symbol precision mismatch" );
 
       sub_balance( from, quantity );
       add_balance( to, quantity, payer );
@@ -192,23 +190,22 @@ void eosusdcom::sub_balance( name owner, asset value ) {
    eosio_assert( from.balance.amount >= value.amount, "overdrawn balance" );
 
    from_acnts.modify( from, owner, [&]( auto& a ) {
-         a.balance -= value;
-      });
+      a.balance -= value;
+   });
 }
 
 void eosusdcom::add_balance( name owner, asset value, name ram_payer )
 {
    accounts to_acnts( _self, owner.value );
    auto to = to_acnts.find( value.symbol.code().raw() );
-   if( to == to_acnts.end() ) {
-      to_acnts.emplace( ram_payer, [&]( auto& a ){
-        a.balance = value;
-      });
-   } else {
-      to_acnts.modify( to, same_payer, [&]( auto& a ) {
-        a.balance += value;
-      });
-   }
+   if( to == to_acnts.end() )
+    to_acnts.emplace( ram_payer, [&]( auto& a ){
+      a.balance = value;
+    });
+   else
+    to_acnts.modify( to, same_payer, [&]( auto& a ) {
+      a.balance += value;
+    });
 }
 
 void eosusdcom::open( name owner, const symbol& symbol, name ram_payer )
@@ -216,10 +213,7 @@ void eosusdcom::open( name owner, const symbol& symbol, name ram_payer )
    require_auth( ram_payer );
 
    auto sym_code_raw = symbol.code().raw();
-
-   stats statstable( _self, sym_code_raw );
-
-   const auto& st = statstable.get( sym_code_raw, "symbol does not exist" );
+   const auto& st = _stats.get( sym_code_raw, "symbol does not exist" );
 
    eosio_assert( st.supply.symbol == symbol, "symbol precision mismatch" );
 
@@ -267,13 +261,22 @@ void eosusdcom::assetin( name   from,
         from, symbol("UZD", 4), _self
       )).send();
   }
+  auto sym = assetin.symbol;
+  auto st = _stats.find( sym.code().raw());
+  if ( st == _stats.end() )        
+    _stats.emplace( _self, [&]( auto& s ) {
+      s.supply.symbol = sym;
+      s.max_supply.symbol = sym;
+      s.issuer = get_code();
+    });
+  
   auto &user = *itr;
   bool found = false;
 
   globals globalstab( _self, _self.value );
-  globalstats stats;
+  globalstats gstats;
   if (globalstab.exists())
-    stats = globalstab.get();
+    gstats = globalstab.get();
   
   if (memo.c_str() == string("collateral")) {
     for ( auto it = user.collateral.begin() ; it != user.collateral.end(); ++it )
@@ -290,14 +293,14 @@ void eosusdcom::assetin( name   from,
         modified_user.collateral.push_back(assetin);
       });
     found = false;
-    for ( auto it = stats.collateral.begin(); it != stats.collateral.end(); ++it )
+    for ( auto it = gstats.collateral.begin(); it != gstats.collateral.end(); ++it )
       if ( it->symbol == assetin.symbol ) {
-        stats.collateral[it - stats.collateral.begin()] += assetin;
+        gstats.collateral[it - gstats.collateral.begin()] += assetin;
         found = true;
         break;
       }
     if ( !found )
-      stats.collateral.push_back(assetin);
+      gstats.collateral.push_back(assetin);
   } 
   else if (memo.c_str() == string("support")) {
     found = false;
@@ -314,16 +317,16 @@ void eosusdcom::assetin( name   from,
         modified_user.support.push_back(assetin);
       });
     found = false;
-    for ( auto it = stats.support.begin(); it != stats.support.end(); ++it ) 
+    for ( auto it = gstats.support.begin(); it != gstats.support.end(); ++it ) 
       if ( it->symbol == assetin.symbol ) {
-        stats.support[it - stats.support.begin()] += assetin;
+        gstats.support[it - gstats.support.begin()] += assetin;
         found = true;
         break;
       }
     if ( !found )
-      stats.support.push_back(assetin);
+      gstats.support.push_back(assetin);
   } 
-  globalstab.set(stats, _self);
+  globalstab.set(gstats, _self);
   update(from);
 }
 
@@ -342,7 +345,7 @@ void eosusdcom::assetout(name usern, asset assetout, string memo) {
   
   globals globalstab( _self, _self.value );
   eosio_assert(globalstab.exists(), "globals don't exist");
-  globalstats stats = globalstab.get();
+  globalstats gstats = globalstab.get();
   
   bool found = false;
 
@@ -379,9 +382,9 @@ void eosusdcom::assetout(name usern, asset assetout, string memo) {
       }
     eosio_assert(found, "collateral asset not found in user");
     found = false;
-    for ( auto it = stats.collateral.begin(); it != stats.collateral.end(); ++it ) {
+    for ( auto it = gstats.collateral.begin(); it != gstats.collateral.end(); ++it ) {
       if ( it->symbol == assetout.symbol ) {
-        stats.collateral[it - stats.collateral.begin()] -= assetout;
+        gstats.collateral[it - gstats.collateral.begin()] -= assetout;
         found = true;
         break;
       }
@@ -415,9 +418,9 @@ void eosusdcom::assetout(name usern, asset assetout, string memo) {
       }
     eosio_assert(found, "support asset not found in user");
     found = false;
-    for ( auto it = stats.support.begin(); it != stats.support.end(); ++it ) {
+    for ( auto it = gstats.support.begin(); it != gstats.support.end(); ++it ) {
       if ( it->symbol == assetout.symbol ) {
-        stats.support[it - stats.support.begin()] -= assetout;
+        gstats.support[it - gstats.support.begin()] -= assetout;
         found = true;
         break;
       }
@@ -428,7 +431,6 @@ void eosusdcom::assetout(name usern, asset assetout, string memo) {
     eosio_assert( assetout.symbol == symbol("UZD", 4), 
                   "Borrow asset type must be UZD" 
                 );
-    stats.bel_n += assetout.amount / 10000; //TODO
     asset debt = user.debt + assetout;
     eosio_assert( user.valueofcol >= 1.01 * ( debt.amount / std::pow(10.0,4) ),
     "Dollar value of collateral would become less than dollar value of debt" );
@@ -441,7 +443,7 @@ void eosusdcom::assetout(name usern, asset assetout, string memo) {
         usern, debt, std::string("UZD issued to ") + usern.to_string()
       )).send();
   }
-  globalstab.set(stats, _self);
+  globalstab.set(gstats, _self);
   update(usern);
 }
 
@@ -467,8 +469,8 @@ void eosusdcom::pricingmodel(name usern) {
   double portVariance = 0.0;
   for ( auto i = user.collateral.begin(); i != user.collateral.end(); ++i ) {
     auto sym_code_raw = i->symbol.code().raw();
-    stats statstable( _self, sym_code_raw );
-    const auto& iV = statstable.get( sym_code_raw, "symbol does not exist" );
+    eosio::print( "pricingmodelSYMBOL : ", sym_code_raw, "\n");
+    const auto& iV = _stats.get( sym_code_raw, "symbol does not exist" );
 
     double iW = (((i->amount)/std::pow(10.0, i->symbol.precision())) * (fxrate[i->symbol]/std::pow(10.0, 4))) / user.valueofcol;
 
@@ -476,8 +478,7 @@ void eosusdcom::pricingmodel(name usern) {
       double c = iV.correlation_matrix.at(j->symbol);
       
       sym_code_raw = j->symbol.code().raw();
-      stats statstable( _self, sym_code_raw );
-      const auto& jV = statstable.get( sym_code_raw, "symbol does not exist" );
+      const auto& jV = _stats.get( sym_code_raw, "symbol does not exist" );
 
       double jW = (((j->amount)/std::pow(10.0, j->symbol.precision())) * (fxrate[j->symbol]/std::pow(10.0, 4))) / user.valueofcol; 
 
@@ -522,8 +523,7 @@ void eosusdcom::calcStats()
 {
   symbol sst = symbol("UZD", 4);
   auto sym_code_raw = sst.code().raw();
-  stats statstable( _self, sym_code_raw );
-  const auto& st = statstable.get( sym_code_raw, "UZD doesn't exist" );
+  const auto& st = _stats.get( sym_code_raw, "UZD doesn't exist" );
   
   double totdebt = st.supply.amount/std::pow(10.0,4);
   eosio::print( "totdebt : ", totdebt, "\n");
@@ -535,8 +535,7 @@ void eosusdcom::calcStats()
   double portVariance = 0.0;
   for ( auto i = gstats.support.begin(); i != gstats.support.end(); ++i ) {
     sym_code_raw = i->symbol.code().raw();
-    stats statstable( _self, sym_code_raw );
-    const auto& iV = statstable.get( sym_code_raw, "symbol does not exist" );
+    const auto& iV = _stats.get( sym_code_raw, "symbol does not exist" );
 
     double iW = (((i->amount)/std::pow(10.0, i->symbol.precision())) * (fxrate[i->symbol]/std::pow(10.0, 4))) /  gstats.valueofins;
 
@@ -544,8 +543,7 @@ void eosusdcom::calcStats()
       double c = iV.correlation_matrix.at(j->symbol);
       
       sym_code_raw = j->symbol.code().raw();
-      stats statstable( _self, sym_code_raw );
-      const auto& jV = statstable.get( sym_code_raw, "symbol does not exist" );
+      const auto& jV = _stats.get( sym_code_raw, "symbol does not exist" );
 
       double jW = (((j->amount)/std::pow(10.0, j->symbol.precision())) * (fxrate[j->symbol]/std::pow(10.0, 4))) /  gstats.valueofins; 
 
@@ -581,7 +579,7 @@ void eosusdcom::payfee(name usern) {
   
   globals globalstab( _self, _self.value );
   eosio_assert(globalstab.exists(), "No support yet");
-  globalstats stats = globalstab.get();
+  globalstats gstats = globalstab.get();
 
   uint64_t amt = 0;
   uint64_t T = 360*24*60;
@@ -607,7 +605,7 @@ void eosusdcom::payfee(name usern) {
   else 
     for ( auto itr = _user.begin(); itr != _user.end(); ++itr )
       if ( itr->valueofins > 0 ) {
-        double weight = itr->valueofins / stats.valueofins;
+        double weight = itr->valueofins / gstats.valueofins;
 
         for ( auto it = itr->support.begin(); it != itr->support.end(); ++it )
           if ( it->symbol == symbol("VIG", 4) ) {
@@ -624,7 +622,7 @@ void eosusdcom::update(name usern) {
   auto &user = _user.get( usern.value, "User not found" );
   globals globalstab( _self, _self.value );
   eosio_assert(globalstab.exists(), "globals not found");
-  globalstats stats = globalstab.get();
+  globalstats gstats = globalstab.get();
   
   double valueofins = 0.0;
   double valueofcol = 0.0;
@@ -636,18 +634,18 @@ void eosusdcom::update(name usern) {
     valueofcol += (it->amount) / std::pow(10.0, it->symbol.precision()) * 
                   ( fxrate[it->symbol] / std::pow(10.0, 4) );
   
-  stats.valueofins += valueofins - user.valueofins;
-  stats.valueofcol += valueofcol - user.valueofcol;
+  gstats.valueofins += valueofins - user.valueofins;
+  gstats.valueofcol += valueofcol - user.valueofcol;
 
   _user.modify(user, _self, [&]( auto& modified_user) { // Update value of collateral
     modified_user.valueofins = valueofins;
     modified_user.valueofcol = valueofcol;
   }); 
-  globalstab.set(stats, _self);
+  globalstab.set(gstats, _self);
 
   if ( user.valueofcol > 0.0 && user.debt.amount > 0 ) { // Update tesprice    
     pricingmodel(usern); 
-    payfee(usern);
+    //payfee(usern);
     
     if (user.latepays > 4) {
       _user.modify(user, _self, [&]( auto& modified_user) {
@@ -663,7 +661,7 @@ void eosusdcom::update(name usern) {
       bailout(usern);
     }
   }
-  calcStats();
+  // calcStats();
 }
 
 

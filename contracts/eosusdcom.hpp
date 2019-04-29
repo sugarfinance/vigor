@@ -73,16 +73,11 @@ CONTRACT eosusdcom : public eosio::contract {
          double iportVaRcol = 0.0; // SUM_i [ (1 - portVaR_COLi ) * COLi ]
          double iportVaRins = 0.0; // [ (1 - portVaR_INS ) * INS ]
          
-         // MVA_S = iportVaRcol + iportVaRins +
-         // TODO: unused...[ (1 - portVaR_RES ) * RES ]
-         double mva_s = 0.0;
-         double bel_n = 0.0; // best estimate of total normal liabilities
-
          double solvency = 0.0;
          vector<asset> support;
          vector<asset> collateral;
    
-         EOSLIB_SERIALIZE(globalstats, (valueofcol)(valueofins)(iportVaRcol)(iportVaRins)(mva_s)(bel_n)(solvency)(support)(collateral))
+         EOSLIB_SERIALIZE(globalstats, (valueofcol)(valueofins)(iportVaRcol)(iportVaRins)(solvency)(support)(collateral))
       }; typedef eosio::singleton<"globals"_n, globalstats> globals;
          typedef eosio::multi_index<"globals"_n, globalstats> globalsm;
                                                               globals globalstab;
@@ -139,6 +134,7 @@ CONTRACT eosusdcom : public eosio::contract {
 
          uint64_t primary_key()const { return supply.symbol.code().raw(); }
       }; typedef eosio::multi_index< "stat"_n, currency_stats > stats;
+                                                                stats _stats;
 
       void sub_balance( name owner, asset value );
       void add_balance( name owner, asset value, name ram_payer );
@@ -146,8 +142,10 @@ CONTRACT eosusdcom : public eosio::contract {
    public:
       using contract::contract;
       eosusdcom(name receiver, name code, datastream<const char*> ds):contract(receiver, code, ds), 
-      _user(receiver, receiver.value), _eosusd(receiver, receiver.value), globalstab(receiver, receiver.value), globalstabm(receiver, receiver.value) {}
+      _user(receiver, receiver.value), _stats(receiver, receiver.value), _eosusd(receiver, receiver.value),
+      globalstab(receiver, receiver.value), globalstabm(receiver, receiver.value) {}
     
+
       //TODO: consts to be vars
       const float scale = 1.0;
       //float dollar_conversion = 3.51; // from oracle

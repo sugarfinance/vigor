@@ -84,6 +84,11 @@ cleos set account permission eosusdcom111 active '{"threshold":1,"keys":[{"key":
 
 cleos set contract eosusdcom111 . $CONTRACT_WASM $CONTRACT_ABI -p eosusdcom111@active
 cleos push action eosusdcom111 create '[ "eosusdcom111", "1000000000.0000 UZD"]' -p eosusdcom111@active
+
+cleos push action eosusdcom111 create '[ "eosusdcom111", "1000000000.0000 UZD"]' -p eosusdcom111@active
+cleos push action eosusdcom111 create '[ "eosusdcom111", "1000000000.0000 UZD"]' -p eosusdcom111@active
+cleos push action eosusdcom111 create '[ "eosusdcom111", "1000000000.0000 UZD"]' -p eosusdcom111@active
+
 cleos push action eosusdcom111 setsupply '[ "eosusdcom111", "1000000000.0000 UZD"]' -p eosusdcom111@active
 
 #=================================================================================#
@@ -208,9 +213,12 @@ cleos push action eosusdcom111 assetout '{"usern":"testinsure12","assetout":"1.0
 cleos push action eosusdcom111 transfer '{"from":"testborrow11","to":"eosusdcom111","quantity":"6.0000 UZD","memo":"payoff debt"}' -p testborrow11@active
 cleos push action eosusdcom111 transfer '{"from":"testborrow12","to":"eosusdcom111","quantity":"5.0000 UZD","memo":"payoff debt"}' -p testborrow12@active
 
-cleos get table eosusdcom111 eosusdcom111 user
-
-cleos push action eosusdcom111 doupdate '{"up":"1"}' -p eosusdcom111@active
+# cleos get table eosusdcom111 eosusdcom111 user
+# cleos push action eosusdcom111 doupdate '{"up":"1"}' -p eosusdcom111@active
+# sleep 5
+# cleos push action eosusdcom111 doupdate '{"up":"0"}' -p eosusdcom111@active
+# sleep 5
+# cleos get table eosusdcom111 eosusdcom111 user
 
 # doupdate action does the following:
 # pull prices from oracle
