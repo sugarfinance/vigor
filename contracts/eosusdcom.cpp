@@ -572,6 +572,7 @@ void eosusdcom::payfee(name usern) {
       const auto& st = _stats.get( symbol("VIG",4).code().raw(), "symbol doesn't exist");
       amt = ( tespay * std::pow(10.0, 4) ) / 
             ( st.fxrate / std::pow(10.0, 4) );
+      eosio::print( "TESPRICE: ", amt, "\n");
       if ( it->amount >= amt )
         _user.modify(user, _self, [&]( auto& modified_user) { // withdraw fee
           modified_user.feespaid += tespay;
@@ -633,7 +634,6 @@ void eosusdcom::update(name usern) {
   if ( user.valueofcol > 0.0 && user.debt.amount > 0 ) { // Update tesprice    
     pricingmodel(usern); 
     payfee(usern);
-    
     if (user.latepays > 4) {
       _user.modify(user, _self, [&]( auto& modified_user) {
         modified_user.latepays = 0; 
@@ -659,53 +659,59 @@ void eosusdcom::update(name usern) {
  * their collateral bucket so that it overcollateralizes their debt
  * at some default setting like 1.5
 */
-void eosusdcom::bailout(name usern) {
+void eosusdcom::bailout(name usern) 
+{
   auto user = _user.find(usern.value);
   eosio_assert(user != _user.end(), "User not found");
+  
   globals globalstab( _self, _self.value );
-  globalstats stats = globalstab.get();
+  globalstats gstats = globalstab.get();
 
   for ( auto itr = _user.begin(); itr != _user.end(); ++itr ) {
     if (itr->valueofins > 0) {
-      double weight = itr->valueofins / stats.valueofins;
+      double weight = itr->valueofins / gstats.valueofins;
+      asset debt = user->debt;
+      debt.amount *= weight;
 
       for ( auto c = user->collateral.begin(); c != user->collateral.end(); ++c ) {
-        uint64_t amt = c->amount * weight;
+        asset amt = *c;
+        amt.amount *= weight;
         _user.modify(user, _self, [&]( auto& modified_user) { // weighted fee withdrawl
-            modified_user.collateral[c - user->collateral.begin()].amount -= amt;
+            modified_user.collateral[c - user->collateral.begin()] -= amt;
         });
         for ( auto it = itr->collateral.begin(); it != itr->collateral.end(); ++it )
           if (it->symbol == c->symbol) {
             _user.modify(itr, _self, [&]( auto& modified_user) { // weighted fee deposit
-              modified_user.collateral[it - itr->collateral.begin()].amount += amt;
+              modified_user.collateral[it - itr->collateral.begin()] += amt;
             });
-            amt = 0;
+            amt.amount = 0;
             break;
           } 
-        if (amt > 0) 
+        if (amt.amount > 0) 
           _user.modify(itr, _self, [&]( auto& modified_user) { // weighted fee deposit
-            modified_user.collateral.push_back(asset(amt, c->symbol));
+            modified_user.collateral.push_back(amt);
           });
       }
       _user.modify(itr, _self, [&]( auto& modified_user) { // weighted fee deposit
-          modified_user.debt.amount += user->debt.amount * weight;
+          modified_user.debt += debt;
       });
       for ( auto i = itr->support.begin(); i != itr->support.end(); ++i ) {
-        uint64_t amt = i->amount * 0.25; //convert some support into collateral
+        asset amt = *i;
+        amt.amount *= 0.25; //convert some support into collateral
         _user.modify(itr, _self, [&]( auto& modified_user) { // weighted fee withdrawl
-            modified_user.support[i - user->support.begin()].amount -= amt;
+            modified_user.support[i - itr->support.begin()] -= amt;
         });
         for ( auto it = itr->collateral.begin(); it != itr->collateral.end(); ++it )
           if ( it->symbol == i->symbol ) {
             _user.modify(itr, _self, [&]( auto& modified_user) { // weighted fee deposit
-              modified_user.collateral[it - itr->collateral.begin()].amount += amt;
+              modified_user.collateral[it - itr->collateral.begin()] += amt;
             });
-            amt = 0;
+            amt.amount = 0;
             break;
           } 
-        if (amt > 0) 
+        if (amt.amount > 0) 
           _user.modify(itr, _self, [&]( auto& modified_user) { // weighted fee deposit
-            modified_user.collateral.push_back(asset(amt, i->symbol));
+            modified_user.collateral.push_back(amt);
           });
       }
     }
