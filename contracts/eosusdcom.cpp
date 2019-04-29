@@ -487,7 +487,7 @@ void eosusdcom::pricingmodel(name usern) {
   double tesprice = std::max((payoff * std::erfc(-d/std::sqrt(2))/2)/(user.debt.amount/std::pow(10.0,4)),0.005*this->scale);
   double tesvalue = std::max((payoff * std::erfc(-d/std::sqrt(2))/2),0.005*this->scale);
   
-  tesprice = tesprice/(1.6*(user.creditscore/800.0)); // credit score of 500 means no discount or penalty.
+  tesprice /= 1.6*(user.creditscore/800.0); // credit score of 500 means no discount or penalty.
 
   iportVaR = ((1.0 - iportVaR) * user.valueofcol - user.debt.amount); 
   
@@ -572,7 +572,7 @@ void eosusdcom::payfee(name usern) {
       const auto& st = _stats.get( symbol("VIG",4).code().raw(), "symbol doesn't exist");
       amt = ( tespay * std::pow(10.0, 4) ) / 
             ( st.fxrate / std::pow(10.0, 4) );
-      eosio::print( "TESPRICE: ", amt, "\n");
+      eosio::print( "payfee TESPRICE: ", amt, "\n");
       if ( it->amount >= amt )
         _user.modify(user, _self, [&]( auto& modified_user) { // withdraw fee
           modified_user.feespaid += tespay;
