@@ -563,34 +563,33 @@ void eosusdcom::payfee(name usern) {
   eosio_assert(globalstab.exists(), "No support yet");
   globalstats gstats = globalstab.get();
 
-  uint64_t amt = 0;
+  bool late = true;
   uint64_t T = 360*24*60;
   double tespay = (user.debt.amount / std::pow(10.0, 4)) * (std::pow((1 + user.tesprice), (1 / T)) - 1);
 
   for ( auto it = user.collateral.begin(); it != user.collateral.end(); ++it )
     if ( it->symbol == symbol("VIG",4) ) {
       const auto& st = _stats.get( symbol("VIG",4).code().raw(), "symbol doesn't exist");
-      amt = ( tespay * std::pow(10.0, 4) ) / 
-            ( st.fxrate / std::pow(10.0, 4) );
+      uint64_t amt = ( tespay * std::pow(10.0, 4) ) / 
+                     ( st.fxrate / std::pow(10.0, 4) );
       eosio::print( "payfee TESPRICE: ", amt, "\n");
-      if ( it->amount >= amt )
+      if (amt > it->amount)
         _user.modify(user, _self, [&]( auto& modified_user) { // withdraw fee
-          modified_user.feespaid += tespay;
+          modified_user.latepays += 1;
+        });
+      else {
+        _user.modify(user, _self, [&]( auto& modified_user) { // withdraw fee
+          modified_user.feespaid += amt;
           modified_user.collateral[it - user.collateral.begin()].amount -= amt;
         });
-      else 
-        amt = 0;
+        late = false;
+      }
       break;
     }
-  if (!amt)
-    _user.modify(user, _self, [&]( auto& modified_user) { // withdraw fee
-      modified_user.latepays += 1;
-    });
-  else 
+  if (!late)
     for ( auto itr = _user.begin(); itr != _user.end(); ++itr )
       if ( itr->valueofins > 0 ) {
         double weight = itr->valueofins / gstats.valueofins;
-
         for ( auto it = itr->support.begin(); it != itr->support.end(); ++it )
           if ( it->symbol == symbol("VIG", 4) ) {
             _user.modify( itr, _self, [&]( auto& modified_user ) { // weighted fee deposit
