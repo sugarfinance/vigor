@@ -214,9 +214,9 @@ cleos push action eosusdcom111 transfer '{"from":"testborrow11","to":"eosusdcom1
 cleos push action eosusdcom111 transfer '{"from":"testborrow12","to":"eosusdcom111","quantity":"5.0000 UZD","memo":"payoff debt"}' -p testborrow12@active
 
 cleos get table eosusdcom111 eosusdcom111 user
-cleos push action eosusdcom111 doupdate '{"up":1}' -p eosusdcom111@active
+cleos push action eosusdcom111 doupdate '[true]' -p eosusdcom111@active
 sleep 5
-cleos push action eosusdcom111 doupdate '{"up":0}' -p eosusdcom111@active
+cleos push action eosusdcom111 doupdate '[false]' -p eosusdcom111@active
 sleep 5
 cleos get table eosusdcom111 eosusdcom111 user
 

@@ -1,26 +1,30 @@
 #include "eosusdcom.hpp"
 
-void eosusdcom::doupdate(uint64_t up)
+void eosusdcom::doupdate(bool up)
 {
    //require_auth(_self);
-   if (up == 0) {
-     fxrate[symbol("EOS",4)] = 24000;
+   if (!up) {
+     for ( auto it = _stats.begin(); it != _stats.end(); ++it )
+       _stats.modify( it, same_payer, [&]( auto& s ) {
+         s.fxrate = 14000;
+       });
    }
-   else if (up == 1) {
-     fxrate[symbol("EOS",4)] = 64000;
+   else if (up) {
+     for ( auto it = _stats.begin(); it != _stats.end(); ++it )
+       _stats.modify( it, same_payer, [&]( auto& s ) {
+         s.fxrate = 64000;
+       });
    }
-   else {
-    usdtable eosusdtable(name("oracle111111"),name("oracle111111").value);
-    auto iterator = eosusdtable.begin();
-    
-    fxrate[symbol("EOS",4)] = iterator->average;
-    eosio::print( "EOS fxrate updated : ", iterator->average, "\n");
+  
+  // usdtable eosusdtable(name("oracle111111"),name("oracle111111").value);
+  // auto iterator = eosusdtable.begin();
+  
+  // fxrate[symbol("EOS",4)] = iterator->average;
+  // eosio::print( "EOS fxrate updated : ", iterator->average, "\n");
 
-    user_t _user(_self, _self.value);
-    for ( auto it = _user.begin(); it != _user.end(); it++ ) {
-      update(it->usern);
-      //eosio::print( "update complete for: ", eosio::name{it->usern}, "\n");
-    }
+  for ( auto it = _user.begin(); it != _user.end(); it++ ) {
+    update(it->usern);
+    //eosio::print( "update complete for: ", eosio::name{it->usern}, "\n");
   }
   //  transaction txn{};
   //  txn.actions.emplace_back(  permission_level { _self, "active"_n },
@@ -145,9 +149,6 @@ void eosusdcom::transfer(name    from,
       
       eosio_assert(user.debt.amount >= quantity.amount, "Payment too high");
       
-      sub_balance( from, quantity );
-      add_balance( to, quantity, payer ); //TODO: why if we are retiring it?
-
       globals globalstab( _self, _self.value );
       globalstats gstats;
       if (globalstab.exists())
@@ -162,16 +163,6 @@ void eosusdcom::transfer(name    from,
       ).send();
       update(from);
     } 
-    else {
-      sub_balance( from, quantity );
-      action(permission_level{_self, name("active")}, _self, 
-        name("assetout"), std::make_tuple(from, quantity, memo)
-      ).send();
-      add_balance( to, quantity, payer );
-      action(permission_level{_self, name("active")}, _self, 
-        name("assetin"), std::make_tuple(from, to, quantity, memo)
-      ).send();
-    }
 }
 
 void eosusdcom::sub_balance( name owner, asset value ) {
@@ -252,7 +243,7 @@ void eosusdcom::assetin( name   from,
         from, symbol("UZD", 4), _self
       )).send();
   }
-  auto sym = assetin.symbol;
+  symbol sym = assetin.symbol;
   auto st = _stats.find( sym.code().raw());
   if ( st == _stats.end() )        
     _stats.emplace( _self, [&]( auto& s ) {
@@ -337,7 +328,8 @@ void eosusdcom::assetout(name usern, asset assetout, string memo) {
   globals globalstab( _self, _self.value );
   eosio_assert(globalstab.exists(), "globals don't exist");
   globalstats gstats = globalstab.get();
-  
+
+  const auto& st = _stats.get( assetout.symbol.code().raw(), "symbol doesn't exist");
   bool found = false;
 
   if ( memo.c_str() == string("collateral") ) {
@@ -349,7 +341,7 @@ void eosusdcom::assetout(name usern, asset assetout, string memo) {
         eosio_assert((it->amount >= assetout.amount),"Insufficient collateral available.");
         
         double valueofasset = assetout.amount / std::pow(10.0, it->symbol.precision());
-        valueofasset *= fxrate[assetout.symbol] / std::pow(10.0, 4);
+        valueofasset *= st.fxrate / std::pow(10.0, 4);
         double valueofcol = user.valueofcol - valueofasset;
 
         eosio_assert( valueofcol >= 1.01 * ( user.debt.amount / std::pow(10.0, 4) ),
@@ -462,7 +454,7 @@ void eosusdcom::pricingmodel(name usern) {
     auto sym_code_raw = i->symbol.code().raw();
     const auto& iV = _stats.get( sym_code_raw, "symbol does not exist" );
 
-    double iW = (((i->amount)/std::pow(10.0, i->symbol.precision())) * (fxrate[i->symbol]/std::pow(10.0, 4))) / user.valueofcol;
+    double iW = (((i->amount)/std::pow(10.0, i->symbol.precision())) * (iV.fxrate/std::pow(10.0, 4))) / user.valueofcol;
 
     for (auto j = i + 1; j != user.collateral.end(); ++j ) {
       double c = iV.correlation_matrix.at(j->symbol);
@@ -470,7 +462,7 @@ void eosusdcom::pricingmodel(name usern) {
       sym_code_raw = j->symbol.code().raw();
       const auto& jV = _stats.get( sym_code_raw, "symbol does not exist" );
 
-      double jW = (((j->amount)/std::pow(10.0, j->symbol.precision())) * (fxrate[j->symbol]/std::pow(10.0, 4))) / user.valueofcol; 
+      double jW = (((j->amount)/std::pow(10.0, j->symbol.precision())) * (jV.fxrate/std::pow(10.0, 4))) / user.valueofcol; 
 
       portVariance += 2.0 * iW * jW * c * iV.volatility * jV.volatility;
     }
@@ -527,7 +519,7 @@ void eosusdcom::calcStats()
     sym_code_raw = i->symbol.code().raw();
     const auto& iV = _stats.get( sym_code_raw, "symbol does not exist" );
 
-    double iW = (((i->amount)/std::pow(10.0, i->symbol.precision())) * (fxrate[i->symbol]/std::pow(10.0, 4))) /  gstats.valueofins;
+    double iW = (((i->amount)/std::pow(10.0, i->symbol.precision())) * (iV.fxrate/std::pow(10.0, 4))) /  gstats.valueofins;
 
     for (auto j = i + 1; j != gstats.support.end(); ++j ) {
       double c = iV.correlation_matrix.at(j->symbol);
@@ -535,7 +527,7 @@ void eosusdcom::calcStats()
       sym_code_raw = j->symbol.code().raw();
       const auto& jV = _stats.get( sym_code_raw, "symbol does not exist" );
 
-      double jW = (((j->amount)/std::pow(10.0, j->symbol.precision())) * (fxrate[j->symbol]/std::pow(10.0, 4))) /  gstats.valueofins; 
+      double jW = (((j->amount)/std::pow(10.0, j->symbol.precision())) * (jV.fxrate/std::pow(10.0, 4))) /  gstats.valueofins; 
 
       portVariance += 2.0 * iW * jW * c * iV.volatility * jV.volatility;
     }
@@ -577,8 +569,9 @@ void eosusdcom::payfee(name usern) {
 
   for ( auto it = user.collateral.begin(); it != user.collateral.end(); ++it )
     if ( it->symbol == symbol("VIG",4) ) {
+      const auto& st = _stats.get( symbol("VIG",4).code().raw(), "symbol doesn't exist");
       amt = ( tespay * std::pow(10.0, 4) ) / 
-            ( fxrate[it->symbol] / std::pow(10.0, 4) );
+            ( st.fxrate / std::pow(10.0, 4) );
       if ( it->amount >= amt )
         _user.modify(user, _self, [&]( auto& modified_user) { // withdraw fee
           modified_user.feespaid += tespay;
@@ -617,12 +610,16 @@ void eosusdcom::update(name usern) {
   double valueofins = 0.0;
   double valueofcol = 0.0;
   
-  for ( auto it = user.support.begin(); it != user.support.end(); ++it )
+  for ( auto it = user.support.begin(); it != user.support.end(); ++it ) {
+    const auto& st = _stats.get( it->symbol.code().raw(), "symbol doesn't exist");
     valueofins += (it->amount) / std::pow(10.0, it->symbol.precision()) * 
-                  ( fxrate[it->symbol] / std::pow(10.0, 4) );
-  for ( auto it = user.collateral.begin(); it != user.collateral.end(); ++it )
+                  ( st.fxrate / std::pow(10.0, 4) );
+  }
+  for ( auto it = user.collateral.begin(); it != user.collateral.end(); ++it ) {
+    const auto& st = _stats.get( it->symbol.code().raw(), "symbol doesn't exist");
     valueofcol += (it->amount) / std::pow(10.0, it->symbol.precision()) * 
-                  ( fxrate[it->symbol] / std::pow(10.0, 4) );
+                  ( st.fxrate / std::pow(10.0, 4) );
+  }
   
   gstats.valueofins += valueofins - user.valueofins;
   gstats.valueofcol += valueofcol - user.valueofcol;
