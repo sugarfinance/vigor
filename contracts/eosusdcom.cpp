@@ -645,7 +645,7 @@ void eosusdcom::update(name usern) {
 
   if ( user.valueofcol > 0.0 && user.debt.amount > 0 ) { // Update tesprice    
     pricingmodel(usern); 
-    //payfee(usern);
+    payfee(usern);
     
     if (user.latepays > 4) {
       _user.modify(user, _self, [&]( auto& modified_user) {
@@ -661,7 +661,7 @@ void eosusdcom::update(name usern) {
       bailout(usern);
     }
   }
-  // calcStats();
+  calcStats();
 }
 
 
