@@ -324,7 +324,6 @@ void eosusdcom::assetout(name usern, asset assetout, string memo) {
                 memo.c_str() == string("borrow"), 
                 "memo must be composed of either word: support | collateral | borrow"
               );
-  
   globals globalstab( _self, _self.value );
   eosio_assert(globalstab.exists(), "globals don't exist");
   globalstats gstats = globalstab.get();
