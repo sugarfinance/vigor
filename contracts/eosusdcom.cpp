@@ -472,7 +472,6 @@ void eosusdcom::pricingmodel(name usern) {
 
   // premium payments in exchange for contingient payoff in the event that a price threshhold is breached
 
-
   double unscaled =  std::min(3.0*sqrt(portVariance), 1.0);
   double impliedvol = sqrt(portVariance) * this->scale; 
   double iportVaR = std::min(3.0*impliedvol, 1.0); // value at risk
@@ -488,14 +487,19 @@ void eosusdcom::pricingmodel(name usern) {
   
   tesprice /= 1.6*(user.creditscore/800.0); // credit score of 500 means no discount or penalty.
 
-  iportVaR = ((1.0 - iportVaR) * user.valueofcol - user.debt.amount); 
+  // iportVaR is allowed to go negative, and will be negative if a user draws a lot of 
+  // debt and has small overcollateralization
+  iportVaR = ((1.0 - unscaled) * user.valueofcol - user.debt.amount/std::pow(10.0,4)); 
   
-  gstats.iportVaRcol += unscaled - user.iportVaR;
+  gstats.iportVaRcol += iportVaR - user.iportVaR; // update sum of all users iportVaRs
   globalstab.set(gstats, _self);
 
   _user.modify(user, _self, [&]( auto& modified_user) { // Update value of collateral
-    modified_user.iportVaR = unscaled;
-    modified_user.tesvalue = tesvalue;
+    /* dollar value of the users collateral 
+     * portfolio in excess of their debt 
+     * in a stress scenario.
+    */ modified_user.iportVaR = iportVaR; 
+    modified_user.tesvalue = tesvalue; 
     modified_user.tesprice = tesprice;
   });
 }
@@ -538,10 +542,15 @@ void eosusdcom::calcStats()
   double impliedvol = std::sqrt(portVariance);
   double iportVaR = std::min(3.0 * impliedvol, 1.0); // value at risk 
   
-  gstats.iportVaRins = (1.0 - iportVaR) * gstats.valueofins;
+  // the dollar value of insurance assets under a stress scenario
+  gstats.iportVaRins = (1.0 - iportVaR) * gstats.valueofins; 
 
   double own_n = gstats.valueofins + gstats.valueofcol - totdebt;
-  double own_s = gstats.iportVaRcol + gstats.iportVaRins;
+  /*
+   * the dollar value of all available assets in excess 
+   * of debt in a stress scenario
+  */ double own_s = gstats.iportVaRcol + gstats.iportVaRins;
+  
   double scr = own_n - own_s;
 
   eosio::print( "own_n : ", own_n, "\n");
