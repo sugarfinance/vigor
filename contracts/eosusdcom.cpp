@@ -490,7 +490,7 @@ void eosusdcom::pricingmodel(name usern) {
   // iportVaR is allowed to go negative, and will be negative if a user draws a lot of 
   // debt and has small overcollateralization
   iportVaR = ((1.0 - unscaled) * user.valueofcol - user.debt.amount/std::pow(10.0,4)); 
-  
+
   gstats.iportVaRcol += iportVaR - user.iportVaR; // update sum of all users iportVaRs
   globalstab.set(gstats, _self);
 
@@ -517,6 +517,7 @@ void eosusdcom::calcStats()
   eosio_assert(globalstab.exists(), "No support yet");
   globalstats gstats = globalstab.get();
 
+  gstats.totaldebt = totdebt;
   double portVariance = 0.0;
   for ( auto i = gstats.support.begin(); i != gstats.support.end(); ++i ) {
     sym_code_raw = i->symbol.code().raw();
@@ -574,12 +575,12 @@ void eosusdcom::payfee(name usern) {
   bool late = true;
   uint64_t T = 360*24*60;
   double tespay = (user.debt.amount / std::pow(10.0, 4)) * (std::pow((1 + user.tesprice), (1 / T)) - 1);
-
+  uint64_t amt = 0;
   for ( auto it = user.collateral.begin(); it != user.collateral.end(); ++it )
     if ( it->symbol == symbol("VIG",4) ) {
       const auto& st = _stats.get( symbol("VIG",4).code().raw(), "symbol doesn't exist");
-      uint64_t amt = ( tespay * std::pow(10.0, 4) ) / 
-                     ( st.fxrate / std::pow(10.0, 4) );
+      amt = ( tespay * std::pow(10.0, 4) ) / 
+            ( st.fxrate / std::pow(10.0, 4) );
       eosio::print( "payfee TESPRICE: ", amt, "\n");
       if (amt > it->amount)
         _user.modify(user, _self, [&]( auto& modified_user) { // withdraw fee

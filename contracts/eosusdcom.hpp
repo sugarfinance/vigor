@@ -67,9 +67,9 @@ CONTRACT eosusdcom : public eosio::contract {
                         indexed_by<name("timestamp"), const_mem_fun<eosusd, uint64_t, &eosusd::by_timestamp>>> usdtable;
                                                                                                                usdtable _eosusd;
       TABLE globalstats {
+         double totaldebt = 0.0;
          double valueofcol = 0.0;
          double valueofins = 0.0;
-         
          double iportVaRcol = 0.0; // SUM_i [ (1 - portVaR_COLi ) * COLi ]
          double iportVaRins = 0.0; // [ (1 - portVaR_INS ) * INS ]
          
@@ -77,7 +77,7 @@ CONTRACT eosusdcom : public eosio::contract {
          vector<asset> support;
          vector<asset> collateral;
    
-         EOSLIB_SERIALIZE(globalstats, (valueofcol)(valueofins)(iportVaRcol)(iportVaRins)(solvency)(support)(collateral))
+         EOSLIB_SERIALIZE(globalstats, (totaldebt)(valueofcol)(valueofins)(iportVaRcol)(iportVaRins)(solvency)(support)(collateral))
       }; typedef eosio::singleton<"globals"_n, globalstats> globals;
          typedef eosio::multi_index<"globals"_n, globalstats> globalsm;
                                                               globals globalstab;
