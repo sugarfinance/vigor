@@ -36,6 +36,8 @@ CONTRACT eosusdcom : public eosio::contract {
       /* measured by how much VIG was paid in the past
        * relative to number of late payments and collections
       */ uint64_t creditscore = 500; //out of 800
+
+         uint32_t lastupdate = 0;
       
          double feespaid = 0.0;
          uint64_t recaps = 0;
@@ -67,6 +69,7 @@ CONTRACT eosusdcom : public eosio::contract {
                         indexed_by<name("timestamp"), const_mem_fun<eosusd, uint64_t, &eosusd::by_timestamp>>> usdtable;
                                                                                                                usdtable _eosusd;
       TABLE globalstats {
+         double inreserve = 0.0; // vig
          double totaldebt = 0.0;
          double valueofcol = 0.0;
          double valueofins = 0.0;
@@ -91,7 +94,7 @@ CONTRACT eosusdcom : public eosio::contract {
       map <symbol, name> issueracct {
          {symbol("SYS",4),	    name("eosio.token")},
          {symbol("VIG",4),	    name("vig111111111")},
-         {symbol("IQ",4),	       name("dummytokens1")},
+         {symbol("IQ",4),	    name("dummytokens1")},
          {symbol("UTG",4),	    name("dummytokens1")},
          {symbol("PTI",4),	    name("dummytokens1")},
          {symbol("OWN",4),	    name("dummytokens1")},

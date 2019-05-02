@@ -126,7 +126,6 @@ void eosusdcom::retire( asset quantity, string memo )
     _stats.modify( st, same_payer, [&]( auto& s ) {
        s.supply -= quantity;
     });
-
     sub_balance( st.issuer, quantity );
 }
 
@@ -157,6 +156,9 @@ void eosusdcom::transfer(name    from,
       _user.modify(user, _self, [&]( auto& modified_user) { // Transfer stablecoin into user
         modified_user.debt -= quantity;
       });
+      
+      gstats.totaldebt -= quantity.amount;
+
       //clear the debt from circulating supply
       action(permission_level{_self, name("active")}, _self, 
         name("retire"), std::make_tuple(quantity, memo)
@@ -414,15 +416,22 @@ void eosusdcom::assetout(name usern, asset assetout, string memo) {
                   "Borrow asset type must be UZD" 
                 );
     asset debt = user.debt + assetout;
-    eosio_assert( user.valueofcol >= 1.01 * ( debt.amount / std::pow(10.0,4) ),
+    /*
+    * if overcollateralization is C then leverage L is found as 
+    * L = 1 / ( 1 - ( 1 / C ) )
+    */
+    eosio_assert( user.valueofcol >= 1.11 * ( debt.amount / std::pow(10.0, 4) ),
     "Dollar value of collateral would become less than dollar value of debt" );
     
     _user.modify(user, _self, [&]( auto& modified_user) {
       modified_user.debt = debt;
     });
+
+    gstats.totaldebt += assetout.amount;
+
     action( permission_level{_self, name("active")},
       _self, name("issue"), std::make_tuple(
-        usern, debt, std::string("UZD issued to ") + usern.to_string()
+        usern, assetout, std::string("UZD issued to ") + usern.to_string()
       )).send();
   }
   globalstab.set(gstats, _self);
@@ -506,21 +515,16 @@ void eosusdcom::pricingmodel(name usern) {
 
 void eosusdcom::calcStats() 
 {
-  symbol sst = symbol("UZD", 4);
-  auto sym_code_raw = sst.code().raw();
-  const auto& st = _stats.get( sym_code_raw, "UZD doesn't exist" );
-  
-  double totdebt = st.supply.amount/std::pow(10.0,4);
-  eosio::print( "totdebt : ", totdebt, "\n");
-
   globals globalstab( _self, _self.value );
   eosio_assert(globalstab.exists(), "No support yet");
   globalstats gstats = globalstab.get();
 
-  gstats.totaldebt = totdebt;
   double portVariance = 0.0;
+  double totdebt = gstats.totaldebt/std::pow(10.0,4);
+  eosio::print( "totdebt : ",  totdebt, "\n");
+
   for ( auto i = gstats.support.begin(); i != gstats.support.end(); ++i ) {
-    sym_code_raw = i->symbol.code().raw();
+    auto sym_code_raw = i->symbol.code().raw();
     const auto& iV = _stats.get( sym_code_raw, "symbol does not exist" );
 
     double iW = (((i->amount)/std::pow(10.0, i->symbol.precision())) * (iV.fxrate/std::pow(10.0, 4))) /  gstats.valueofins;
@@ -573,9 +577,11 @@ void eosusdcom::payfee(name usern) {
   globalstats gstats = globalstab.get();
 
   bool late = true;
-  uint64_t T = 360*24*60;
-  double tespay = (user.debt.amount / std::pow(10.0, 4)) * (std::pow((1 + user.tesprice), (1 / T)) - 1);
+  uint64_t dsec = now() - user.lastupdate;
+  uint64_t T = 360*24*60*(60/dsec);
+  double tespay = (user.debt.amount / std::pow(10.0, 4)) * (std::pow((1 + user.tesprice), (1.0 / T)) - 1);
   uint64_t amt = 0;
+
   for ( auto it = user.collateral.begin(); it != user.collateral.end(); ++it )
     if ( it->symbol == symbol("VIG",4) ) {
       const auto& st = _stats.get( symbol("VIG",4).code().raw(), "symbol doesn't exist");
@@ -588,25 +594,42 @@ void eosusdcom::payfee(name usern) {
         });
       else {
         _user.modify(user, _self, [&]( auto& modified_user) { // withdraw fee
-          modified_user.feespaid += amt;
+          modified_user.feespaid += amt / std::pow(10.0, 4);
           modified_user.collateral[it - user.collateral.begin()].amount -= amt;
         });
         late = false;
       }
       break;
     }
-  if (!late)
+  if (!late) {
+    uint64_t res = amt * 0.25;
+    gstats.inreserve += res;
+    globalstab.set(gstats, _self);
+
+    //TODO inline transfer
+    
+    amt *= 0.75; 
+    
     for ( auto itr = _user.begin(); itr != _user.end(); ++itr )
       if ( itr->valueofins > 0 ) {
         double weight = itr->valueofins / gstats.valueofins;
+        asset vig = asset(amt * weight, symbol("VIG", 4));
+        bool found = false;
         for ( auto it = itr->support.begin(); it != itr->support.end(); ++it )
           if ( it->symbol == symbol("VIG", 4) ) {
             _user.modify( itr, _self, [&]( auto& modified_user ) { // weighted fee deposit
-              modified_user.support[it - itr->support.begin()].amount += amt * weight;
+              modified_user.support[it - itr->support.begin()] += vig;
             });
+            found = true;
             break;
           } 
+        if (!found)
+          _user.modify(itr, _self, [&]( auto& modified_user) {
+            modified_user.support.push_back(vig);
+          });
       }
+  }
+  
 }
 
 void eosusdcom::update(name usern) {
@@ -656,6 +679,9 @@ void eosusdcom::update(name usern) {
       bailout(usern);
     }
   }
+  _user.modify(user, _self, [&]( auto& modified_user) {
+    modified_user.lastupdate = now();
+  });
   calcStats();
 }
 
@@ -701,7 +727,7 @@ void eosusdcom::bailout(name usern)
           });
       }
       _user.modify(itr, _self, [&]( auto& modified_user) { // weighted fee deposit
-          modified_user.debt += debt;
+        modified_user.debt += debt;
       });
       for ( auto i = itr->support.begin(); i != itr->support.end(); ++i ) {
         asset amt = *i;
@@ -724,6 +750,9 @@ void eosusdcom::bailout(name usern)
       }
     }
   }
+
+  // TODO: IF THERE STILL REMAINS DEBT 
+
 }
 
 extern "C" {
@@ -738,6 +767,6 @@ extern "C" {
           EOSIO_DISPATCH_HELPER(eosusdcom, (create)(assetout)(issue)(transfer)(open)(close)(retire)(setsupply)(doupdate)) 
       }    
     }
-        eosio_exit(0);
+    eosio_exit(0);
   }
 }
