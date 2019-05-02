@@ -123,7 +123,18 @@ CONTRACT eosusdcom : public eosio::contract {
             {symbol("OWN",4),	0.42},
             {symbol("EOS",4),	0.42}
          };
-         uint64_t fxrate = 54000;
+
+      map <symbol, uint64_t> fxrate {
+      {symbol("SYS",4),	    54000},
+      {symbol("VIG",4),	    200},
+      {symbol("IQ",4),	       39},
+      {symbol("UTG",4),	    2},
+      {symbol("PTI",4),	    63},
+      {symbol("OWN",4),	    198},
+      {symbol("EOS",4),	    54000}
+      };
+
+        // uint64_t fxrate = 54000;
          double volatility = 0.1; // stdev, scale factor for price discovery
 
          uint64_t primary_key()const { return supply.symbol.code().raw(); }

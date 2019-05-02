@@ -3,24 +3,29 @@
 
 #=================================================================================#
 # SETUP
+# 
+pkill nodeos
+rm -rf ~/.local/share/eosio/nodeos/data
+nodeos -e -p eosio --http-validate-host=false --delete-all-blocks --contracts-console --plugin eosio::chain_api_plugin --plugin eosio::history_api_plugin --plugin eosio::producer_plugin --plugin eosio::http_plugin --max-transaction-time=10000
+
 
 CYAN='\033[1;36m'
 NC='\033[0m'
 
 # CHANGE PATH
-EOSIO_CONTRACTS_ROOT=/home/ricardo/Documents/eosio.contracts/build
+EOSIO_CONTRACTS_ROOT=/home/ab/contracts1.6.0/eosio.contracts/contracts
 
+CONTRACT_ROOT=/home/ab/contracts1.6.0/eosusd/contracts
 CONTRACT="eosusdcom"
 CONTRACT_WASM="$CONTRACT.wasm"
 CONTRACT_ABI="$CONTRACT.abi"
+CONTRACT_CPP="$CONTRACT.cpp"
 
 OWNER_KEY="EOS6TnW2MQbZwXHWDHAYQazmdc3Sc1KGv4M9TSgsKZJSo43Uxs2Bx"
 OWNER_ACCT="5J3TQGkkiRQBKcg8Gg2a7Kk5a2QAQXsyGrkCnnq4krSSJSUkW12"
 
-# pkill nodeos
-# nodeos -e -p eosio --http-validate-host=false --delete-all-blocks --contracts-console --plugin eosio::chain_api_plugin --plugin eosio::history_api_plugin --plugin eosio::producer_plugin --plugin eosio::http_plugin --max-transaction-time=10000
-
-cleos wallet unlock -n default --password PW5JjGjm4FjESLYWUqgpEP4sfVCFoCLfNRccSv2XZNd4cgBJBXnDV
+#cleos wallet create --to-console
+cleos wallet unlock -n default --password PW5KDyCJVL3ypUGia4yf5TatcCQ4UjyrDQ296Dh2pe8ZjrLVDPh91
 cleos wallet import -n default --private-key $OWNER_ACCT
 
 #=================================================================================#
@@ -48,11 +53,15 @@ cleos create account eosio eosio.ram EOS5tY6zv1vXoqF36gUg5CG7GxWbajnwPtimTnq6h5i
 cleos create account eosio eosio.ramfee EOS6a7idZWj1h4PezYks61sf1RJjQJzrc8s4aUbe3YJ3xkdiXKBhF
 cleos create account eosio eosio.saving EOS8ioLmKrCyy5VyZqMNdimSpPjVF2tKbT5WKhE67vbVPcsRXtj5z
 cleos create account eosio eosio.stake EOS5an8bvYFHZBmiCAzAtVSiEiixbJhLY8Uy5Z7cpf3S9UoqA3bJb
-cleos create account eosio eosio.token EOS7JPVyejkbQHzE9Z4HwewNzGss11GB21NPkwTX2MQFmruYFqGXm
+#cleos create account eosio eosio.token EOS7JPVyejkbQHzE9Z4HwewNzGss11GB21NPkwTX2MQFmruYFqGXm
+cleos create account eosio eosio.token EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV
 cleos create account eosio eosio.vpay EOS6szGbnziz224T1JGoUUFu2LynVG72f8D3UVAS25QgwawdH983U
 
 # Bootstrap new system contracts
 echo -e "${CYAN}-----------------------SYSTEM CONTRACTS-----------------------${NC}"
+#eosio-cpp -I $EOSIO_CONTRACTS_ROOT/eosio.msig/include -o $EOSIO_CONTRACTS_ROOT/eosio.msig/eosio.msig.wasm $EOSIO_CONTRACTS_ROOT/eosio.msig/src/eosio.msig.cpp --abigen
+#eosio-cpp -I $EOSIO_CONTRACTS_ROOT/eosio.system/include -I $EOSIO_CONTRACTS_ROOT/eosio.token/include -o $EOSIO_CONTRACTS_ROOT/eosio.system/eosio.system.wasm $EOSIO_CONTRACTS_ROOT/eosio.system/src/eosio.system.cpp --abigen
+#eosio-cpp -I $EOSIO_CONTRACTS_ROOT/eosio.wrap/include -o $EOSIO_CONTRACTS_ROOT/eosio.wrap/eosio.wrap.wasm $EOSIO_CONTRACTS_ROOT/eosio.wrap/src/eosio.wrap.cpp --abigen
 cleos set contract eosio.token $EOSIO_CONTRACTS_ROOT/eosio.token/
 cleos set contract eosio.msig $EOSIO_CONTRACTS_ROOT/eosio.msig/
 cleos push action eosio.token create '[ "eosio", "100000000000.0000 EOS" ]' -p eosio.token
@@ -81,14 +90,9 @@ cleos set contract eosio.wrap $EOSIO_CONTRACTS_ROOT/eosio.wrap/
 
 cleos system newaccount eosio eosusdcom111 $OWNER_KEY --stake-cpu "50 EOS" --stake-net "10 EOS" --buy-ram-kbytes 50000 --transfer
 cleos set account permission eosusdcom111 active '{"threshold":1,"keys":[{"key":"EOS6TnW2MQbZwXHWDHAYQazmdc3Sc1KGv4M9TSgsKZJSo43Uxs2Bx","weight":1}],"accounts":[{"permission":{"actor":"eosusdcom111","permission":"eosio.code"},"weight":1}],"waits":[]}' -p eosusdcom111@active
-
-cleos set contract eosusdcom111 . $CONTRACT_WASM $CONTRACT_ABI -p eosusdcom111@active
+#eosio-cpp -I $CONTRACT_ROOT -o "$CONTRACT_ROOT/$CONTRACT_WASM" "$CONTRACT_ROOT/$CONTRACT_CPP" --abigen
+cleos set contract eosusdcom111 $CONTRACT_ROOT $CONTRACT_WASM $CONTRACT_ABI -p eosusdcom111@active
 cleos push action eosusdcom111 create '[ "eosusdcom111", "1000000000.0000 UZD"]' -p eosusdcom111@active
-
-cleos push action eosusdcom111 create '[ "eosusdcom111", "1000000000.0000 UZD"]' -p eosusdcom111@active
-cleos push action eosusdcom111 create '[ "eosusdcom111", "1000000000.0000 UZD"]' -p eosusdcom111@active
-cleos push action eosusdcom111 create '[ "eosusdcom111", "1000000000.0000 UZD"]' -p eosusdcom111@active
-
 cleos push action eosusdcom111 setsupply '[ "eosusdcom111", "1000000000.0000 UZD"]' -p eosusdcom111@active
 
 #=================================================================================#
@@ -166,12 +170,14 @@ cleos push action oracle111111 write '{"owner":"feeder111111", "value":63800}' -
 #=================================================================================#
 
 ###### OPTIONAL FOR LOCAL TESTNET #############
+# cd ~/contracts1.6.0/delphioracle/scripts
 # nodeosurl='http://127.0.0.1:8888' interval=15000 account="oracle111111" defaultPrivateKey="5J3TQGkkiRQBKcg8Gg2a7Kk5a2QAQXsyGrkCnnq4krSSJSUkW12" feeder="feeder111111" node updater2.js
-
 #cleos get table oracle111111 oracle111111 eosusd --limit 1
 #cleos get table oracle111111 oracle111111 oracles
 #cleos get table oracle111111 oracle111111 eosusdstats
 
+# launch two oracle feeders
+#in a new shell
 #=================================================================================#
 # exposed actions for eosusdcom demo starts here
 cleos push action eosio.token transfer '{"from":"testborrow11","to":"eosusdcom111","quantity":"6.0000 EOS","memo":"collateral"}' -p testborrow11@active
@@ -205,12 +211,10 @@ cleos push action eosusdcom111 assetout '{"usern":"testborrow12","assetout":"24.
 
 cleos push action eosusdcom111 assetout '{"usern":"testborrow11","assetout":"1.0000 EOS","memo":"collateral"}' -p testborrow11@active
 cleos push action eosusdcom111 assetout '{"usern":"testborrow12","assetout":"1.0000 EOS","memo":"collateral"}' -p testborrow12@active
-
 cleos push action eosusdcom111 assetout '{"usern":"testinsure11","assetout":"1.0000 EOS","memo":"support"}' -p testinsure11@active
-
 cleos push action eosusdcom111 assetout '{"usern":"testinsure12","assetout":"1.0000 EOS","memo":"support"}' -p testinsure12@active
 
-cleos push action eosusdcom111 transfer '{"from":"testborrow11","to":"eosusdcom111","quantity":"6.0000 UZD","memo":"payoff debt"}' -p testborrow11@active
+cleos push action eosusdcom111 transfer '{"from":"testborrow11","to":"eosusdcom111","quantity":"1.0000 UZD","memo":"payoff debt"}' -p testborrow11@active
 cleos push action eosusdcom111 transfer '{"from":"testborrow12","to":"eosusdcom111","quantity":"5.0000 UZD","memo":"payoff debt"}' -p testborrow12@active
 
 cleos get table eosusdcom111 eosusdcom111 user

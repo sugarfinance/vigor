@@ -6,13 +6,25 @@ void eosusdcom::doupdate(bool up)
    if (!up) {
      for ( auto it = _stats.begin(); it != _stats.end(); ++it )
        _stats.modify( it, same_payer, [&]( auto& s ) {
-         s.fxrate = 14000;
+         s.fxrate[symbol("SYS",4)] = 54000;
+         s.fxrate[symbol("VIG",4)] = 200;
+         s.fxrate[symbol("IQ",4)] = 39;
+         s.fxrate[symbol("UTG",4)] = 2;
+         s.fxrate[symbol("PTI",4)] = 63;
+         s.fxrate[symbol("OWN",4)] = 198;
+         s.fxrate[symbol("EOS",4)] = 54000;
        });
    }
    else if (up) {
      for ( auto it = _stats.begin(); it != _stats.end(); ++it )
        _stats.modify( it, same_payer, [&]( auto& s ) {
-         s.fxrate = 64000;
+         s.fxrate[symbol("SYS",4)] = 54000;
+         s.fxrate[symbol("VIG",4)] = 200;
+         s.fxrate[symbol("IQ",4)] = 39;
+         s.fxrate[symbol("UTG",4)] = 2;
+         s.fxrate[symbol("PTI",4)] = 63;
+         s.fxrate[symbol("OWN",4)] = 198;
+         s.fxrate[symbol("EOS",4)] = 54000;
        });
    }
   
@@ -342,7 +354,7 @@ void eosusdcom::assetout(name usern, asset assetout, string memo) {
         eosio_assert((it->amount >= assetout.amount),"Insufficient collateral available.");
         
         double valueofasset = assetout.amount / std::pow(10.0, it->symbol.precision());
-        valueofasset *= st.fxrate / std::pow(10.0, 4);
+        valueofasset *= st.fxrate.at(assetout.symbol) / std::pow(10.0, it->symbol.precision());
         double valueofcol = user.valueofcol - valueofasset;
 
         eosio_assert( valueofcol >= 1.01 * ( user.debt.amount / std::pow(10.0, 4) ),
@@ -462,7 +474,7 @@ void eosusdcom::pricingmodel(name usern) {
     auto sym_code_raw = i->symbol.code().raw();
     const auto& iV = _stats.get( sym_code_raw, "symbol does not exist" );
 
-    double iW = (((i->amount)/std::pow(10.0, i->symbol.precision())) * (iV.fxrate/std::pow(10.0, 4))) / user.valueofcol;
+    double iW = (((i->amount)/std::pow(10.0, i->symbol.precision())) * (iV.fxrate.at(i->symbol)/std::pow(10.0, i->symbol.precision()))) / user.valueofcol;
 
     for (auto j = i + 1; j != user.collateral.end(); ++j ) {
       double c = iV.correlation_matrix.at(j->symbol);
@@ -470,7 +482,7 @@ void eosusdcom::pricingmodel(name usern) {
       sym_code_raw = j->symbol.code().raw();
       const auto& jV = _stats.get( sym_code_raw, "symbol does not exist" );
 
-      double jW = (((j->amount)/std::pow(10.0, j->symbol.precision())) * (jV.fxrate/std::pow(10.0, 4))) / user.valueofcol; 
+      double jW = (((j->amount)/std::pow(10.0, j->symbol.precision())) * (jV.fxrate.at(j->symbol)/std::pow(10.0, j->symbol.precision()))) / user.valueofcol; 
 
       portVariance += 2.0 * iW * jW * c * iV.volatility * jV.volatility;
     }
@@ -527,7 +539,7 @@ void eosusdcom::calcStats()
     auto sym_code_raw = i->symbol.code().raw();
     const auto& iV = _stats.get( sym_code_raw, "symbol does not exist" );
 
-    double iW = (((i->amount)/std::pow(10.0, i->symbol.precision())) * (iV.fxrate/std::pow(10.0, 4))) /  gstats.valueofins;
+    double iW = (((i->amount)/std::pow(10.0, i->symbol.precision())) * (iV.fxrate.at(i->symbol)/std::pow(10.0, i->symbol.precision()))) /  gstats.valueofins;
 
     for (auto j = i + 1; j != gstats.support.end(); ++j ) {
       double c = iV.correlation_matrix.at(j->symbol);
@@ -535,7 +547,7 @@ void eosusdcom::calcStats()
       sym_code_raw = j->symbol.code().raw();
       const auto& jV = _stats.get( sym_code_raw, "symbol does not exist" );
 
-      double jW = (((j->amount)/std::pow(10.0, j->symbol.precision())) * (jV.fxrate/std::pow(10.0, 4))) /  gstats.valueofins; 
+      double jW = (((j->amount)/std::pow(10.0, j->symbol.precision())) * (jV.fxrate.at(j->symbol)/std::pow(10.0, j->symbol.precision()))) /  gstats.valueofins; 
 
       portVariance += 2.0 * iW * jW * c * iV.volatility * jV.volatility;
     }
@@ -586,7 +598,7 @@ void eosusdcom::payfee(name usern) {
     if ( it->symbol == symbol("VIG",4) ) {
       const auto& st = _stats.get( symbol("VIG",4).code().raw(), "symbol doesn't exist");
       amt = ( tespay * std::pow(10.0, 4) ) / 
-            ( st.fxrate / std::pow(10.0, 4) );
+            ( st.fxrate.at(symbol("VIG",4)) / std::pow(10.0, symbol("VIG",4).precision()) );
       eosio::print( "payfee TESPRICE: ", amt, "\n");
       if (amt > it->amount)
         _user.modify(user, _self, [&]( auto& modified_user) { // withdraw fee
@@ -645,12 +657,12 @@ void eosusdcom::update(name usern) {
   for ( auto it = user.support.begin(); it != user.support.end(); ++it ) {
     const auto& st = _stats.get( it->symbol.code().raw(), "symbol doesn't exist");
     valueofins += (it->amount) / std::pow(10.0, it->symbol.precision()) * 
-                  ( st.fxrate / std::pow(10.0, 4) );
+                  ( st.fxrate.at(it->symbol) / std::pow(10.0, it->symbol.precision()) );
   }
   for ( auto it = user.collateral.begin(); it != user.collateral.end(); ++it ) {
     const auto& st = _stats.get( it->symbol.code().raw(), "symbol doesn't exist");
     valueofcol += (it->amount) / std::pow(10.0, it->symbol.precision()) * 
-                  ( st.fxrate / std::pow(10.0, 4) );
+                  ( st.fxrate.at(it->symbol) / std::pow(10.0, it->symbol.precision()) );
   }
   
   gstats.valueofins += valueofins - user.valueofins;
