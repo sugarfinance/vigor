@@ -3,31 +3,26 @@
 void eosusdcom::doupdate(bool up)
 {
    //require_auth(_self);
-   if (!up) {
-     for ( auto it = _stats.begin(); it != _stats.end(); ++it )
-       _stats.modify( it, same_payer, [&]( auto& s ) {
-         s.fxrate[symbol("SYS",4)] = 54000;
-         s.fxrate[symbol("VIG",4)] = 200;
-         s.fxrate[symbol("IQ",4)] = 39;
-         s.fxrate[symbol("UTG",4)] = 2;
-         s.fxrate[symbol("PTI",4)] = 63;
-         s.fxrate[symbol("OWN",4)] = 198;
-         s.fxrate[symbol("EOS",4)] = 54000;
-       });
-   }
-   else if (up) {
-     for ( auto it = _stats.begin(); it != _stats.end(); ++it )
-       _stats.modify( it, same_payer, [&]( auto& s ) {
-         s.fxrate[symbol("SYS",4)] = 54000;
-         s.fxrate[symbol("VIG",4)] = 200;
-         s.fxrate[symbol("IQ",4)] = 39;
-         s.fxrate[symbol("UTG",4)] = 2;
-         s.fxrate[symbol("PTI",4)] = 63;
-         s.fxrate[symbol("OWN",4)] = 198;
-         s.fxrate[symbol("EOS",4)] = 54000;
-       });
-   }
-  
+  globalstats gstats = _globals.get();
+  if (!up) {  
+    gstats.fxrate[symbol("SYS",4)] = 54000;
+    gstats.fxrate[symbol("VIG",4)] = 200;
+    gstats.fxrate[symbol("IQ",4)] = 39;
+    gstats.fxrate[symbol("UTG",4)] = 2;
+    gstats.fxrate[symbol("PTI",4)] = 63;
+    gstats.fxrate[symbol("OWN",4)] = 198;
+    gstats.fxrate[symbol("EOS",4)] = 54000;
+  }
+  else if (up) {
+    gstats.fxrate[symbol("SYS",4)] = 54000;
+    gstats.fxrate[symbol("VIG",4)] = 200;
+    gstats.fxrate[symbol("IQ",4)] = 39;
+    gstats.fxrate[symbol("UTG",4)] = 2;
+    gstats.fxrate[symbol("PTI",4)] = 63;
+    gstats.fxrate[symbol("OWN",4)] = 198;
+    gstats.fxrate[symbol("EOS",4)] = 54000; 
+  }
+  _globals.set(gstats, _self);
   // usdtable eosusdtable(name("oracle111111"),name("oracle111111").value);
   // auto iterator = eosusdtable.begin();
   
@@ -38,6 +33,7 @@ void eosusdcom::doupdate(bool up)
     update(it->usern);
     //eosio::print( "update complete for: ", eosio::name{it->usern}, "\n");
   }
+  calcStats();
   //  transaction txn{};
   //  txn.actions.emplace_back(  permission_level { _self, "active"_n },
   //                             _self, "doupdate"_n, make_tuple()
@@ -160,21 +156,21 @@ void eosusdcom::transfer(name    from,
       
       eosio_assert(user.debt.amount >= quantity.amount, "Payment too high");
       
-      globals globalstab( _self, _self.value );
-      globalstats gstats;
-      if (globalstab.exists())
-        gstats = globalstab.get();
+      eosio_assert(_globals.exists(), "");
+      globalstats gstats = _globals.get();
 
       _user.modify(user, _self, [&]( auto& modified_user) { // Transfer stablecoin into user
         modified_user.debt -= quantity;
       });
       
       gstats.totaldebt -= quantity.amount;
+      _globals.set(gstats, _self);
 
       //clear the debt from circulating supply
       action(permission_level{_self, name("active")}, _self, 
         name("retire"), std::make_tuple(quantity, memo)
       ).send();
+      
       update(from);
     } 
 }
@@ -242,23 +238,27 @@ void eosusdcom::assetin( name   from,
   require_auth( from );
   eosio_assert(assetin.symbol.is_valid(), "Symbol must be valid.");
   eosio_assert(assetin.amount > 0, "Amount must be > 0.");
-  eosio_assert( memo.c_str() == string("collateral") || 
-                memo.c_str() == string("support"), 
+  eosio_assert( memo.c_str() == string("support") ||
+                memo.c_str() == string("collateral"),  
                 "memo must be composed of either word: support or collateral"
               );
   auto itr = _user.find(from.value);
+  
   if ( itr == _user.end() ) {
     itr = _user.emplace(_self, [&](auto& new_user) {
+      new_user.debt = asset( 0, symbol("UZD", 4) );
       new_user.usern = from;
-      new_user.debt = asset(0,symbol("UZD", 4));
     });
-    action(permission_level{_self, name("active")},
+    action( permission_level{ _self, name("active") },
       _self, name("open"), std::make_tuple(
         from, symbol("UZD", 4), _self
       )).send();
   }
+
   symbol sym = assetin.symbol;
   auto st = _stats.find( sym.code().raw());
+  
+  //TODO: remove
   if ( st == _stats.end() )        
     _stats.emplace( _self, [&]( auto& s ) {
       s.supply.symbol = sym;
@@ -269,65 +269,52 @@ void eosusdcom::assetin( name   from,
   auto &user = *itr;
   bool found = false;
 
-  globals globalstab( _self, _self.value );
   globalstats gstats;
-  if (globalstab.exists())
-    gstats = globalstab.get();
-  
-  if (memo.c_str() == string("collateral")) {
-    for ( auto it = user.collateral.begin() ; it != user.collateral.end(); ++it )
-      if (it->symbol == assetin.symbol) {
-        //User collateral type found
-        _user.modify(user, _self, [&]( auto& modified_user) {
-          modified_user.collateral[it - user.collateral.begin()].amount += assetin.amount;
-        });
-        found = true;
-        break;
-      }
-    if ( !found ) //User collateral type not found
-      _user.modify(user, _self, [&]( auto& modified_user) {
-        modified_user.collateral.push_back(assetin);
-      });
-    found = false;
-    for ( auto it = gstats.collateral.begin(); it != gstats.collateral.end(); ++it )
-      if ( it->symbol == assetin.symbol ) {
-        gstats.collateral[it - gstats.collateral.begin()] += assetin;
-        found = true;
-        break;
-      }
-    if ( !found )
-      gstats.collateral.push_back(assetin);
-  } 
-  else if (memo.c_str() == string("support")) {
-    found = false;
-    for ( auto it = user.support.begin(); it != user.support.end(); ++it )
-      if ( it->symbol == assetin.symbol ) { // User support type found
-        _user.modify(user, _self, [&]( auto& modified_user) {
-          modified_user.support[it - user.support.begin()].amount += assetin.amount;
-        });
-        found = true;
-        break;
-      }
-    if ( !found ) // User support type not found
-      _user.modify(user, _self, [&]( auto& modified_user) {
+  if (_globals.exists())
+    gstats = _globals.get();
+
+  if (memo.c_str() == string("support")) {
+    auto it = user.support.begin();
+    while ( !found && it++ != user.support.end() )
+      found = it->symbol == assetin.symbol; //User collateral type found
+    _user.modify(user, _self, [&]( auto& modified_user) {
+      if (found)
         modified_user.support.push_back(assetin);
-      });
-    found = false;
-    for ( auto it = gstats.support.begin(); it != gstats.support.end(); ++it ) 
-      if ( it->symbol == assetin.symbol ) {
-        gstats.support[it - gstats.support.begin()] += assetin;
-        found = true;
-        break;
-      }
+      else
+        modified_user.support[it - user.support.begin()] += assetin;
+    }); found = false;
+    it = gstats.support.begin();
+    while ( !found && it++ != gstats.support.end() )
+      found = it->symbol == assetin.symbol;
     if ( !found )
       gstats.support.push_back(assetin);
+    else
+      gstats.support[it - gstats.support.begin()] += assetin;
+  }
+  else {
+    auto it = user.collateral.begin();
+    while ( !found && it++ != user.collateral.end() )
+      found = it->symbol == assetin.symbol; //User collateral type found
+    _user.modify(user, _self, [&]( auto& modified_user) {
+      if (found)
+        modified_user.collateral.push_back(assetin);
+      else
+        modified_user.collateral[it - user.collateral.begin()] += assetin;
+    }); found = false;
+    it = gstats.collateral.begin();
+    while ( !found && it++ != gstats.collateral.end() )
+      found = it->symbol == assetin.symbol;
+    if ( !found )
+      gstats.collateral.push_back(assetin);
+    else
+      gstats.collateral[it - gstats.collateral.begin()] += assetin;
   } 
-  globalstab.set(gstats, _self);
+  _globals.set(gstats, _self);
   update(from);
 }
 
-void eosusdcom::assetout(name usern, asset assetout, string memo) {
-
+void eosusdcom::assetout(name usern, asset assetout, string memo) 
+{
   require_auth(usern);
 
   auto &user = _user.get( usern.value,"User not found" );
@@ -338,92 +325,11 @@ void eosusdcom::assetout(name usern, asset assetout, string memo) {
                 memo.c_str() == string("borrow"), 
                 "memo must be composed of either word: support | collateral | borrow"
               );
-  globals globalstab( _self, _self.value );
-  eosio_assert(globalstab.exists(), "globals don't exist");
-  globalstats gstats = globalstab.get();
-
-  const auto& st = _stats.get( assetout.symbol.code().raw(), "symbol doesn't exist");
+  eosio_assert(_globals.exists(), "globals don't exist");
+  globalstats gstats = _globals.get();
   bool found = false;
 
-  if ( memo.c_str() == string("collateral") ) {
-    eosio_assert( !user.collateral.empty(), 
-                  "User does not have any collateral"
-                );
-    for ( auto it = user.collateral.begin(); it != user.collateral.end(); ++it )
-      if (it->symbol == assetout.symbol) { //User collateral type found
-        eosio_assert((it->amount >= assetout.amount),"Insufficient collateral available.");
-        
-        double valueofasset = assetout.amount / std::pow(10.0, it->symbol.precision());
-        valueofasset *= st.fxrate.at(assetout.symbol) / std::pow(10.0, it->symbol.precision());
-        double valueofcol = user.valueofcol - valueofasset;
-
-        eosio_assert( valueofcol >= 1.01 * ( user.debt.amount / std::pow(10.0, 4) ),
-        "Dollar value of collateral would become less than dollar value of debt" );
-        
-        if ( it->amount - assetout.amount == 0 )
-          _user.modify(user, _self, [&]( auto& modified_user) {
-            modified_user.collateral.erase(it);
-          });
-        else
-          _user.modify(user, _self, [&]( auto& modified_user) {
-            modified_user.collateral[it - user.collateral.begin()] -= assetout;
-          });
-        action( permission_level{_self, name("active")}, 
-          issueracct[assetout.symbol], name("transfer"),
-          std::make_tuple( _self, usern, assetout,
-            std::string("Transfer loan collateral out: ") + usern.to_string()
-          )).send();
-        found = true;
-        break;
-      }
-    eosio_assert(found, "collateral asset not found in user");
-    found = false;
-    for ( auto it = gstats.collateral.begin(); it != gstats.collateral.end(); ++it ) {
-      if ( it->symbol == assetout.symbol ) {
-        gstats.collateral[it - gstats.collateral.begin()] -= assetout;
-        found = true;
-        break;
-      }
-    }
-    eosio_assert(found, "collateral asset not found in globals");
-  } 
-  else if ( memo.c_str() == string("support") ) {
-    eosio_assert( !user.support.empty(), 
-                  "User does not have any support asset"
-                );
-    found = false;
-    for ( auto it = user.support.begin() ; it < user.support.end(); ++it )
-      if (it->symbol == assetout.symbol) { // User support type found
-        eosio_assert( it->amount >= assetout.amount,
-        "Insufficient support asset available." );
-        if ( it->amount - assetout.amount == 0 )
-          _user.modify(user, _self, [&]( auto& modified_user) {
-            modified_user.support.erase(it);
-          });
-        else 
-          _user.modify(user, _self, [&]( auto& modified_user) {
-            modified_user.support[it - user.support.begin()] -= assetout;
-          });
-        action( permission_level{_self, name("active")},
-          issueracct[assetout.symbol], name("transfer"),
-          std::make_tuple(_self, usern, assetout,
-            std::string("Transfer support assets out: ") + usern.to_string()
-        )).send(); 
-        found = true;
-        break;
-      }
-    eosio_assert(found, "support asset not found in user");
-    found = false;
-    for ( auto it = gstats.support.begin(); it != gstats.support.end(); ++it ) {
-      if ( it->symbol == assetout.symbol ) {
-        gstats.support[it - gstats.support.begin()] -= assetout;
-        found = true;
-        break;
-      }
-    }
-    eosio_assert(found, "support asset not found in globals");
-  } 
-  else {
+  if ( memo.c_str() == string("borrow") ) {
     eosio_assert( assetout.symbol == symbol("UZD", 4), 
                   "Borrow asset type must be UZD" 
                 );
@@ -446,7 +352,68 @@ void eosusdcom::assetout(name usern, asset assetout, string memo) {
         usern, assetout, std::string("UZD issued to ") + usern.to_string()
       )).send();
   }
-  globalstab.set(gstats, _self);
+  else {
+    if ( memo.c_str() == string("support") ) {
+      for ( auto it = user.support.begin(); it < user.support.end(); ++it )
+        if (it->symbol == assetout.symbol) { // User support type found
+          eosio_assert( it->amount >= assetout.amount,
+          "Insufficient support assets available." );
+          if ( it->amount - assetout.amount == 0 )
+            _user.modify(user, _self, [&]( auto& modified_user) {
+              modified_user.support.erase(it);
+            });
+          else 
+            _user.modify(user, _self, [&]( auto& modified_user) {
+              modified_user.support[it - user.support.begin()] -= assetout;
+            });
+          found = true;
+          break;
+        }
+      for ( auto it = gstats.support.begin(); it != gstats.support.end(); ++it )
+        if ( it->symbol == assetout.symbol ) {
+          gstats.support[it - gstats.support.begin()] -= assetout;
+          found = true;
+          break;
+        }
+    }
+    else {
+      for ( auto it = user.collateral.begin(); it != user.collateral.end(); ++it )
+        if ( it->symbol == assetout.symbol ) { //User collateral type found
+          eosio_assert( it->amount >= assetout.amount,
+          "Insufficient collateral assets available." );
+          
+          double valueofasset = assetout.amount / std::pow(10.0, it->symbol.precision());
+          valueofasset *= gstats.fxrate.at(assetout.symbol) / std::pow(10.0, it->symbol.precision());
+          double valueofcol = user.valueofcol - valueofasset;
+
+          eosio_assert( valueofcol >= 1.01 * ( user.debt.amount / std::pow(10.0, 4) ),
+          "Dollar value of collateral would become less than dollar value of debt" );
+          
+          if ( it->amount - assetout.amount == 0 )
+            _user.modify(user, _self, [&]( auto& modified_user) {
+              modified_user.collateral.erase(it);
+            });
+          else
+            _user.modify(user, _self, [&]( auto& modified_user) {
+              modified_user.collateral[it - user.collateral.begin()] -= assetout;
+            });
+          found = true;
+          break;
+        }
+      for ( auto it = gstats.collateral.begin(); it != gstats.collateral.end(); ++it ) 
+        if ( it->symbol == assetout.symbol ) {
+          gstats.collateral[it - gstats.collateral.begin()] -= assetout;
+          break;
+        }  
+    }
+    eosio_assert(found, "asset not found in user");
+    memo += std::string("assets to be transfered out for: ") + usern.to_string();
+    action( permission_level{_self, name("active")},
+            issueracct[assetout.symbol], name("transfer"),
+            std::make_tuple(_self, usern, assetout, memo
+          )).send(); 
+  } 
+  _globals.set(gstats, _self);
   update(usern);
 }
 
@@ -465,24 +432,27 @@ void eosusdcom::assetout(name usern, asset assetout, string memo) {
 void eosusdcom::pricingmodel(name usern) {
 
   const auto& user = _user.get( usern.value, "User not found" );  
-  globals globalstab( _self, _self.value );
-  eosio_assert(globalstab.exists(), "globals not found");
-  globalstats gstats = globalstab.get();
+  
+  eosio_assert(_globals.exists(), "globals not found");
+  globalstats gstats = _globals.get();
   
   double portVariance = 0.0;
   for ( auto i = user.collateral.begin(); i != user.collateral.end(); ++i ) {
     auto sym_code_raw = i->symbol.code().raw();
     const auto& iV = _stats.get( sym_code_raw, "symbol does not exist" );
 
-    double iW = (((i->amount)/std::pow(10.0, i->symbol.precision())) * (iV.fxrate.at(i->symbol)/std::pow(10.0, i->symbol.precision()))) / user.valueofcol;
+    double iW = gstats.fxrate.at(i->symbol) / std::pow(10.0, i->symbol.precision());
+    iW *= i->amount / std::pow(10.0, i->symbol.precision()); 
+    iW /= user.valueofcol;
 
     for (auto j = i + 1; j != user.collateral.end(); ++j ) {
       double c = iV.correlation_matrix.at(j->symbol);
-      
       sym_code_raw = j->symbol.code().raw();
       const auto& jV = _stats.get( sym_code_raw, "symbol does not exist" );
 
-      double jW = (((j->amount)/std::pow(10.0, j->symbol.precision())) * (jV.fxrate.at(j->symbol)/std::pow(10.0, j->symbol.precision()))) / user.valueofcol; 
+      double jW = gstats.fxrate.at(j->symbol) / std::pow(10.0, j->symbol.precision()); 
+      jW *= j->amount / std::pow(10.0, j->symbol.precision());
+      jW /= user.valueofcol; 
 
       portVariance += 2.0 * iW * jW * c * iV.volatility * jV.volatility;
     }
@@ -494,7 +464,7 @@ void eosusdcom::pricingmodel(name usern) {
   // premium payments in exchange for contingient payoff in the event that a price threshhold is breached
 
   double unscaled =  std::min(3.0*sqrt(portVariance), 1.0);
-  double impliedvol = sqrt(portVariance) * this->scale; 
+  double impliedvol = sqrt(portVariance) * gstats.scale; 
   double iportVaR = std::min(3.0*impliedvol, 1.0); // value at risk
 
   double payoff = std::max(1.0*(user.debt.amount/std::pow(10.0,4)) - user.valueofcol*(1-iportVaR),0.0);
@@ -503,17 +473,20 @@ void eosusdcom::pricingmodel(name usern) {
   
   double d = ((std::log(user.valueofcol / (user.debt.amount/std::pow(10.0,4)))) + (-std::pow(impliedvol,2)/2) * T)/ (impliedvol * std::sqrt(T));
 
-  double tesprice = std::max((payoff * std::erfc(-d/std::sqrt(2))/2)/(user.debt.amount/std::pow(10.0,4)),0.005*this->scale);
-  double tesvalue = std::max((payoff * std::erfc(-d/std::sqrt(2))/2),0.005*this->scale);
-  
-  tesprice /= 1.6*(user.creditscore/800.0); // credit score of 500 means no discount or penalty.
+  double tesprice = std::max( 0.005*gstats.scale,
+    (payoff * std::erfc(-d / std::sqrt(2)) / 2) / (user.debt.amount / std::pow(10.0, 4))
+  );
+  double tesvalue = std::max( 0.005*gstats.scale,
+    payoff * std::erfc(-d / std::sqrt(2)) / 2
+  );
+  tesprice /= 1.6 * (user.creditscore / 800.0); // credit score of 500 means no discount or penalty.
 
   // iportVaR is allowed to go negative, and will be negative if a user draws a lot of 
   // debt and has small overcollateralization
-  iportVaR = ((1.0 - unscaled) * user.valueofcol - user.debt.amount/std::pow(10.0,4)); 
+  iportVaR = ((1.0 - unscaled) * user.valueofcol - user.debt.amount / std::pow(10.0, 4)); 
 
   gstats.iportVaRcol += iportVaR - user.iportVaR; // update sum of all users iportVaRs
-  globalstab.set(gstats, _self);
+  _globals.set(gstats, _self);
 
   _user.modify(user, _self, [&]( auto& modified_user) { // Update value of collateral
     /* dollar value of the users collateral 
@@ -527,19 +500,20 @@ void eosusdcom::pricingmodel(name usern) {
 
 void eosusdcom::calcStats() 
 {
-  globals globalstab( _self, _self.value );
-  eosio_assert(globalstab.exists(), "No support yet");
-  globalstats gstats = globalstab.get();
+  eosio_assert( _globals.exists(), "No support yet" );
+  globalstats gstats = _globals.get();
 
   double portVariance = 0.0;
-  double totdebt = gstats.totaldebt/std::pow(10.0,4);
+  double totdebt = gstats.totaldebt / std::pow(10.0, 4);
   eosio::print( "totdebt : ",  totdebt, "\n");
 
   for ( auto i = gstats.support.begin(); i != gstats.support.end(); ++i ) {
     auto sym_code_raw = i->symbol.code().raw();
     const auto& iV = _stats.get( sym_code_raw, "symbol does not exist" );
 
-    double iW = (((i->amount)/std::pow(10.0, i->symbol.precision())) * (iV.fxrate.at(i->symbol)/std::pow(10.0, i->symbol.precision()))) /  gstats.valueofins;
+    double iW = gstats.fxrate.at(i->symbol) / std::pow(10.0, i->symbol.precision());
+    iW *= i->amount / std::pow(10.0, i->symbol.precision()); 
+    iW /=  gstats.valueofins;
 
     for (auto j = i + 1; j != gstats.support.end(); ++j ) {
       double c = iV.correlation_matrix.at(j->symbol);
@@ -547,13 +521,14 @@ void eosusdcom::calcStats()
       sym_code_raw = j->symbol.code().raw();
       const auto& jV = _stats.get( sym_code_raw, "symbol does not exist" );
 
-      double jW = (((j->amount)/std::pow(10.0, j->symbol.precision())) * (jV.fxrate.at(j->symbol)/std::pow(10.0, j->symbol.precision()))) /  gstats.valueofins; 
+      double jW = gstats.fxrate.at(j->symbol) / std::pow(10.0, j->symbol.precision()); 
+      jW *= j->amount / std::pow(10.0, j->symbol.precision());
+      jW /=  gstats.valueofins; 
 
       portVariance += 2.0 * iW * jW * c * iV.volatility * jV.volatility;
     }
     portVariance += std::pow(iW, 2) * std::pow(iV.volatility, 2);
   }
-  
   eosio::print( "portVarianceins : ", portVariance, "\n");
   
   double impliedvol = std::sqrt(portVariance);
@@ -575,7 +550,7 @@ void eosusdcom::calcStats()
   eosio::print( "scr : ", scr, "\n");
   
   gstats.solvency = own_n / scr;
-  globalstab.set(gstats, _self);
+  _globals.set(gstats, _self);
 }
 
 /* premium payments in exchange for contingient payoff in 
@@ -583,22 +558,21 @@ void eosusdcom::calcStats()
 */
 void eosusdcom::payfee(name usern) {
   auto &user = _user.get( usern.value, "User not found" );
-  
-  globals globalstab( _self, _self.value );
-  eosio_assert(globalstab.exists(), "No support yet");
-  globalstats gstats = globalstab.get();
+  eosio_assert(_globals.exists(), "No support yet");
+
+  globalstats gstats = _globals.get();
 
   bool late = true;
   uint64_t dsec = now() - user.lastupdate;
   uint64_t T = 360*24*60*(60/dsec);
   double tespay = (user.debt.amount / std::pow(10.0, 4)) * (std::pow((1 + user.tesprice), (1.0 / T)) - 1);
   uint64_t amt = 0;
-
+  symbol vig = symbol("VIG", 4);
   for ( auto it = user.collateral.begin(); it != user.collateral.end(); ++it )
-    if ( it->symbol == symbol("VIG",4) ) {
-      const auto& st = _stats.get( symbol("VIG",4).code().raw(), "symbol doesn't exist");
+    if ( it->symbol ==  vig) {
+      const auto& st = _stats.get( vig.code().raw(), "symbol doesn't exist");
       amt = ( tespay * std::pow(10.0, 4) ) / 
-            ( st.fxrate.at(symbol("VIG",4)) / std::pow(10.0, symbol("VIG",4).precision()) );
+            ( gstats.fxrate.at(vig) / std::pow(10.0, vig.precision()) );
       eosio::print( "payfee TESPRICE: ", amt, "\n");
       if (amt > it->amount)
         _user.modify(user, _self, [&]( auto& modified_user) { // withdraw fee
@@ -616,64 +590,57 @@ void eosusdcom::payfee(name usern) {
   if (!late) {
     uint64_t res = amt * 0.25;
     gstats.inreserve += res;
-    globalstab.set(gstats, _self);
-
-    //TODO inline transfer
+    _globals.set(gstats, _self);
     
     amt *= 0.75; 
     
     for ( auto itr = _user.begin(); itr != _user.end(); ++itr )
       if ( itr->valueofins > 0 ) {
         double weight = itr->valueofins / gstats.valueofins;
-        asset vig = asset(amt * weight, symbol("VIG", 4));
+        asset viga = asset(amt * weight, vig);
         bool found = false;
         for ( auto it = itr->support.begin(); it != itr->support.end(); ++it )
-          if ( it->symbol == symbol("VIG", 4) ) {
+          if ( it->symbol == vig ) {
             _user.modify( itr, _self, [&]( auto& modified_user ) { // weighted fee deposit
-              modified_user.support[it - itr->support.begin()] += vig;
+              modified_user.support[it - itr->support.begin()] += viga;
             });
             found = true;
             break;
           } 
         if (!found)
           _user.modify(itr, _self, [&]( auto& modified_user) {
-            modified_user.support.push_back(vig);
+            modified_user.support.push_back(viga);
           });
       }
   }
   
 }
 
-void eosusdcom::update(name usern) {
+void eosusdcom::update(name usern) 
+{
+  eosio_assert(_globals.exists(), "globals not found");
+  auto user = _user.get(usern.value, "User not found");
+  globalstats gstats = _globals.get();
 
-  auto &user = _user.get( usern.value, "User not found" );
-  globals globalstab( _self, _self.value );
-  eosio_assert(globalstab.exists(), "globals not found");
-  globalstats gstats = globalstab.get();
-  
   double valueofins = 0.0;
   double valueofcol = 0.0;
   
-  for ( auto it = user.support.begin(); it != user.support.end(); ++it ) {
-    const auto& st = _stats.get( it->symbol.code().raw(), "symbol doesn't exist");
+  for ( auto it = user.support.begin(); it != user.support.end(); ++it )
     valueofins += (it->amount) / std::pow(10.0, it->symbol.precision()) * 
-                  ( st.fxrate.at(it->symbol) / std::pow(10.0, it->symbol.precision()) );
-  }
-  for ( auto it = user.collateral.begin(); it != user.collateral.end(); ++it ) {
-    const auto& st = _stats.get( it->symbol.code().raw(), "symbol doesn't exist");
+                  ( gstats.fxrate.at(it->symbol) / std::pow(10.0, it->symbol.precision()) );
+
+  for ( auto it = user.collateral.begin(); it != user.collateral.end(); ++it )
     valueofcol += (it->amount) / std::pow(10.0, it->symbol.precision()) * 
-                  ( st.fxrate.at(it->symbol) / std::pow(10.0, it->symbol.precision()) );
-  }
+                  ( gstats.fxrate.at(it->symbol) / std::pow(10.0, it->symbol.precision()) );
   
   gstats.valueofins += valueofins - user.valueofins;
   gstats.valueofcol += valueofcol - user.valueofcol;
+  _globals.set(gstats, _self);
 
-  _user.modify(user, _self, [&]( auto& modified_user) { // Update value of collateral
+  _user.modify( user, _self, [&]( auto& modified_user ) { // Update value of collateral
     modified_user.valueofins = valueofins;
     modified_user.valueofcol = valueofcol;
   }); 
-  globalstab.set(gstats, _self);
-
   if ( user.valueofcol > 0.0 && user.debt.amount > 0 ) { // Update tesprice    
     pricingmodel(usern); 
     payfee(usern);
@@ -684,7 +651,7 @@ void eosusdcom::update(name usern) {
       });
       bailout(usern);
     } 
-    else if ( 1.01 * ( user.debt.amount / std::pow(10.0, 4) ) > user.valueofcol ) {
+    else if (( user.debt.amount / std::pow(10.0, 4) ) > user.valueofcol ) {
       _user.modify(user, _self, [&]( auto& modified_user) {
         modified_user.recaps += 1;
       });
@@ -694,7 +661,7 @@ void eosusdcom::update(name usern) {
   _user.modify(user, _self, [&]( auto& modified_user) {
     modified_user.lastupdate = now();
   });
-  calcStats();
+ 
 }
 
 
@@ -707,23 +674,21 @@ void eosusdcom::update(name usern) {
 */
 void eosusdcom::bailout(name usern) 
 {
-  auto user = _user.find(usern.value);
-  eosio_assert(user != _user.end(), "User not found");
-  
-  globals globalstab( _self, _self.value );
-  globalstats gstats = globalstab.get();
+  eosio_assert(_globals.exists(), "globals not found");
+  auto user = _user.get(usern.value, "User not found");
+  globalstats gstats = _globals.get();
 
   for ( auto itr = _user.begin(); itr != _user.end(); ++itr ) {
     if (itr->valueofins > 0) {
       double weight = itr->valueofins / gstats.valueofins;
-      asset debt = user->debt;
+      asset debt = user.debt;
       debt.amount *= weight;
 
-      for ( auto c = user->collateral.begin(); c != user->collateral.end(); ++c ) {
+      for ( auto c = user.collateral.begin(); c != user.collateral.end(); ++c ) {
         asset amt = *c;
         amt.amount *= weight;
         _user.modify(user, _self, [&]( auto& modified_user) { // weighted fee withdrawl
-            modified_user.collateral[c - user->collateral.begin()] -= amt;
+            modified_user.collateral[c - user.collateral.begin()] -= amt;
         });
         for ( auto it = itr->collateral.begin(); it != itr->collateral.end(); ++it )
           if (it->symbol == c->symbol) {
