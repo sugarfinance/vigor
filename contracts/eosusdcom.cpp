@@ -2,8 +2,10 @@
 
 void eosusdcom::doupdate(bool up)
 {
-   //require_auth(_self);
-  globalstats gstats = _globals.get();
+  //require_auth(_self);
+  
+  globals globalstab( _self, _self.value );
+  globalstats gstats = globalstab.get();
   if (!up) {  
     gstats.fxrate[symbol("SYS",4)] = 54000;
     gstats.fxrate[symbol("VIG",4)] = 200;
@@ -22,7 +24,8 @@ void eosusdcom::doupdate(bool up)
     gstats.fxrate[symbol("OWN",4)] = 198;
     gstats.fxrate[symbol("EOS",4)] = 54000; 
   }
-  _globals.set(gstats, _self);
+  globalstab.set(gstats, _self);
+
   // usdtable eosusdtable(name("oracle111111"),name("oracle111111").value);
   // auto iterator = eosusdtable.begin();
   
@@ -34,6 +37,7 @@ void eosusdcom::doupdate(bool up)
     //eosio::print( "update complete for: ", eosio::name{it->usern}, "\n");
   }
   calcStats();
+
   //  transaction txn{};
   //  txn.actions.emplace_back(  permission_level { _self, "active"_n },
   //                             _self, "doupdate"_n, make_tuple()
@@ -156,15 +160,15 @@ void eosusdcom::transfer(name    from,
       
       eosio_assert(user.debt.amount >= quantity.amount, "Payment too high");
       
-      eosio_assert(_globals.exists(), "");
-      globalstats gstats = _globals.get();
+      globals globalstab( _self, _self.value );
+      globalstats gstats = globalstab.get();
 
       _user.modify(user, _self, [&]( auto& modified_user) { // Transfer stablecoin into user
         modified_user.debt -= quantity;
       });
       
       gstats.totaldebt -= quantity.amount;
-      _globals.set(gstats, _self);
+      globalstab.set(gstats, _self);
 
       //clear the debt from circulating supply
       action(permission_level{_self, name("active")}, _self, 
@@ -257,9 +261,10 @@ void eosusdcom::assetin( name   from,
   auto &user = *itr;
   bool found = false;
 
+  globals globalstab( _self, _self.value );
   globalstats gstats;
-  if (_globals.exists())
-    gstats = _globals.get();
+  if (globalstab.exists())
+    gstats = globalstab.get();
 
   symbol sym = assetin.symbol;
   auto st = _stats.find( sym.code().raw());
@@ -308,7 +313,7 @@ void eosusdcom::assetin( name   from,
     else
       gstats.collateral[it - gstats.collateral.begin()] += assetin;
   } 
-  _globals.set(gstats, _self);
+  globalstab.set(gstats, _self);
   update(from);
 }
 
@@ -324,10 +329,11 @@ void eosusdcom::assetout(name usern, asset assetout, string memo)
                 memo.c_str() == string("borrow"), 
                 "memo must be composed of either word: support | collateral | borrow"
               );
-  eosio_assert(_globals.exists(), "globals don't exist");
-  globalstats gstats = _globals.get();
-  bool found = false;
+  globals globalstab( _self, _self.value );
+  eosio_assert(globalstab.exists(), "globals don't exist");
+  globalstats gstats = globalstab.get();
 
+  bool found = false;
   if ( memo.c_str() == string("borrow") ) {
     eosio_assert( assetout.symbol == symbol("UZD", 4), 
                   "Borrow asset type must be UZD" 
@@ -412,7 +418,7 @@ void eosusdcom::assetout(name usern, asset assetout, string memo)
             std::make_tuple(_self, usern, assetout, memo
           )).send(); 
   } 
-  _globals.set(gstats, _self);
+  globalstab.set(gstats, _self);
   update(usern);
 }
 
@@ -431,9 +437,9 @@ void eosusdcom::assetout(name usern, asset assetout, string memo)
 void eosusdcom::pricingmodel(name usern) {
 
   const auto& user = _user.get( usern.value, "User not found" );  
-  
-  eosio_assert(_globals.exists(), "globals not found");
-  globalstats gstats = _globals.get();
+  globals globalstab( _self, _self.value );
+  eosio_assert(globalstab.exists(), "globals not found");
+  globalstats gstats = globalstab.get();
   
   double portVariance = 0.0;
   for ( auto i = user.collateral.begin(); i != user.collateral.end(); ++i ) {
@@ -462,9 +468,9 @@ void eosusdcom::pricingmodel(name usern) {
 
   // premium payments in exchange for contingient payoff in the event that a price threshhold is breached
 
-  double unscaled =  std::min(3.0*sqrt(portVariance), 1.0);
+  double unscaled =  std::min(3.0 * sqrt(portVariance), 1.0);
   double impliedvol = sqrt(portVariance) * gstats.scale; 
-  double iportVaR = std::min(3.0*impliedvol, 1.0); // value at risk
+  double iportVaR = std::min(3.0 * impliedvol, 1.0); // value at risk
 
   double payoff = std::max(1.0*(user.debt.amount/std::pow(10.0,4)) - user.valueofcol*(1-iportVaR),0.0);
 
@@ -472,20 +478,15 @@ void eosusdcom::pricingmodel(name usern) {
   
   double d = ((std::log(user.valueofcol / (user.debt.amount/std::pow(10.0,4)))) + (-std::pow(impliedvol,2)/2) * T)/ (impliedvol * std::sqrt(T));
 
-  double tesprice = std::max( 0.005*gstats.scale,
-    (payoff * std::erfc(-d / std::sqrt(2)) / 2) / (user.debt.amount / std::pow(10.0, 4))
-  );
-  double tesvalue = std::max( 0.005*gstats.scale,
-    payoff * std::erfc(-d / std::sqrt(2)) / 2
-  );
+  double tesprice = std::max((payoff * std::erfc(-d/std::sqrt(2))/2)/(user.debt.amount/std::pow(10.0,4)),0.005*gstats.scale);
+  double tesvalue = std::max((payoff * std::erfc(-d/std::sqrt(2))/2),0.005*gstats.scale);
   tesprice /= 1.6 * (user.creditscore / 800.0); // credit score of 500 means no discount or penalty.
 
   // iportVaR is allowed to go negative, and will be negative if a user draws a lot of 
   // debt and has small overcollateralization
-  iportVaR = ((1.0 - unscaled) * user.valueofcol - user.debt.amount / std::pow(10.0, 4)); 
+  iportVaR = (1.0 - unscaled) * user.valueofcol - user.debt.amount / std::pow(10.0, 4); 
 
   gstats.iportVaRcol += iportVaR - user.iportVaR; // update sum of all users iportVaRs
-  _globals.set(gstats, _self);
 
   _user.modify(user, _self, [&]( auto& modified_user) { // Update value of collateral
     /* dollar value of the users collateral 
@@ -495,12 +496,14 @@ void eosusdcom::pricingmodel(name usern) {
     modified_user.tesvalue = tesvalue; 
     modified_user.tesprice = tesprice;
   });
+  globalstab.set(gstats, _self);
 }
 
 void eosusdcom::calcStats() 
 {
-  eosio_assert( _globals.exists(), "No support yet" );
-  globalstats gstats = _globals.get();
+  globals globalstab( _self, _self.value );
+  eosio_assert(globalstab.exists(), "globals not found");
+  globalstats gstats = globalstab.get();
 
   double portVariance = 0.0;
   double totdebt = gstats.totaldebt / std::pow(10.0, 4);
@@ -549,7 +552,7 @@ void eosusdcom::calcStats()
   eosio::print( "scr : ", scr, "\n");
   
   gstats.solvency = own_n / scr;
-  _globals.set(gstats, _self);
+  globalstab.set(gstats, _self);
 }
 
 /* premium payments in exchange for contingient payoff in 
@@ -557,16 +560,19 @@ void eosusdcom::calcStats()
 */
 void eosusdcom::payfee(name usern) {
   auto &user = _user.get( usern.value, "User not found" );
-  eosio_assert(_globals.exists(), "No support yet");
+  globals globalstab( _self, _self.value );
+  eosio_assert(globalstab.exists(), "globals not found");
+  globalstats gstats = globalstab.get();
 
-  globalstats gstats = _globals.get();
-
-  bool late = true;
-  uint64_t dsec = now() - user.lastupdate;
-  uint64_t T = 360*24*60*(60/dsec);
-  double tespay = (user.debt.amount / std::pow(10.0, 4)) * (std::pow((1 + user.tesprice), (1.0 / T)) - 1);
   uint64_t amt = 0;
+  bool late = true;
   symbol vig = symbol("VIG", 4);
+
+  uint64_t dsec = now() - user.lastupdate;
+  uint64_t T = 360 * 24 * 60 * (60 / dsec);
+  
+  double tespay = (user.debt.amount / std::pow(10.0, 4)) * (std::pow((1 + user.tesprice), (1.0 / T)) - 1);
+  
   for ( auto it = user.collateral.begin(); it != user.collateral.end(); ++it )
     if ( it->symbol ==  vig) {
       const auto& st = _stats.get( vig.code().raw(), "symbol doesn't exist");
@@ -589,7 +595,7 @@ void eosusdcom::payfee(name usern) {
   if (!late) {
     uint64_t res = amt * 0.25;
     gstats.inreserve += res;
-    _globals.set(gstats, _self);
+    globalstab.set(gstats, _self);
     
     amt *= 0.75; 
     
@@ -617,9 +623,10 @@ void eosusdcom::payfee(name usern) {
 
 void eosusdcom::update(name usern) 
 {
-  eosio_assert(_globals.exists(), "globals not found");
-  auto user = _user.get(usern.value, "User not found");
-  globalstats gstats = _globals.get();
+  auto &user = _user.get(usern.value, "User not found");
+  globals globalstab( _self, _self.value );
+  eosio_assert(globalstab.exists(), "globals not found");
+  globalstats gstats = globalstab.get();
 
   double valueofins = 0.0;
   double valueofcol = 0.0;
@@ -634,12 +641,13 @@ void eosusdcom::update(name usern)
   
   gstats.valueofins += valueofins - user.valueofins;
   gstats.valueofcol += valueofcol - user.valueofcol;
-  _globals.set(gstats, _self);
 
   _user.modify( user, _self, [&]( auto& modified_user ) { // Update value of collateral
     modified_user.valueofins = valueofins;
     modified_user.valueofcol = valueofcol;
   }); 
+  globalstab.set(gstats, _self);
+
   if ( user.valueofcol > 0.0 && user.debt.amount > 0 ) { // Update tesprice    
     pricingmodel(usern); 
     payfee(usern);
@@ -660,7 +668,6 @@ void eosusdcom::update(name usern)
   _user.modify(user, _self, [&]( auto& modified_user) {
     modified_user.lastupdate = now();
   });
- 
 }
 
 
@@ -673,9 +680,10 @@ void eosusdcom::update(name usern)
 */
 void eosusdcom::bailout(name usern) 
 {
-  eosio_assert(_globals.exists(), "globals not found");
-  auto user = _user.get(usern.value, "User not found");
-  globalstats gstats = _globals.get();
+  auto &user = _user.get(usern.value, "User not found");
+  globals globalstab( _self, _self.value );
+  eosio_assert(globalstab.exists(), "globals not found");
+  globalstats gstats = globalstab.get();
 
   for ( auto itr = _user.begin(); itr != _user.end(); ++itr ) {
     if (itr->valueofins > 0) {

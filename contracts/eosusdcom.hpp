@@ -35,9 +35,9 @@ CONTRACT eosusdcom : public eosio::contract {
       /* measured by how much VIG was paid in the past
        * relative to number of late payments and collections
       */ uint64_t creditscore = 500; //out of 800
-         uint32_t lastupdate = 0;
-         uint32_t latepays = 0;
-         uint32_t recaps = 0;
+         uint64_t lastupdate = 0;
+         uint64_t latepays = 0;
+         uint64_t recaps = 0;
          
          /* Own Funds = amount of crypto collateral 
          * pledged by supporters minus our best estimate
@@ -45,7 +45,7 @@ CONTRACT eosusdcom : public eosio::contract {
          */
          auto primary_key() const { return usern.value; }
 
-         EOSLIB_SERIALIZE(user_s, (usern)(debt)(collateral)(support)(valueofcol)(valueofins)(tesvalue)(tesprice)(iportVaR)(feespaid)(creditscore)(lastupdate)(latepays)(recaps))
+         //EOSLIB_SERIALIZE(user_s, (usern)(debt)(collateral)(support)(valueofcol)(valueofins)(tesvalue)(tesprice)(iportVaR)(feespaid)(creditscore)(lastupdate)(latepays)(recaps))
       }; typedef eosio::multi_index<name("user"), user_s> user_t;
                                                           user_t _user;
       TABLE eosusd {
@@ -88,10 +88,11 @@ CONTRACT eosusdcom : public eosio::contract {
          vector<asset> support;
          vector<asset> collateral;
    
-         EOSLIB_SERIALIZE(globalstats, (solvency)(valueofcol)(valueofins)(scale)(iportVaRcol)(iportVaRins)(fxrate)(inreserve)(totaldebt)(support)(collateral))
-      }; typedef eosio::multi_index<"globals"_n, globalstats> globalsm; 
-         typedef eosio::singleton<"globals"_n, globalstats> globals;
-                                                            globals _globals;
+         //EOSLIB_SERIALIZE(globalstats, (solvency)(valueofcol)(valueofins)(scale)(iportVaRcol)(iportVaRins)(fxrate)(inreserve)(totaldebt)(support)(collateral))
+      }; typedef eosio::singleton<"globals"_n, globalstats> globals;
+         typedef eosio::multi_index<"globals"_n, globalstats> globalsm;
+                                                              globals globalstab;
+                                                              globalsm globalstabm;
       void calcStats();
       void update(name usern); 
       void payfee(name usern);
@@ -134,7 +135,7 @@ CONTRACT eosusdcom : public eosio::contract {
 
          uint64_t primary_key()const { return supply.symbol.code().raw(); }
 
-         EOSLIB_SERIALIZE(currency_stats, (supply)(max_supply)(issuer)(correlation_matrix)(volatility))
+         //EOSLIB_SERIALIZE(currency_stats, (supply)(max_supply)(issuer)(correlation_matrix)(volatility))
       }; typedef eosio::multi_index< "stat"_n, currency_stats > stats;
                                                                 stats _stats;
 
@@ -144,9 +145,9 @@ CONTRACT eosusdcom : public eosio::contract {
    public:
       using contract::contract;
       eosusdcom(name receiver, name code, datastream<const char*> ds):contract(receiver, code, ds), 
-      _user(receiver, receiver.value), _eosusd(receiver, receiver.value),
-      _stats(receiver, receiver.value), _globals(receiver, receiver.value)  {}
-     
+      _user(receiver, receiver.value), _stats(receiver, receiver.value), _eosusd(receiver, receiver.value),
+      globalstab(receiver, receiver.value), globalstabm(receiver, receiver.value) {}
+
       //ACTION deleteuser(name user);
       ACTION assetin( name   from,
                      name   to,
