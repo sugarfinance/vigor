@@ -282,8 +282,8 @@ void eosusdcom::assetin( name   from,
 
   if (memo.c_str() == string("support")) {
     auto it = user.support.begin();
-    while ( !found && it++ != user.support.end() )
-      found = it->symbol == assetin.symbol; //User collateral type found
+    while ( !found && it != user.support.end() )
+      found = (++it)->symbol == assetin.symbol; //User collateral type found
     _user.modify(user, _self, [&]( auto& modified_user) {
       if (!found)
         modified_user.support.push_back(assetin);
@@ -291,8 +291,8 @@ void eosusdcom::assetin( name   from,
         modified_user.support[it - user.support.begin()] += assetin;
     }); found = false;
     it = gstats.support.begin();
-    while ( !found && it++ != gstats.support.end() )
-      found = it->symbol == assetin.symbol;
+    while ( !found && it != gstats.support.end() )
+      found = (++it)->symbol == assetin.symbol;
     if ( !found )
       gstats.support.push_back(assetin);
     else
@@ -300,8 +300,8 @@ void eosusdcom::assetin( name   from,
   }
   else {
     auto it = user.collateral.begin();
-    while ( !found && it++ != user.collateral.end() )
-      found = it->symbol == assetin.symbol; //User collateral type found
+    while ( !found && it != user.collateral.end() )
+      found = (++it)->symbol == assetin.symbol; //User collateral type found
     _user.modify(user, _self, [&]( auto& modified_user) {
       if (!found)
         modified_user.collateral.push_back(assetin);
@@ -309,8 +309,8 @@ void eosusdcom::assetin( name   from,
         modified_user.collateral[it - user.collateral.begin()] += assetin;
     }); found = false;
     it = gstats.collateral.begin();
-    while ( !found && it++ != gstats.collateral.end() )
-      found = it->symbol == assetin.symbol;
+    while ( !found && it != gstats.collateral.end() )
+      found = (++it)->symbol == assetin.symbol;
     if ( !found )
       gstats.collateral.push_back(assetin);
     else

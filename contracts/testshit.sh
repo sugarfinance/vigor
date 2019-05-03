@@ -217,7 +217,7 @@ cleos get table eosusdcom111 eosusdcom111 user
 
 # get all the user data
 cleos get table eosusdcom111 eosusdcom111 user
-# cleos get table eosusdcom111 eosusdcom111 globals
+cleos get table eosusdcom111 eosusdcom111 globals
 # cleos get table eosusdcom111 UZD stat
 # cleos get table eosio.token eosusdcom111 accounts
 # cleos get table eosio.token testborrow11 accounts
