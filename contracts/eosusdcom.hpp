@@ -25,19 +25,24 @@ CONTRACT eosusdcom : public eosio::contract {
          vector<asset> collateral;
          vector<asset> support;
 
-         double valueofcol;
-         double valueofins;
+         double valueofcol = 0.0; // dollar value of user collateral portfolio
+         double valueofins = 0.0; // dollar value of user support portfolio
 
-         double tesvalue;
-         double tesprice;
-         double iportVaR; //  (1 - portVaR_COL ) * COL
-         double feespaid;
+         double tesprice = 0.0; // annualized rate borrowers pay in periodic premiums to insure their collateral
+         double tesvalue = 0.0;  // dollar value for borrowers to insure their collateral
+         double volcol = 1.0; // volatility of the user collateral portfolio
+         double stresscol = 0.0; // model suggested percentage loss that the user collateral portfolio would experience in a stress event.
+         double istresscol = 0.0; // market determined implied percentage loss that the user collateral portfolio would experience in a stress event.
+         double svalueofcol = 0.0; // model suggested dollar value of the user collateral portfolio in a stress event.
+         double svalueofcole = 0.0; // model suggested dollar amount of insufficient collateral of a user loan in a stressed market.   min((1 - svalueofcol ) * valueofcol - debt,0) 
+
+         double feespaid = 0.0;
       /* measured by how much VIG was paid in the past
        * relative to number of late payments and collections
-      */ uint64_t creditscore; //out of 800
-         uint32_t lastupdate;
-         uint32_t latepays;
-         uint32_t recaps;
+      */ uint64_t creditscore = 500; //out of 800
+         uint32_t lastupdate = 0;
+         uint32_t latepays = 0;
+         uint32_t recaps = 0;
          
          /* Own Funds = amount of crypto collateral 
          * pledged by supporters minus our best estimate
@@ -45,7 +50,7 @@ CONTRACT eosusdcom : public eosio::contract {
          */
          auto primary_key() const { return usern.value; }
 
-         EOSLIB_SERIALIZE(user_s, (usern)(debt)(collateral)(support)(valueofcol)(valueofins)(tesvalue)(tesprice)(iportVaR)(feespaid)(creditscore)(lastupdate)(latepays)(recaps))
+         EOSLIB_SERIALIZE(user_s, (usern)(debt)(collateral)(support)(valueofcol)(valueofins)(tesvalue)(tesprice)(volcol)(stresscol)(istresscol)(svalueofcol)(svalueofcole)(feespaid)(creditscore)(lastupdate)(latepays)(recaps))
       }; typedef eosio::multi_index<name("user"), user_s> user_t;
                                                           user_t _user;
       TABLE eosusd {
@@ -65,13 +70,16 @@ CONTRACT eosusdcom : public eosio::contract {
                         indexed_by<name("timestamp"), const_mem_fun<eosusd, uint64_t, &eosusd::by_timestamp>>> usdtable;
                                                                                                                usdtable _eosusd;
       TABLE globalstats {
-         double solvency;
-         double valueofcol;
-         double valueofins;
+         double solvency = 1.0;
+         double valueofcol = 0.0; // dollar value of total collateral portfolio
+         double valueofins = 0.0; // dollar value of total support portfolio
 
          double scale = 1.0;
-         double iportVaRcol; // SUM_i [ (1 - portVaR_COLi ) * COLi ]
-         double iportVaRins; // [ (1 - portVaR_INS ) * INS ]
+         double tesvalue = 0.0; // dollar value for borrowers to insure their collateral
+         double svalueofcole = 0.0; // model suggested dollar value of the sum of all insufficient collateral in a stressed market SUM_i [ min((1 - svalueofcoli ) * valueofcoli - debti,0) ]
+         double svalueofins = 0.0; // model suggested dollar value of the total insurance asset portfolio in a stress event. [ (1 - stressins ) * INS ]
+         double stressins = 0.0; // model suggested percentage loss that the total insurance asset portfolio would experience in a stress event.
+ 
 
          map <symbol, uint64_t> fxrate = { 
             { symbol("SYS", 4), 54000 },
@@ -82,13 +90,13 @@ CONTRACT eosusdcom : public eosio::contract {
             { symbol("IQ", 4), 39 },
             { symbol("UTG", 4), 2 }
          };
-         uint64_t inreserve; // vig
-         uint64_t totaldebt; // uzd
+         uint64_t inreserve = 0; // vig
+         asset totaldebt = asset( 0, symbol("UZD", 4) ); // uzd
          
          vector<asset> support;
          vector<asset> collateral;
    
-         EOSLIB_SERIALIZE(globalstats, (solvency)(valueofcol)(valueofins)(scale)(iportVaRcol)(iportVaRins)(fxrate)(inreserve)(totaldebt)(support)(collateral))
+         EOSLIB_SERIALIZE(globalstats, (solvency)(valueofcol)(valueofins)(scale)(tesvalue)(svalueofcole)(svalueofins)(stressins)(fxrate)(inreserve)(totaldebt)(support)(collateral))
       }; typedef eosio::multi_index<"globals"_n, globalstats> globalsm; 
          typedef eosio::singleton<"globals"_n, globalstats> globals;
                                                             globals _globals;
@@ -99,13 +107,13 @@ CONTRACT eosusdcom : public eosio::contract {
       void pricingmodel(name usern);
 
       map <symbol, name> issueracct {
-         {symbol("SYS", 4), name("eosio.token")},
-         {symbol("VIG", 4), name("vig111111111")},
-         {symbol("IQ", 4),	 name("dummytokens1")},
-         {symbol("UTG", 4), name("dummytokens1")},
-         {symbol("PTI", 4), name("dummytokens1")},
-         {symbol("OWN", 4), name("dummytokens1")},
-         {symbol("EOS", 4), name("eosio.token")}
+         {symbol("SYS",4),	    name("eosio.token")},
+         {symbol("VIG",4),	    name("vig111111111")},
+         {symbol("IQ",4),	    name("dummytokens1")},
+         {symbol("UTG",4),	    name("dummytokens1")},
+         {symbol("PTI",4),	    name("dummytokens1")},
+         {symbol("OWN",4),	    name("dummytokens1")},
+         {symbol("EOS",4),	    name("eosio.token")}
       };
 
       TABLE account {
@@ -122,13 +130,13 @@ CONTRACT eosusdcom : public eosio::contract {
          * assets tracked by the contract
          */
          map <symbol, double> correlation_matrix {
-            {symbol("SYS", 4), 0.42},
-            {symbol("VIG", 4), 0.42},
-            {symbol("IQ", 4),  0.42},
-            {symbol("UTG", 4), 0.42},
-            {symbol("PTI", 4), 0.42},
-            {symbol("OWN", 4), 0.42},
-            {symbol("EOS", 4), 0.42}
+            {symbol("SYS",4), 0.42},
+            {symbol("VIG",4), 0.42},
+            {symbol("IQ",4), 0.42},
+            {symbol("UTG",4), 0.42},
+            {symbol("PTI",4), 0.42},
+            {symbol("OWN",4),	0.42},
+            {symbol("EOS",4),	0.42}
          };
          double volatility = 0.1; // stdev, scale factor for price discovery
 

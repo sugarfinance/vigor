@@ -166,9 +166,9 @@ void eosusdcom::transfer(name    from,
         modified_user.debt -= quantity;
       });
       
-      gstats.totaldebt -= quantity.amount;
+      gstats.totaldebt -= quantity;
       
-      double totdebt = gstats.totaldebt / std::pow(10.0, 4);
+      double totdebt = gstats.totaldebt.amount / std::pow(10.0, 4);
       eosio::print( "totdebt : ",  totdebt, "\n");
 
       _globals.set(gstats, _self);
@@ -351,9 +351,9 @@ void eosusdcom::assetout(name usern, asset assetout, string memo)
     _user.modify(user, _self, [&]( auto& modified_user) {
       modified_user.debt = debt;
     });
-    gstats.totaldebt += assetout.amount;
+    gstats.totaldebt += assetout;
 
-    double totdebt = gstats.totaldebt / std::pow(10.0, 4);
+    double totdebt = gstats.totaldebt.amount / std::pow(10.0, 4);
     eosio::print( "totdebt : ",  totdebt, "\n");
 
     action( permission_level{_self, name("active")},
@@ -471,39 +471,43 @@ void eosusdcom::pricingmodel(name usern) {
   }
   eosio::print( "portVariance : ", portVariance, "\n");
 
-  // premium payments in exchange for contingient payoff in the event that a price threshhold is breached
-  double unscaled =  std::min(3.0 * sqrt(portVariance), 1.0);
-  double impliedvol = sqrt(portVariance) * gstats.scale; 
-  double iportVaR = std::min(3.0 * impliedvol, 1.0); // value at risk
-  double payoff = std::max(0.0,
-    1.0 * (user.debt.amount / std::pow(10.0, 4)) - user.valueofcol * (1 - iportVaR)
-  );
-  double T = 1.0;
-  double d = (
-    std::log(user.valueofcol / (user.debt.amount / std::pow(10.0, 4))) + 
-    (-std::pow(impliedvol, 2) / 2) * T
-  ) / (impliedvol * std::sqrt(T));
+  // Token Event Swap (TES): premium payments in exchange for contingient payoff in the event that a price threshhold is breached
 
-  double tesprice = std::max( 0.005 * gstats.scale,
+  double stresscol =  std::min(3.0*sqrt(portVariance), 1.0);
+  double ivol = sqrt(portVariance) * gstats.scale; // market determined implied volaility
+  double istresscol = std::min(3.0*ivol, 1.0);
+
+  double payoff = std::max(1.0*(user.debt.amount/std::pow(10.0,4)) - user.valueofcol*(1.0-istresscol),0.0);
+  double T = 1.0;
+  double d = ((std::log(user.valueofcol / (user.debt.amount/std::pow(10.0,4)))) + (-std::pow(ivol,2)/2) * T)/ (ivol * std::sqrt(T));
+
+  double tesprice = std::max( 0.005*gstats.scale,
     (payoff * std::erfc(-d / std::sqrt(2)) / 2) / (user.debt.amount / std::pow(10.0, 4))
   );
-  double tesvalue = std::max( 0.005 * gstats.scale,
-    payoff * std::erfc(-d / std::sqrt(2)) / 2
+
+  double tesvalue = std::max( 0.005*gstats.scale,
+    (payoff * std::erfc(-d / std::sqrt(2)) / 2)
   );
+
   tesprice /= 1.6 * (user.creditscore / 800.0); // credit score of 500 means no discount or penalty.
-  // iportVaR is allowed to go negative, and will be negative if a user draws a lot of 
-  // debt and has small overcollateralization
-  iportVaR = (1.0 - unscaled) * user.valueofcol - user.debt.amount / std::pow(10.0, 4); 
-  gstats.iportVaRcol += iportVaR - user.iportVaR; // update sum of all users iportVaRs
-  _user.modify(user, _self, [&]( auto& modified_user) { // Update user's asset values
-    /* dollar value of the users collateral 
-     * portfolio in excess of their debt 
-     * in a stress scenario.
-    */ modified_user.iportVaR = iportVaR; 
-    modified_user.tesvalue = tesvalue; 
-    modified_user.tesprice = tesprice;
-  });
+  tesvalue /= 1.6 * (user.creditscore / 800.0); 
+
+  double svalueofcol = ((1.0 - stresscol) * user.valueofcol);
+  double svalueofcole = std::max((user.debt.amount / std::pow(10.0, 4)-((1.0 - stresscol) * user.valueofcol)),0.0);
+
+  gstats.svalueofcole += svalueofcole - user.svalueofcole; // model suggested dollar value of the sum of all insufficient collateral in a stressed market
+  gstats.tesvalue += tesvalue - user.tesvalue; // total dollar value for all borrowers to insure their collateral
   _globals.set(gstats, _self);
+
+  _user.modify(user, _self, [&]( auto& modified_user) { 
+    modified_user.volcol = sqrt(portVariance); // volatility of the user collateral portfolio
+    modified_user.stresscol = stresscol; // model suggested percentage loss that the user collateral portfolio would experience in a stress event.
+    modified_user.istresscol = istresscol; // market determined implied percentage loss that the user collateral portfolio would experience in a stress event.
+    modified_user.svalueofcol = svalueofcol; // model suggested dollar value of the user collateral portfolio in a stress event.
+    modified_user.svalueofcole = svalueofcole; // model suggested dollar amount of insufficient collateral of a user loan in a stressed market.
+    modified_user.tesprice = tesprice; // annualized rate borrowers pay in periodic premiums to insure their collateral
+    modified_user.tesvalue = tesvalue; // dollar value for borrowers to insure their collateral
+  });
 }
 
 void eosusdcom::calcStats() 
@@ -512,7 +516,7 @@ void eosusdcom::calcStats()
   globalstats gstats = _globals.get();
 
   double portVariance = 0.0;
-  double totdebt = gstats.totaldebt / std::pow(10.0, 4);
+  double totdebt = gstats.totaldebt.amount / std::pow(10.0, 4);
   eosio::print( "totdebt : ",  totdebt, "\n");
 
   for ( auto i = gstats.support.begin(); i != gstats.support.end(); ++i ) {
@@ -540,16 +544,22 @@ void eosusdcom::calcStats()
   eosio::print( "portVarianceins : ", portVariance, "\n");
   
   double impliedvol = std::sqrt(portVariance);
-  double iportVaR = std::min(3.0 * impliedvol, 1.0); // value at risk 
-  
-  // the dollar value of insurance assets under a stress scenario
-  gstats.iportVaRins = (1.0 - iportVaR) * gstats.valueofins; 
+  double stressins = std::min(3.0 * impliedvol, 1.0); // model suggested percentage loss that the total insurance asset portfolio would experience in a stress event.
+  gstats.stressins = stressins;
+  gstats.svalueofins = (1.0 - stressins) * gstats.valueofins; // model suggested dollar value of the total insurance asset portfolio in a stress event.
 
-  double own_n = gstats.valueofins + gstats.valueofcol - totdebt;
-  /*
-   * the dollar value of all available assets in excess 
-   * of debt in a sstress scenario
-  */ double own_s = gstats.iportVaRcol + gstats.iportVaRins;
+  // market value of assets and liabilities from the perspective of insurers
+
+  // normal markets
+  double mva_n = gstats.valueofins; //market value of insurance assets in normal markets, collateral is not an asset of the insurers
+  double mvl_n = 0; // no upfront is paid for tes, and insurers can walk away at any time, debt is not a liability of the insurers
+  
+  //stressed markets
+  double mva_s = gstats.svalueofins;
+  double mvl_s = gstats.svalueofcole;
+
+  double own_n = mva_n - mvl_n;
+  double own_s = mva_s - mvl_s;
   
   double scr = own_n - own_s;
 
@@ -558,6 +568,7 @@ void eosusdcom::calcStats()
   eosio::print( "scr : ", scr, "\n");
   
   gstats.solvency = own_n / scr;
+  eosio::print( "solvency : ", gstats.solvency, "\n");
   _globals.set(gstats, _self);
 }
 
@@ -658,6 +669,7 @@ void eosusdcom::update(name usern)
   }); 
   if ( user.valueofcol > 0.0 && user.debt.amount > 0 ) { // Update tesprice    
     pricingmodel(usern); 
+    calcStats();
     payfee(usern);
     if (user.latepays > 4) {
       _user.modify(user, _self, [&]( auto& modified_user) {
