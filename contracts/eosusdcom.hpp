@@ -25,30 +25,27 @@ CONTRACT eosusdcom : public eosio::contract {
          vector<asset> collateral;
          vector<asset> support;
 
-         double valueofcol;
-         double valueofins;
+         double valueofcol = 0.0;
+         double valueofins = 0.0;
 
-         double tesvalue;
-         double tesprice;
-         double iportVaR; //  (1 - portVaR_COL ) * COL
-      
+         double tesvalue = 0.0;
+         double tesprice = 0.0;
+         double iportVaR = 0.0; //  (1 - portVaR_COL ) * COL
+         double feespaid = 0.0;
       /* measured by how much VIG was paid in the past
        * relative to number of late payments and collections
       */ uint64_t creditscore = 500; //out of 800
-
-         uint32_t lastupdate;
-      
-         uint8_t latepays;
-         uint32_t recaps;
-         double feespaid;
-
+         uint32_t lastupdate = 0;
+         uint32_t latepays = 0;
+         uint32_t recaps = 0;
+         
          /* Own Funds = amount of crypto collateral 
          * pledged by supporters minus our best estimate
          * normal market value of the TES contracts.
          */
          auto primary_key() const { return usern.value; }
 
-         EOSLIB_SERIALIZE(user_s, (usern)(debt)(collateral)(support)(valueofcol)(valueofins)(tesvalue)(tesprice)(iportVaR)(creditscore)(lastupdate)(latepays)(recaps)(feespaid))
+         EOSLIB_SERIALIZE(user_s, (usern)(debt)(collateral)(support)(valueofcol)(valueofins)(tesvalue)(tesprice)(iportVaR)(feespaid)(creditscore)(lastupdate)(latepays)(recaps))
       }; typedef eosio::multi_index<name("user"), user_s> user_t;
                                                           user_t _user;
       TABLE eosusd {
@@ -68,13 +65,13 @@ CONTRACT eosusdcom : public eosio::contract {
                         indexed_by<name("timestamp"), const_mem_fun<eosusd, uint64_t, &eosusd::by_timestamp>>> usdtable;
                                                                                                                usdtable _eosusd;
       TABLE globalstats {
-         double solvency;
-         double valueofcol;
-         double valueofins;
+         double solvency = 0.0;
+         double valueofcol = 0.0;
+         double valueofins = 0.0;
 
          double scale = 1.0;
-         double iportVaRcol; // SUM_i [ (1 - portVaR_COLi ) * COLi ]
-         double iportVaRins; // [ (1 - portVaR_INS ) * INS ]
+         double iportVaRcol = 0.0; // SUM_i [ (1 - portVaR_COLi ) * COLi ]
+         double iportVaRins = 0.0; // [ (1 - portVaR_INS ) * INS ]
 
          map <symbol, uint64_t> fxrate = { 
             { symbol("SYS", 4), 54000 },
@@ -85,8 +82,8 @@ CONTRACT eosusdcom : public eosio::contract {
             { symbol("IQ", 4), 39 },
             { symbol("UTG", 4), 2 }
          };
-         uint64_t inreserve; // vig
-         uint64_t totaldebt; // uzd
+         uint64_t inreserve = 0; // vig
+         uint64_t totaldebt = 0; // uzd
          
          vector<asset> support;
          vector<asset> collateral;
@@ -148,7 +145,7 @@ CONTRACT eosusdcom : public eosio::contract {
       using contract::contract;
       eosusdcom(name receiver, name code, datastream<const char*> ds):contract(receiver, code, ds), 
       _user(receiver, receiver.value), _eosusd(receiver, receiver.value),
-      _stats(receiver, receiver.value), _globals(receiver, receiver.value) {}
+      _stats(receiver, receiver.value), _globals(receiver, receiver.value)  {}
      
       //ACTION deleteuser(name user);
       ACTION assetin( name   from,

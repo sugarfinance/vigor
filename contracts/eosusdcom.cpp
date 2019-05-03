@@ -243,17 +243,23 @@ void eosusdcom::assetin( name   from,
                 "memo must be composed of either word: support or collateral"
               );
   auto itr = _user.find(from.value);
-  
   if ( itr == _user.end() ) {
     itr = _user.emplace(_self, [&](auto& new_user) {
-      new_user.debt = asset( 0, symbol("UZD", 4) );
       new_user.usern = from;
+      new_user.debt = asset( 0, symbol("UZD", 4) );
     });
     action( permission_level{ _self, name("active") },
       _self, name("open"), std::make_tuple(
         from, symbol("UZD", 4), _self
       )).send();
   }
+
+  auto &user = *itr;
+  bool found = false;
+
+  globalstats gstats;
+  if (_globals.exists())
+    gstats = _globals.get();
 
   symbol sym = assetin.symbol;
   auto st = _stats.find( sym.code().raw());
@@ -265,20 +271,13 @@ void eosusdcom::assetin( name   from,
       s.max_supply.symbol = sym;
       s.issuer = get_code();
     });
-  
-  auto &user = *itr;
-  bool found = false;
-
-  globalstats gstats;
-  if (_globals.exists())
-    gstats = _globals.get();
 
   if (memo.c_str() == string("support")) {
     auto it = user.support.begin();
     while ( !found && it++ != user.support.end() )
       found = it->symbol == assetin.symbol; //User collateral type found
     _user.modify(user, _self, [&]( auto& modified_user) {
-      if (found)
+      if (!found)
         modified_user.support.push_back(assetin);
       else
         modified_user.support[it - user.support.begin()] += assetin;
@@ -296,7 +295,7 @@ void eosusdcom::assetin( name   from,
     while ( !found && it++ != user.collateral.end() )
       found = it->symbol == assetin.symbol; //User collateral type found
     _user.modify(user, _self, [&]( auto& modified_user) {
-      if (found)
+      if (!found)
         modified_user.collateral.push_back(assetin);
       else
         modified_user.collateral[it - user.collateral.begin()] += assetin;
