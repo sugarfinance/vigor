@@ -100,7 +100,7 @@ CONTRACT eosusdcom : public eosio::contract {
       }; typedef eosio::multi_index<"globals"_n, globalstats> globalsm; 
          typedef eosio::singleton<"globals"_n, globalstats> globals;
                                                             globals _globals;
-      void calcStats();
+      void riskmodel();
       void update(name usern); 
       void payfee(name usern);
       void bailout(name usern);    
