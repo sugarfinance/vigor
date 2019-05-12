@@ -207,7 +207,7 @@ cleos push action dummytokens1 transfer '{"from":"testinsure12","to":"eosusdcom1
 cleos push action dummytokens1 transfer '{"from":"testinsure12","to":"eosusdcom111","quantity":"1000.0000 OWN","memo":"support"}' -p testinsure12@active
 
 cleos push action eosusdcom111 assetout '{"usern":"testborrow11","assetout":"200.0000 UZD","memo":"borrow"}' -p testborrow11@active
-cleos push action eosusdcom111 assetout '{"usern":"testborrow12","assetout":"200.0000 UZD","memo":"borrow"}' -p testborrow12@active
+cleos push action eosusdcom111 assetout '{"usern":"testborrow12","assetout":"220.0000 UZD","memo":"borrow"}' -p testborrow12@active
 
 cleos push action eosusdcom111 assetout '{"usern":"testborrow11","assetout":"1.0000 EOS","memo":"collateral"}' -p testborrow11@active
 cleos push action eosusdcom111 assetout '{"usern":"testborrow12","assetout":"1.0000 EOS","memo":"collateral"}' -p testborrow12@active
@@ -234,3 +234,8 @@ cleos get table eosusdcom111 eosusdcom111 user
 # cleos get currency balance eosusdcom111 testborrow11
 # cleos get currency balance eosio.token eosusdcom111
 
+cleos -u https://api.kylin.alohaeos.com get table delphioracle delphioracle eosusd
+cleos -u https://api.kylin.alohaeos.com get table eostitantest eostitantest eosusd
+cleos -u https://api.kylin.alohaeos.com get table eostitantest eosusd datapoints
+
+notifier1111
