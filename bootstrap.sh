@@ -46,6 +46,7 @@ cleos push action vig111111111 issue '[ "testinsure12", "100000.0000 VIG", "m" ]
 cleos create account eosio dummytokens1 EOS6K42yrrMETmx2rXFJeKtaGrQAwgCDBYUVY7PGCVfhWFykqvhVR EOS6K42yrrMETmx2rXFJeKtaGrQAwgCDBYUVY7PGCVfhWFykqvhVR
 cleos set contract dummytokens1 /eosio.cdt/eosio.contracts/contracts/eosio.token/src eosio.token.wasm eosio.token.abi -p dummytokens1@active
 
+
 cleos push action dummytokens1 create '[ "dummytokens1", "1000000000.0000 IQ"]' -p dummytokens1@active
 cleos push action dummytokens1 create '[ "dummytokens1", "1000000000.0000 UTG"]' -p dummytokens1@active
 cleos push action dummytokens1 create '[ "dummytokens1", "1000000000.0000 PTI"]' -p dummytokens1@active
@@ -72,41 +73,78 @@ cleos push action dummytokens1 issue '[ "testinsure12", "100000.0000 PTI", "m" ]
 cleos push action dummytokens1 issue '[ "testinsure12", "100000.0000 OWN", "m" ]' -p dummytokens1@active
 
 # create the oracle contract (for EOS only for now)
-cleos create account eosio oracle111111 EOS6K42yrrMETmx2rXFJeKtaGrQAwgCDBYUVY7PGCVfhWFykqvhVR EOS6K42yrrMETmx2rXFJeKtaGrQAwgCDBYUVY7PGCVfhWFykqvhVR
-cleos create account eosio eostitanprod EOS6K42yrrMETmx2rXFJeKtaGrQAwgCDBYUVY7PGCVfhWFykqvhVR EOS6K42yrrMETmx2rXFJeKtaGrQAwgCDBYUVY7PGCVfhWFykqvhVR
-cleos create account eosio feeder111111 EOS6K42yrrMETmx2rXFJeKtaGrQAwgCDBYUVY7PGCVfhWFykqvhVR EOS6K42yrrMETmx2rXFJeKtaGrQAwgCDBYUVY7PGCVfhWFykqvhVR
-cleos create account eosio feeder211111 EOS6K42yrrMETmx2rXFJeKtaGrQAwgCDBYUVY7PGCVfhWFykqvhVR EOS6K42yrrMETmx2rXFJeKtaGrQAwgCDBYUVY7PGCVfhWFykqvhVR
+#cleos create account eosio oracle111111 EOS6K42yrrMETmx2rXFJeKtaGrQAwgCDBYUVY7PGCVfhWFykqvhVR EOS6K42yrrMETmx2rXFJeKtaGrQAwgCDBYUVY7PGCVfhWFykqvhVR
+#cleos create account eosio eostitanprod EOS6K42yrrMETmx2rXFJeKtaGrQAwgCDBYUVY7PGCVfhWFykqvhVR EOS6K42yrrMETmx2rXFJeKtaGrQAwgCDBYUVY7PGCVfhWFykqvhVR
+#cleos create account eosio feeder111111 EOS6K42yrrMETmx2rXFJeKtaGrQAwgCDBYUVY7PGCVfhWFykqvhVR EOS6K42yrrMETmx2rXFJeKtaGrQAwgCDBYUVY7PGCVfhWFykqvhVR
+#cleos create account eosio feeder211111 EOS6K42yrrMETmx2rXFJeKtaGrQAwgCDBYUVY7PGCVfhWFykqvhVR EOS6K42yrrMETmx2rXFJeKtaGrQAwgCDBYUVY7PGCVfhWFykqvhVR
 
-docker exec -it nodeos cleos -u http://api.eosnewyork.io:80 get code delphioracle --wasm -c delphioracle.wasm
-docker exec -it nodeos cleos -u http://api.eosnewyork.io:80 get code delphioracle --abi delphioracle.abi
-cleos set contract oracle111111 / delphioracle.wasm delphioracle.abi -p oracle111111@active
+#docker exec -it nodeos cleos -u http://api.eosnewyork.io:80 get code delphioracle --wasm -c delphioracle.wasm
+#docker exec -it nodeos cleos -u http://api.eosnewyork.io:80 get code delphioracle --abi delphioracle.abi
+#cleos set contract oracle111111 / delphioracle.wasm delphioracle.abi -p oracle111111@active
 
-cleos push action oracle111111 setoracles '{"oracleslist":["feeder111111","feeder211111"]}' -p eostitanprod@active
-cleos push action oracle111111 write '{"owner":"feeder111111", "value":63800}' -p feeder111111@active
+#cleos push action oracle111111 setoracles '{"oracleslist":["feeder111111","feeder211111"]}' -p eostitanprod@active
+#cleos push action oracle111111 write '{"owner":"feeder111111", "value":63800}' -p feeder111111@active
 
 # Install oracle updater deps
-docker exec -it nodeos bash -c "cd /scripts && npm install eosjs node-fetch axios --save"
+#docker exec -it nodeos bash -c "cd /scripts && npm install eosjs node-fetch axios --save"
 
+cleos push action eosio.token transfer '{"from":"testborrow11","to":"eosusdcom111","quantity":"18.0000 EOS","memo":"collateral"}' -p testborrow11@active
+cleos push action dummytokens1 transfer '{"from":"testborrow11","to":"eosusdcom111","quantity":"3000.0000 IQ","memo":"collateral"}' -p testborrow11@active
+cleos push action dummytokens1 transfer '{"from":"testborrow11","to":"eosusdcom111","quantity":"3000.0000 UTG","memo":"collateral"}' -p testborrow11@active
+cleos push action dummytokens1 transfer '{"from":"testborrow11","to":"eosusdcom111","quantity":"3000.0000 PTI","memo":"collateral"}' -p testborrow11@active
+cleos push action dummytokens1 transfer '{"from":"testborrow11","to":"eosusdcom111","quantity":"3000.0000 OWN","memo":"collateral"}' -p testborrow11@active
+cleos push action vig111111111 transfer '{"from":"testborrow11","to":"eosusdcom111","quantity":"3000.0000 VIG","memo":"collateral"}' -p testborrow11@active
+
+cleos push action eosio.token transfer '{"from":"testborrow12","to":"eosusdcom111","quantity":"18.0000 EOS","memo":"collateral"}' -p testborrow12@active
+cleos push action dummytokens1 transfer '{"from":"testborrow12","to":"eosusdcom111","quantity":"3000.0000 IQ","memo":"collateral"}' -p testborrow12@active
+cleos push action dummytokens1 transfer '{"from":"testborrow12","to":"eosusdcom111","quantity":"3000.0000 UTG","memo":"collateral"}' -p testborrow12@active
+cleos push action dummytokens1 transfer '{"from":"testborrow12","to":"eosusdcom111","quantity":"3000.0000 PTI","memo":"collateral"}' -p testborrow12@active
+cleos push action dummytokens1 transfer '{"from":"testborrow12","to":"eosusdcom111","quantity":"3000.0000 OWN","memo":"collateral"}' -p testborrow12@active
+cleos push action vig111111111 transfer '{"from":"testborrow12","to":"eosusdcom111","quantity":"3000.0000 VIG","memo":"collateral"}' -p testborrow12@active
+
+cleos push action eosio.token transfer '{"from":"testinsure11","to":"eosusdcom111","quantity":"6.0000 EOS","memo":"support"}' -p testinsure11@active
+cleos push action dummytokens1 transfer '{"from":"testinsure11","to":"eosusdcom111","quantity":"1000.0000 IQ","memo":"support"}' -p testinsure11@active
+cleos push action dummytokens1 transfer '{"from":"testinsure11","to":"eosusdcom111","quantity":"1000.0000 UTG","memo":"support"}' -p testinsure11@active
+cleos push action dummytokens1 transfer '{"from":"testinsure11","to":"eosusdcom111","quantity":"1000.0000 PTI","memo":"support"}' -p testinsure11@active
+cleos push action dummytokens1 transfer '{"from":"testinsure11","to":"eosusdcom111","quantity":"1000.0000 OWN","memo":"support"}' -p testinsure11@active
+
+cleos push action eosio.token transfer '{"from":"testinsure12","to":"eosusdcom111","quantity":"6.0000 EOS","memo":"support"}' -p testinsure12@active
+cleos push action dummytokens1 transfer '{"from":"testinsure12","to":"eosusdcom111","quantity":"1000.0000 IQ","memo":"support"}' -p testinsure12@active
+cleos push action dummytokens1 transfer '{"from":"testinsure12","to":"eosusdcom111","quantity":"1000.0000 UTG","memo":"support"}' -p testinsure12@active
+cleos push action dummytokens1 transfer '{"from":"testinsure12","to":"eosusdcom111","quantity":"1000.0000 PTI","memo":"support"}' -p testinsure12@active
+cleos push action dummytokens1 transfer '{"from":"testinsure12","to":"eosusdcom111","quantity":"1000.0000 OWN","memo":"support"}' -p testinsure12@active
+
+cleos push action eosusdcom111 assetout '{"usern":"testborrow11","assetout":"200.0000 UZD","memo":"borrow"}' -p testborrow11@active
+cleos push action eosusdcom111 assetout '{"usern":"testborrow12","assetout":"220.0000 UZD","memo":"borrow"}' -p testborrow12@active
+
+cleos push action eosusdcom111 assetout '{"usern":"testborrow11","assetout":"1.0000 EOS","memo":"collateral"}' -p testborrow11@active
+cleos push action eosusdcom111 assetout '{"usern":"testborrow12","assetout":"1.0000 EOS","memo":"collateral"}' -p testborrow12@active
+cleos push action eosusdcom111 assetout '{"usern":"testinsure11","assetout":"1.0000 EOS","memo":"support"}' -p testinsure11@active
+cleos push action eosusdcom111 assetout '{"usern":"testinsure12","assetout":"1.0000 EOS","memo":"support"}' -p testinsure12@active
+
+cleos push action eosusdcom111 transfer '{"from":"testborrow11","to":"eosusdcom111","quantity":"68.0000 UZD","memo":"payoff debt"}' -p testborrow11@active
+cleos push action eosusdcom111 transfer '{"from":"testborrow12","to":"eosusdcom111","quantity":"70.0000 UZD","memo":"payoff debt"}' -p testborrow12@active
+
+cleos get table eosusdcom111 eosusdcom111 user
+cleos push action eosusdcom111 doupdate '[true]' -p eosusdcom111@active
+#sleep 5
+#cleos push action eosusdcom111 doupdate '[false]' -p eosusdcom111@active
+#sleep 5
+cleos get table eosusdcom111 eosusdcom111 globals
+
+# get all the user data
+#cleos get table eosusdcom111 eosusdcom111 user
 ## In other terminals (docker exec -it nodeos bash)
 # nodeosurl='http://127.0.0.1:8888' interval=15000 account="oracle111111" defaultPrivateKey="5J7gFHsbnU7EpQ4RGrdhAoMnvXnJvWgfiRtvTdMCcVfT6DGkNrK" feeder="feeder111111" node /scripts/updater2.js
 # nodeosurl='http://127.0.0.1:8888' interval=15000 account="oracle111111" defaultPrivateKey="5J7gFHsbnU7EpQ4RGrdhAoMnvXnJvWgfiRtvTdMCcVfT6DGkNrK" feeder="feeder211111" node updater2.js
+# get all the user data
+#cleos get table eosusdcom111 eosusdcom111 user --limit 1
 
-
+#cleos get table dummytokens1 testborrow11 accounts
+#cleos get table eosusdcom111 UZD stat
+#cleos get table eosio.token eosusdcom111 accounts
+#cleos get table eosio.token testborrow11 accounts
+#cleos get table eosusdcom111 testborrow11 accounts
+#cleos get currency balance eosusdcom111 testborrow11
+#cleos get currency balance eosio.token eosusdcom111
 ##############################################
-# exposed actions for eosusdcom demo starts here
-
-# .. see test.sh
-
-## The demo actios work but these fails
-
-# $ cleos push action eosusdcom111 borrow '{"usern":"testborrow11","debt":"24.0000 UZD"}' -p testborrow11@active
-# Error 3050003: eosio_assert_message assertion failure
-# Error Details:
-# assertion failure with message: symbol does not exist
-
-# $ cleos push action eosusdcom111 transfer '{"from":"testborrow11","to":"eosusdcom111","quantity":"1.0000 UZD","memo":"payoff debt"}' -p testborrow11@active
-# Error 3050003: eosio_assert_message assertion failure
-# Error Details:
-# assertion failure with message: Payment too high
-
-###
