@@ -1,4 +1,3 @@
 .vscode
 *.wasm
-*.abi
 node_modules
