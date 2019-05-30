@@ -26,7 +26,7 @@ OWNER_ACCT="5J3TQGkkiRQBKcg8Gg2a7Kk5a2QAQXsyGrkCnnq4krSSJSUkW12"
 
 #cleos wallet create --to-console
 cleos wallet unlock -n default --password PW5KDyCJVL3ypUGia4yf5TatcCQ4UjyrDQ296Dh2pe8ZjrLVDPh91
-cleos wallet import -n default --private-key $OWNER_ACCT
+#cleos wallet import -n default --private-key $OWNER_ACCT
 
 #=================================================================================#
 # BOOTSTRAP EOS CRAP

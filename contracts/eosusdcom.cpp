@@ -281,39 +281,39 @@ void eosusdcom::assetin( name   from,
 
   if (memo.c_str() == string("support")) {
     auto it = user.support.begin();
-    while ( !found && it != user.support.end() )
-      found = (++it)->symbol == assetin.symbol; //User collateral type found
+    while ( !found && it++ != user.support.end() )
+      found = (it-1)->symbol == assetin.symbol;//User collateral type found
     _user.modify(user, _self, [&]( auto& modified_user) {
       if (!found)
         modified_user.support.push_back(assetin);
       else
-        modified_user.support[it - user.support.begin()] += assetin;
+        modified_user.support[(it-1) - user.support.begin()] += assetin;
     }); found = false;
     it = gstats.support.begin();
-    while ( !found && it != gstats.support.end() )
-      found = (++it)->symbol == assetin.symbol;
+    while ( !found && it++ != gstats.support.end() )
+      found = (it-1)->symbol == assetin.symbol;
     if ( !found )
       gstats.support.push_back(assetin);
     else
-      gstats.support[it - gstats.support.begin()] += assetin;
+      gstats.support[(it-1) - gstats.support.begin()] += assetin;
   }
   else {
     auto it = user.collateral.begin();
-    while ( !found && it != user.collateral.end() )
-      found = (++it)->symbol == assetin.symbol; //User collateral type found
+    while ( !found && it++ != user.collateral.end() )
+      found = (it-1)->symbol == assetin.symbol; //User collateral type found
     _user.modify(user, _self, [&]( auto& modified_user) {
       if (!found)
         modified_user.collateral.push_back(assetin);
       else
-        modified_user.collateral[it - user.collateral.begin()] += assetin;
+        modified_user.collateral[(it-1) - user.collateral.begin()] += assetin;
     }); found = false;
     it = gstats.collateral.begin();
-    while ( !found && it != gstats.collateral.end() )
-      found = (++it)->symbol == assetin.symbol;
+    while ( !found && it++ != gstats.collateral.end() )
+      found = (it-1)->symbol == assetin.symbol;
     if (!found)
       gstats.collateral.push_back(assetin);
     else
-      gstats.collateral[it - gstats.collateral.begin()] += assetin;
+      gstats.collateral[(it-1) - gstats.collateral.begin()] += assetin;
   } 
   _globals.set(gstats, _self);
   update(from);

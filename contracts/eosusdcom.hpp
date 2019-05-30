@@ -95,6 +95,7 @@ CONTRACT eosusdcom : public eosio::contract {
          
          vector<asset> support;
          vector<asset> collateral;
+
    
          EOSLIB_SERIALIZE(globalstats, (solvency)(valueofcol)(valueofins)(scale)(tesvalue)(svalueofcole)(svalueofins)(stressins)(fxrate)(inreserve)(totaldebt)(support)(collateral))
       }; typedef eosio::multi_index<"globals"_n, globalstats> globalsm; 
