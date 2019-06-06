@@ -53,22 +53,27 @@ CONTRACT eosusdcom : public eosio::contract {
          EOSLIB_SERIALIZE(user_s, (usern)(debt)(collateral)(support)(valueofcol)(valueofins)(tesvalue)(tesprice)(volcol)(stresscol)(istresscol)(svalueofcol)(svalueofcole)(feespaid)(creditscore)(lastupdate)(latepays)(recaps))
       }; typedef eosio::multi_index<name("user"), user_s> user_t;
                                                           user_t _user;
-      TABLE eosusd {
+
+  //Holds the last datapoints_count datapoints from qualified oracles
+      struct [[eosio::table]] datapoints {
          uint64_t id;
          name owner; 
          uint64_t value;
-         uint64_t average;
+         uint64_t median;
          uint64_t timestamp;
-      
-         uint64_t primary_key() const { return id; }
-         uint64_t by_timestamp() const { return timestamp; }
-         uint64_t by_value() const { return value; }
+   
+         uint64_t primary_key() const {return id;}
+         uint64_t by_timestamp() const {return timestamp;}
+         uint64_t by_value() const {return value;}
 
-         EOSLIB_SERIALIZE( eosusd, (id)(owner)(value)(average)(timestamp))
-      }; typedef eosio::multi_index<name("eosusd"), eosusd,
-                        indexed_by<name("value"), const_mem_fun<eosusd, uint64_t, &eosusd::by_value>>, 
-                        indexed_by<name("timestamp"), const_mem_fun<eosusd, uint64_t, &eosusd::by_timestamp>>> usdtable;
-                                                                                                               usdtable _eosusd;
+         EOSLIB_SERIALIZE( datapoints, (id)(owner)(value)(median)(timestamp))
+      };
+
+      typedef eosio::multi_index<name("datapoints"), datapoints,
+         indexed_by<name("value"), const_mem_fun<datapoints, uint64_t, &datapoints::by_value>>, 
+         indexed_by<name("timestamp"), const_mem_fun<datapoints, uint64_t, &datapoints::by_timestamp>>> datapointstable;
+                                                                                                        datapointstable _datapointstable;
+
       TABLE globalstats {
          double solvency = 1.0;
          double valueofcol = 0.0; // dollar value of total collateral portfolio
@@ -79,16 +84,14 @@ CONTRACT eosusdcom : public eosio::contract {
          double svalueofcole = 0.0; // model suggested dollar value of the sum of all insufficient collateral in a stressed market SUM_i [ min((1 - svalueofcoli ) * valueofcoli - debti,0) ]
          double svalueofins = 0.0; // model suggested dollar value of the total insurance asset portfolio in a stress event. [ (1 - stressins ) * INS ]
          double stressins = 0.0; // model suggested percentage loss that the total insurance asset portfolio would experience in a stress event.
- 
 
          map <symbol, uint64_t> fxrate = { 
-            { symbol("SYS", 4), 54000 },
-            { symbol("EOS", 4), 54000 },
+            { symbol("EOS", 4), 61000 },
             { symbol("VIG", 4), 200 },
-            { symbol("OWN", 4), 198 },
-            { symbol("PTI", 4), 63 },
-            { symbol("IQ", 4), 39 },
-            { symbol("UTG", 4), 2 }
+            { symbol("IQ", 3), 42 },
+            { symbol("PEOS", 4), 661 },
+            { symbol("DICE", 4), 12 },
+            { symbol("TPT", 4), 30 }
          };
          uint64_t inreserve = 0; // vig
          asset totaldebt = asset( 0, symbol("UZD", 4) ); // uzd
@@ -108,13 +111,12 @@ CONTRACT eosusdcom : public eosio::contract {
       void pricingmodel(name usern);
 
       map <symbol, name> issueracct {
-         {symbol("SYS",4),	    name("eosio.token")},
-         {symbol("VIG",4),	    name("vig111111111")},
-         {symbol("IQ",4),	    name("dummytokens1")},
-         {symbol("UTG",4),	    name("dummytokens1")},
-         {symbol("PTI",4),	    name("dummytokens1")},
-         {symbol("OWN",4),	    name("dummytokens1")},
          {symbol("EOS",4),	    name("eosio.token")}
+         {symbol("VIG",4),	    name("vig111111111")},
+         {symbol("IQ",3),	    name("dummytokens1")},
+         {symbol("PEOS",4),	    name("dummytokens1")},
+         {symbol("DICE",4),	    name("dummytokens1")},
+         {symbol("TPT",4),	    name("dummytokens1")},
       };
 
       TABLE account {
@@ -131,14 +133,13 @@ CONTRACT eosusdcom : public eosio::contract {
          * assets tracked by the contract
          */
          map <symbol, double> correlation_matrix {
-            {symbol("SYS",4), 0.42},
+            {symbol("EOS",4),0.42}
             {symbol("VIG",4), 0.42},
-            {symbol("IQ",4), 0.42},
-            {symbol("UTG",4), 0.42},
-            {symbol("PTI",4), 0.42},
-            {symbol("OWN",4),	0.42},
-            {symbol("EOS",4),	0.42}
-         };
+            {symbol("IQ",3), 0.42},
+            {symbol("PEOS",4), 0.42},
+            {symbol("DICE",4), 0.42},
+            {symbol("TPT",4), 0.42},
+        };
          double volatility = 0.1; // stdev, scale factor for price discovery
 
          uint64_t primary_key()const { return supply.symbol.code().raw(); }
@@ -153,7 +154,7 @@ CONTRACT eosusdcom : public eosio::contract {
    public:
       using contract::contract;
       eosusdcom(name receiver, name code, datastream<const char*> ds):contract(receiver, code, ds), 
-      _user(receiver, receiver.value), _eosusd(receiver, receiver.value),
+      _user(receiver, receiver.value), _datapointstable(receiver, receiver.value),
       _stats(receiver, receiver.value), _globals(receiver, receiver.value)  {}
      
       //ACTION deleteuser(name user);

@@ -1,33 +1,22 @@
 #include "eosusdcom.hpp"
 
-void eosusdcom::doupdate(bool up)
+void eosusdcom::doupdate()
 {
    //require_auth(_self);
   globalstats gstats = _globals.get();
-  if (!up) {  
-    gstats.fxrate[symbol("SYS",4)] = 54000;
+
+    gstats.fxrate[symbol("EOS",4)] = 61000;
     gstats.fxrate[symbol("VIG",4)] = 200;
-    gstats.fxrate[symbol("IQ",4)] = 39;
-    gstats.fxrate[symbol("UTG",4)] = 2;
-    gstats.fxrate[symbol("PTI",4)] = 63;
-    gstats.fxrate[symbol("OWN",4)] = 198;
-    gstats.fxrate[symbol("EOS",4)] = 54000;
-  }
-  else if (up) {
-    gstats.fxrate[symbol("SYS",4)] = 54000;
-    gstats.fxrate[symbol("VIG",4)] = 200;
-    gstats.fxrate[symbol("IQ",4)] = 39;
-    gstats.fxrate[symbol("UTG",4)] = 2;
-    gstats.fxrate[symbol("PTI",4)] = 63;
-    gstats.fxrate[symbol("OWN",4)] = 198;
-    gstats.fxrate[symbol("EOS",4)] = 54000; 
-  }
-  _globals.set(gstats, _self);
-  // usdtable eosusdtable(name("oracle111111"),name("oracle111111").value);
-  // auto iterator = eosusdtable.begin();
-  
-  // fxrate[symbol("EOS",4)] = iterator->average;
-  // eosio::print( "EOS fxrate updated : ", iterator->average, "\n");
+    gstats.fxrate[symbol("IQ",3)] = 42;
+    gstats.fxrate[symbol("PEOS",4)] = 661;
+    gstats.fxrate[symbol("DICE",4)] = 12;
+    gstats.fxrate[symbol("TPT",4)] = 30;
+//    datapointstable dstore = _datapointstable.get();
+//   datapointstable dstore(name("oracle111111"),name("eosusd").value);
+//    auto iterator = eosusdtable.begin();
+//    gstats.fxrate[symbol("EOS",4)] = iterator->average;
+
+ _globals.set(gstats, _self);
 
   for ( auto it = _user.begin(); it != _user.end(); it++ ) {
     update(it->usern);

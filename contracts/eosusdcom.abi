@@ -108,17 +108,7 @@
             ]
         },
         {
-            "name": "doupdate",
-            "base": "",
-            "fields": [
-                {
-                    "name": "up",
-                    "type": "bool"
-                }
-            ]
-        },
-        {
-            "name": "eosusd",
+            "name": "datapoints",
             "base": "",
             "fields": [
                 {
@@ -134,12 +124,22 @@
                     "type": "uint64"
                 },
                 {
-                    "name": "average",
+                    "name": "median",
                     "type": "uint64"
                 },
                 {
                     "name": "timestamp",
                     "type": "uint64"
+                }
+            ]
+        },
+        {
+            "name": "doupdate",
+            "base": "",
+            "fields": [
+                {
+                    "name": "up",
+                    "type": "bool"
                 }
             ]
         },
@@ -455,8 +455,8 @@
             "key_types": []
         },
         {
-            "name": "eosusd",
-            "type": "eosusd",
+            "name": "datapoints",
+            "type": "datapoints",
             "index_type": "i64",
             "key_names": [],
             "key_types": []

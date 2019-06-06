@@ -6,6 +6,7 @@
 # 
 pkill nodeos
 rm -rf ~/.local/share/eosio/nodeos/data
+rm -rf ./node2
 nodeos -e -p eosio --http-validate-host=false --delete-all-blocks --contracts-console --plugin eosio::chain_api_plugin --plugin eosio::history_api_plugin --plugin eosio::producer_plugin --plugin eosio::http_plugin --max-transaction-time=10000
 
 
@@ -14,7 +15,6 @@ NC='\033[0m'
 
 # CHANGE PATH
 EOSIO_CONTRACTS_ROOT=/home/ab/contracts1.6.0/eosio.contracts/contracts
-
 CONTRACT_ROOT=/home/ab/contracts1.6.0/eosusd/contracts
 CONTRACT="eosusdcom"
 CONTRACT_WASM="$CONTRACT.wasm"
@@ -155,18 +155,61 @@ cleos push action dummytokens1 transfer '[ "dummytokens1", "testinsure12", "1000
 cleos push action dummytokens1 transfer '[ "dummytokens1", "testinsure12", "100000.0000 OWN", "m" ]' -p dummytokens1@active
 
 #=================================================================================#
-# create the oracle contract (for EOS only for now)
+# create the oracle contract for local testnet
 cleos system newaccount eosio oracle111111 $OWNER_KEY --stake-cpu "50 EOS" --stake-net "10 EOS" --buy-ram-kbytes 50000 --transfer
-cleos system newaccount eosio eostitanprod $OWNER_KEY --stake-cpu "50 EOS" --stake-net "10 EOS" --buy-ram-kbytes 50000 --transfer
+#cleos system newaccount eosio eostitanprod $OWNER_KEY --stake-cpu "50 EOS" --stake-net "10 EOS" --buy-ram-kbytes 50000 --transfer
 cleos system newaccount eosio feeder111111 $OWNER_KEY --stake-cpu "50 EOS" --stake-net "10 EOS" --buy-ram-kbytes 50000 --transfer
+cleos system newaccount eosio datapreproc1 $OWNER_KEY --stake-cpu "50 EOS" --stake-net "10 EOS" --buy-ram-kbytes 50000 --transfer
 
-cleos -u http://api.eosnewyork.io:80 get code delphioracle --wasm -c delphioracle.wasm
-cleos -u http://api.eosnewyork.io:80 get code delphioracle --abi delphioracle.abi
+ORACLE_ROOT=/home/ab/contracts1.6.0/delphioracle/contract
+ORACLE="DelphiOracle"
+ORACLE_WASM="$ORACLE.wasm"
+ORACLE_ABI="$ORACLE.abi"
+ORACLE_CPP="$ORACLE.cpp"
+eosio-cpp --abigen -I $ORACLE_ROOT -I $EOSIO_CONTRACTS_ROOT/eosio.system/include -o "$ORACLE_ROOT/$ORACLE_WASM" "$ORACLE_ROOT/$ORACLE_CPP" 
+cleos set contract oracle111111 $ORACLE_ROOT $ORACLE_WASM $ORACLE_ABI -p oracle111111@active
+cleos push action oracle111111 configure '{}' -p oracle111111@active
+cd /home/ab/contracts1.6.0/delphioracle/scripts
+node updater2.js
+cd /home/ab/contracts1.6.0/delphioracle/scripts
+node updater.js
+#cleos push action oracle111111 write '{"owner": "feeder111111","quotes": [{"value":"80000","pair":"eosusd"},{"value":"80000","pair":"eosbtc"}]}' -p feeder111111@active
+#cleos push action oracle111111 write '{"owner": "feeder111111","quotes": [{"value":"70000","pair":"eosusd"},{"value":"70000","pair":"eosbtc"}]}' -p feeder111111@active
+#cleos push action oracle111111 write '{"owner": "feeder111111","quotes": [{"value":"60000","pair":"eosusd"},{"value":"60000","pair":"eosbtc"}]}' -p feeder111111@active
+#cleos push action oracle111111 write '{"owner": "feeder111111","quotes": [{"value":"50000","pair":"eosusd"},{"value":"50000","pair":"eosbtc"}]}' -p feeder111111@active
+#cleos push action oracle111111 write '{"owner": "feeder111111","quotes": [{"value":"40000","pair":"eosusd"},{"value":"40000","pair":"eosbtc"}]}' -p feeder111111@active
+#cleos push action oracle111111 write '{"owner": "feeder111111","quotes": [{"value":"30000","pair":"eosusd"},{"value":"30000","pair":"eosbtc"}]}' -p feeder111111@active
+#cleos push action oracle111111 write '{"owner": "feeder111111","quotes": [{"value":"20000","pair":"eosusd"},{"value":"20000","pair":"eosbtc"}]}' -p feeder111111@active
+#cleos push action oracle111111 write '{"owner": "feeder111111","quotes": [{"value":"10000","pair":"eosusd"},{"value":"10000","pair":"eosbtc"}]}' -p feeder111111@active
+#cleos push action oracle111111 clear '{"pair":"eosusd"}' -p oracle111111@active
+#cleos push action oracle111111 clear '{"pair":"eosbtc"}' -p oracle111111@active
+cleos get table oracle111111 eosusd datapoints --limit -1
+cleos get table oracle111111 iqeos datapoints --limit -1
+cleos get table oracle111111 eosbtc datapoints --limit -1
+cleos get table oracle111111 oracle111111 stats
+cleos get table oracle111111 oracle111111 pairs
 
-cleos set contract oracle111111 . delphioracle.wasm delphioracle.abi -p oracle111111@active
+CONTRACT_ROOT=/home/ab/contracts1.6.0/eosusd/contracts
+CONTRACT="datapreproc"
+CONTRACT_WASM="$CONTRACT.wasm"
+CONTRACT_ABI="$CONTRACT.abi"
+CONTRACT_CPP="$CONTRACT.cpp"
+EOSIO_CONTRACTS_ROOT=/home/ab/contracts1.6.0/eosio.contracts/contracts
+eosio-cpp -abigen -I $CONTRACT_ROOT -I $EOSIO_CONTRACTS_ROOT/eosio.system/include -o "$CONTRACT_ROOT/$CONTRACT_WASM" "$CONTRACT_ROOT/$CONTRACT_CPP" 
+cleos set contract datapreproc1 $CONTRACT_ROOT $CONTRACT_WASM $CONTRACT_ABI -p datapreproc1@active
+cleos push action datapreproc1 update '{}' -p datapreproc1@active
+cleos push action datapreproc1 clear '{}' -p datapreproc1@active
+cleos push action datapreproc1 addpair '{"newpair":"eosusd"}' -p datapreproc1@active
+cleos get table datapreproc1 datapreproc1 pairtoproc --limit -1
 
-cleos push action oracle111111 setoracles '{"oracleslist":["feeder111111"]}' -p eostitanprod@active
-cleos push action oracle111111 write '{"owner":"feeder111111", "value":63800}' -p feeder111111@active
+
+#cleos -u http://api.eosnewyork.io:80 get code delphioracle --wasm -c delphioracle.wasm
+#cleos -u http://api.eosnewyork.io:80 get code delphioracle --abi delphioracle.abi
+
+#cleos set contract oracle111111 . delphioracle.wasm delphioracle.abi -p oracle111111@active
+
+#cleos push action oracle111111 setoracles '{"oracleslist":["feeder111111"]}' -p eostitanprod@active
+
 #=================================================================================#
 
 ###### OPTIONAL FOR LOCAL TESTNET #############
@@ -237,5 +280,7 @@ cleos get table eosusdcom111 eosusdcom111 user
 cleos -u https://api.kylin.alohaeos.com get table delphioracle delphioracle eosusd
 cleos -u https://api.kylin.alohaeos.com get table eostitantest eostitantest eosusd
 cleos -u https://api.kylin.alohaeos.com get table eostitantest eosusd datapoints
-
-notifier1111
+cleos -u https://api.kylin.alohaeos.com get table eostitantest eosbtc datapoints
+cleos -u https://api.kylin.alohaeos.com get table eostitantest eostitantest stats
+cleos -u https://api.kylin.alohaeos.com get table eostitantest eostitantest pairs
+cleos -u https://api.kylin.alohaeos.com get table eosio eosio producers

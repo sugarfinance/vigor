@@ -2,12 +2,8 @@ const Eos = require('eosjs');
 const dotenv = require('dotenv');
 const axios = require('axios');
 
-const url = "https://api.newdex.io/v1/price?symbol=everipediaiq-iq-eos";
-//https://api.newdex.io/v1/price?symbol=everipediaiq-iq-eos
-//https://api.newdex.io/v1/price?symbol=thepeostoken-peos-eos
-//https://api.newdex.io/v1/price?symbol=betdicetoken-dice-eos
-//https://api.newdex.io/v1/price?symbol=eosiotptoken-tpt-eos
-//https://min-api.cryptocompare.com/data/price?fsym=EOS&tsyms=USD&e=Kraken
+const url = "https://min-api.cryptocompare.com/data/price?fsym=EOS&tsyms=USD&e=Kraken";
+
 dotenv.load();
 
 const interval = process.env.FREQ;
@@ -30,15 +26,15 @@ function write(){
 	axios.get(`${url}`)
 		.then(results=>{
 
-			if (results.data && results.data.data.price){
+			if (results.data && results.data.USD){
 
-				console.log(" results.data.data.price",  results.data.data.price);
+				console.log(" results.data.USD",  results.data.USD);
 
 				eos.contract(oracleContract)
 					.then((contract) => {
 						contract.write({
 								owner: owner,
-								quotes:[{value: parseInt(Math.round(results.data.data.price * 1000000)), pair: "iqeos"}]
+								quotes:[{value: parseInt(Math.round(results.data.USD * 10000)), pair: "eosusd"}]
 							},
 							{
 								scope: oracleContract,
