@@ -6,7 +6,7 @@
 # 
 pkill nodeos
 rm -rf ~/.local/share/eosio/nodeos/data
-rm -rf ./node2
+#rm -rf ./node2
 nodeos -e -p eosio --http-validate-host=false --delete-all-blocks --contracts-console --plugin eosio::chain_api_plugin --plugin eosio::history_api_plugin --plugin eosio::producer_plugin --plugin eosio::http_plugin --max-transaction-time=10000
 
 
@@ -197,11 +197,12 @@ CONTRACT_CPP="$CONTRACT.cpp"
 EOSIO_CONTRACTS_ROOT=/home/ab/contracts1.6.0/eosio.contracts/contracts
 eosio-cpp -abigen -I $CONTRACT_ROOT -I $EOSIO_CONTRACTS_ROOT/eosio.system/include -o "$CONTRACT_ROOT/$CONTRACT_WASM" "$CONTRACT_ROOT/$CONTRACT_CPP" 
 cleos set contract datapreproc1 $CONTRACT_ROOT $CONTRACT_WASM $CONTRACT_ABI -p datapreproc1@active
-cleos push action datapreproc1 update '{}' -p datapreproc1@active
 cleos push action datapreproc1 clear '{}' -p datapreproc1@active
 cleos push action datapreproc1 addpair '{"newpair":"eosusd"}' -p datapreproc1@active
+cleos push action datapreproc1 addpair '{"newpair":"iqeos"}' -p datapreproc1@active
+cleos push action datapreproc1 update '{}' -p datapreproc1@active
 cleos get table datapreproc1 datapreproc1 pairtoproc --limit -1
-
+cleos get table datapreproc1 eosusd stats
 
 #cleos -u http://api.eosnewyork.io:80 get code delphioracle --wasm -c delphioracle.wasm
 #cleos -u http://api.eosnewyork.io:80 get code delphioracle --abi delphioracle.abi

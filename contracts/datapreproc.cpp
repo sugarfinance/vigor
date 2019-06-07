@@ -7,12 +7,13 @@
 
 using namespace eosio;
 
-const uint64_t one_minute = 1000000 * 60 - 5000000; //give extra time for cron jobs
-const uint64_t five_minute = 1000000 * 60 * 5 - 5000000;
-const uint64_t fifteen_minute = 1000000 * 60 * 15 - 5000000;
-const uint64_t one_hour = 1000000 * 60 * 60 - 5000000;
-const uint64_t four_hour = 1000000 * 60 * 60 * 4 - 5000000; 
-const uint64_t one_day = 1000000 * 60 * 60 * 24 - 5000000; 
+const uint64_t one_minute = 1000000.0 * 60.0 - 5000000.0; //give extra time for cron jobs
+const uint64_t five_minute = 1000000.0 * 60.0 * 5.0 - 5000000.0;
+const uint64_t fifteen_minute = 1000000.0 * 60.0 * 15.0 - 5000000.0;
+const uint64_t one_hour = 1000000.0 * 60.0 * 60.0 - 5000000.0;
+const uint64_t four_hour = 1000000.0 * 60.0 * 60.0 * 4.0 - 5000000.0; 
+const uint64_t one_day = 1000000.0 * 60.0 * 60.0 * 24.0 - 5000000.0; 
+const uint64_t mpk = std::numeric_limits<unsigned long long>::max();
 
 CONTRACT datapreproc : public eosio::contract {
  public:
@@ -66,17 +67,13 @@ CONTRACT datapreproc : public eosio::contract {
   TABLE stats {
     uint64_t freq; 
     uint64_t timestamp;
-    uint64_t count;
-    uint64_t last_claim;
-    asset balance;
+    std::deque<uint64_t> price;
 
     uint64_t primary_key() const {return freq;}
-    uint64_t by_count() const {return count;}
 
   };
 
-  typedef eosio::multi_index<name("stats"), stats,
-      indexed_by<name("count"), const_mem_fun<stats, uint64_t, &stats::by_count>>> statstable;
+  typedef eosio::multi_index<name("stats"), stats> statstable;
 
 //add to the list of pairs to process
 ACTION addpair(name newpair) {
@@ -112,8 +109,19 @@ ACTION addpair(name newpair) {
         pairtoproc.erase(itr);
     }
 
-  }
+    pairstable pairs(name("oracle111111"), name("oracle111111").value);
+    auto pairsname = pairs.get_index<name("aname")>();
+    for ( auto it = pairsname.begin(); it != pairsname.end(); it++ ) {
+      statstable store(_self, it->aname.value);
 
+      while (store.begin() != store.end()) {
+          auto itr = store.end();
+          itr--;
+          store.erase(itr);
+      };
+    };
+
+  }
 
   uint64_t get_last_price(name pair){
 
@@ -129,6 +137,7 @@ ACTION addpair(name newpair) {
 
   }
 
+//  get median price and store in vector as a historical time series
   ACTION update(){
     require_auth(_self);
 
@@ -141,9 +150,15 @@ ACTION addpair(name newpair) {
         uint64_t lastprice = get_last_price(it->aname);
         eosio::print("pair to process: ", eosio::name{it->aname}, "\n");
         eosio::print("last price: ", lastprice, "\n");
- 
-        check_last_push(it->aname, one_minute);
-        update_datapoints(lastprice, it->aname);
+        eosio::print("one_day: ", one_day, "\n");
+        eosio::print("mpk: ", mpk, "\n");
+
+        push_last_price(it->aname, one_minute, lastprice);
+        push_last_price(it->aname, five_minute, lastprice);
+        push_last_price(it->aname, fifteen_minute, lastprice);
+        push_last_price(it->aname, one_hour, lastprice);
+        push_last_price(it->aname, four_hour, lastprice);
+        push_last_price(it->aname, one_day, lastprice);
 
         };
     }
@@ -151,56 +166,44 @@ ACTION addpair(name newpair) {
 
 
    //Ensure account cannot push data more often than every 60 seconds
-  void check_last_push(const name pair, const uint64_t freq){
+  void push_last_price(const name pair, const uint64_t freq, const uint64_t lastprice){
 
-    statstable gstore(_self,_self.value);
     statstable store(_self, pair.value);
 
-    auto itr = store.find(owner.value);
+    auto itr = store.find(freq);
+    uint64_t ctime = current_time();
     if (itr != store.end()) {
+      eosio::print("existing row: ", freq, "\n");
+      auto last = store.get(freq);
+      if (last.timestamp + freq <= ctime){
 
-      uint64_t ctime = current_time();
-      auto last = store.get(owner.value);
+        if (size(last.price)==3){
+          store.modify( itr, _self, [&]( auto& s ) {
+            s.timestamp = ctime;
+            s.price.push_front(lastprice);
+            s.price.pop_back();
+          });
+        } else {
+          store.modify( itr, _self, [&]( auto& s ) {
+            s.timestamp = ctime;
+            s.price.push_front(lastprice);
+          });
+        }
 
-      eosio_assert(last.timestamp + one_minute <= ctime, "can only call every 60 seconds");
-
-      store.modify( itr, _self, [&]( auto& s ) {
-        s.timestamp = ctime;
-        s.count++;
-      });
-
-    } else {
-
-      store.emplace(_self, [&](auto& s) {
-        s.owner = owner;
-        s.timestamp = current_time();
-        s.count = 1;
-        s.balance = asset(0, symbol("EOS",4));
-        s.last_claim = 0;
-      });
-
-    }
-
-    auto gitr = gstore.find(owner.value);
-    if (gitr != gstore.end()) {
-
-      uint64_t ctime = current_time();
-
-      gstore.modify( gitr, _self, [&]( auto& s ) {
-        s.timestamp = ctime;
-        s.count++;
-      });
+      } else { // update front with latest price
+          store.modify( itr, _self, [&]( auto& s ) {
+            s.price.front() = lastprice;
+          });
+      };
 
     } else {
 
-      gstore.emplace(_self, [&](auto& s) {
-        s.owner = owner;
-        s.timestamp = current_time();
-        s.count = 1;
-       s.balance = asset(0, symbol("EOS",4));
-       s.last_claim = 0;
-      });
-
+          store.emplace(_self, [&](auto& s) {
+            s.freq=freq;
+            s.timestamp = ctime;
+            s.price.push_front(lastprice);
+          });
+    
     }
 
   }
