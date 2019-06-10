@@ -42,6 +42,8 @@ CONTRACT datapreproc : public eosio::contract {
   TABLE pairs {
     uint64_t id;
     name aname;
+    extended_symbol base;
+    extended_symbol quote;
 
     uint64_t primary_key() const {return id;}
     uint64_t by_name() const {return aname.value;}
@@ -54,6 +56,9 @@ CONTRACT datapreproc : public eosio::contract {
   TABLE pairtoproc {
     uint64_t id;
     name aname;
+    extended_symbol base;
+    extended_symbol quote;
+
 
     uint64_t primary_key() const {return id;}
     uint64_t by_name() const {return aname.value;}
@@ -68,8 +73,6 @@ CONTRACT datapreproc : public eosio::contract {
   TABLE stats {
     uint64_t freq; 
     uint64_t timestamp;
-    extended_asset base;
-    extended_asset quote;
     std::deque<uint64_t> price;
     std::deque<int64_t> returns;
     std::deque<extended_asset> cov;
@@ -97,6 +100,8 @@ ACTION addpair(name newpair) {
             pairtoproc.emplace(_self, [&](auto& o) {
                 o.id = pairtoproc.available_primary_key();
                 o.aname = newpair;
+                o.base = itr->base;
+                o.quote = itr->quote;
             });
         };
    };
@@ -169,12 +174,12 @@ ACTION addpair(name newpair) {
         if ( itr != pairsname.end() ) { //pair must exist in the oracle
         uint64_t lastprice = get_last_price(it->aname);
         //eosio::print("pair to process: ", eosio::name{it->aname}, "\n");
-        get_last_price(it->aname, one_minute, lastprice);
-        get_last_price(it->aname, five_minute, lastprice);
-        get_last_price(it->aname, fifteen_minute, lastprice);
-        get_last_price(it->aname, one_hour, lastprice);
-        get_last_price(it->aname, four_hour, lastprice);
-        get_last_price(it->aname, one_day, lastprice);
+        store_last_price(it->aname, one_minute, lastprice);
+        store_last_price(it->aname, five_minute, lastprice);
+        store_last_price(it->aname, fifteen_minute, lastprice);
+        store_last_price(it->aname, one_hour, lastprice);
+        store_last_price(it->aname, four_hour, lastprice);
+        store_last_price(it->aname, one_day, lastprice);
         };
     }
   }
@@ -186,10 +191,10 @@ ACTION addpair(name newpair) {
 
     pairtoproctb pairtoproc(_self,_self.value);
     for ( auto it = pairtoproc.begin(); it != pairtoproc.end(); it++ ) {
-          statstable store(_self, it.aname.value);
+          statstable store(_self, it->aname.value);
           auto itr = store.find(one_minute);
           if (itr != store.end()) {
-            covariance(itr->aname, one_minute, itr->returns);
+            covariance(it->aname, one_minute, itr->returns);
           }
      //   get_last_price(it->aname, five_minute, lastprice);
      //   get_last_price(it->aname, fifteen_minute, lastprice);
@@ -198,10 +203,10 @@ ACTION addpair(name newpair) {
      //   get_last_price(it->aname, one_day, lastprice);
         };
     }
-  }
+  
 
   //  calculate statistics covariance matrix and correlation matrix
-  void covariance(name aname, uint64_t freq, deque<int64_t> returns){
+  void covariance(name aname, uint64_t freq, std::deque<int64_t> returns){
     require_auth(_self);
 
     pairtoproctb pairtoproc(_self,_self.value);
@@ -214,7 +219,7 @@ ACTION addpair(name newpair) {
           statstable store(_self, aname.value);
           auto itr = store.find(freq);
           if (itr != store.end()) {
-            itr.returns
+        //    itr->returns
 
           };
      //   get_last_price(it->aname, five_minute, lastprice);
@@ -226,8 +231,8 @@ ACTION addpair(name newpair) {
     }
   }
 
-   //get last price from the oracle and prepend to time series
-  void get_last_price(const name pair, const uint64_t freq, const uint64_t lastprice){
+   //store last price from the oracle, append to time series
+  void store_last_price(const name pair, const uint64_t freq, const uint64_t lastprice){
 
     statstable store(_self, pair.value);
 

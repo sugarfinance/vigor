@@ -164,25 +164,26 @@ cleos system newaccount eosio feeder111113 $OWNER_KEY --stake-cpu "50 EOS" --sta
 cleos system newaccount eosio datapreproc1 $OWNER_KEY --stake-cpu "50 EOS" --stake-net "10 EOS" --buy-ram-kbytes 50000 --transfer
 
 ORACLE_ROOT=/home/ab/contracts1.6.0/delphioracle/contract
-ORACLE="DelphiOracle"
+ORACLE="oracle"
 ORACLE_WASM="$ORACLE.wasm"
 ORACLE_ABI="$ORACLE.abi"
 ORACLE_CPP="$ORACLE.cpp"
 eosio-cpp --abigen -I $ORACLE_ROOT -I $EOSIO_CONTRACTS_ROOT/eosio.system/include -o "$ORACLE_ROOT/$ORACLE_WASM" "$ORACLE_ROOT/$ORACLE_CPP" 
 cleos set contract oracle111111 $ORACLE_ROOT $ORACLE_WASM $ORACLE_ABI -p oracle111111@active
 cleos push action oracle111111 configure '{}' -p oracle111111@active
-cd /home/ab/contracts1.6.0/delphioracle/scripts
+cd /home/ab/contracts1.6.0/delphioracle_bac2/scripts
 node updaterEOS_1.js
-cd /home/ab/contracts1.6.0/delphioracle/scripts
+cd /home/ab/contracts1.6.0/delphioracle_bac2/scripts
 node updaterEOS_2.js
-cd /home/ab/contracts1.6.0/delphioracle/scripts
+cd /home/ab/contracts1.6.0/delphioracle_bac2/scripts
 node updaterEOS_3.js
-cd /home/ab/contracts1.6.0/delphioracle/scripts
+cd /home/ab/contracts1.6.0/delphioracle_bac2/scripts
 node updaterIQ_1.js
-cd /home/ab/contracts1.6.0/delphioracle/scripts
+cd /home/ab/contracts1.6.0/delphioracle_bac2/scripts
 node updaterIQ_2.js
-cd /home/ab/contracts1.6.0/delphioracle/scripts
+cd /home/ab/contracts1.6.0/delphioracle_bac2/scripts
 node updaterIQ_3.js
+#cleos push action oracle111111 write '{"owner": "feeder111111","quotes": [{"value":"20000","pair":"eosusd", "base": {"sym": "4,EOS", "con": "eosio.token"}}]}' -p feeder111111@active
 #cleos push action oracle111111 write '{"owner": "feeder111111","quotes": [{"value":"10000","pair":"eosusd"},{"value":"80000","pair":"eosbtc"}]}' -p feeder111111@active
 #cleos push action oracle111111 write '{"owner": "feeder111112","quotes": [{"value":"20000","pair":"eosusd"},{"value":"80000","pair":"eosbtc"}]}' -p feeder111112@active
 #cleos push action oracle111111 write '{"owner": "feeder111113","quotes": [{"value":"30000","pair":"eosusd"},{"value":"80000","pair":"eosbtc"}]}' -p feeder111113@active
