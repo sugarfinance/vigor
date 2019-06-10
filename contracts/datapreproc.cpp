@@ -7,19 +7,20 @@
 
 using namespace eosio;
 
-const uint64_t one_minute = 1000000.0 * 60.0 - 5000000.0; //give extra time for cron jobs
-const uint64_t five_minute = 1000000.0 * 60.0 * 5.0 - 5000000.0;
-const uint64_t fifteen_minute = 1000000.0 * 60.0 * 15.0 - 5000000.0;
-const uint64_t one_hour = 1000000.0 * 60.0 * 60.0 - 5000000.0;
-const uint64_t four_hour = 1000000.0 * 60.0 * 60.0 * 4.0 - 5000000.0; 
-const uint64_t one_day = 1000000.0 * 60.0 * 60.0 * 24.0 - 5000000.0; 
-const uint64_t mpk = std::numeric_limits<unsigned long long>::max();
+const uint64_t one_minute = 1000000.0 * 60.0; 
+const uint64_t five_minute = 1000000.0 * 60.0 * 5.0;
+const uint64_t fifteen_minute = 1000000.0 * 60.0 * 15.0;
+const uint64_t one_hour = 1000000.0 * 60.0 * 60.0;
+const uint64_t four_hour = 1000000.0 * 60.0 * 60.0 * 4.0; 
+const uint64_t one_day = 1000000.0 * 60.0 * 60.0 * 24.0; 
+const uint64_t cronlag = 5000000; //give extra time for cron jobs
+const uint64_t dequesize = 30;
 
 CONTRACT datapreproc : public eosio::contract {
  public:
   datapreproc(name receiver, name code, datastream<const char*> ds) : eosio::contract(receiver, code, ds) {}
 
-  //Holds the last datapoints_count datapoints from qualified oracles
+ //Holds the latest datapoints from qualified oracles
   TABLE datapoints {
     uint64_t id;
     name owner; 
@@ -63,11 +64,16 @@ CONTRACT datapreproc : public eosio::contract {
       indexed_by<name("aname"), const_mem_fun<pairtoproc, uint64_t, &pairtoproc::by_name>>> pairtoproctb;
 
 
-  //Holds the time of last writes, vol and correlation
+  //Holds the time series of prices, returns, vol and correlation
   TABLE stats {
     uint64_t freq; 
     uint64_t timestamp;
+    extended_asset base;
+    extended_asset quote;
     std::deque<uint64_t> price;
+    std::deque<int64_t> returns;
+    std::deque<extended_asset> cov;
+    std::deque<extended_asset> cor;
 
     uint64_t primary_key() const {return freq;}
 
@@ -125,20 +131,34 @@ ACTION addpair(name newpair) {
 
   uint64_t get_last_price(name pair){
 
-    datapointstable dstore(name("oracle111111"), pair.value);
-    //eosio_assert(dstore.begin() != dstore.end(), "no datapoints");
-    if (dstore.begin() != dstore.end()) {
-        auto newest = dstore.begin();
-        return newest->median;
-    } else {
-        eosio::print("pair has no datapoints: ", eosio::name{pair}, "\n");
-        return -1;
-    }
+    uint64_t eosusd = 0;
+    datapointstable dstoreos(name("oracle111111"), name("eosusd").value);
+    auto newesteos = dstoreos.begin();
+    if (newesteos != dstoreos.end())
+      eosusd = newesteos->median;
 
+    datapointstable dstore(name("oracle111111"), pair.value);
+    auto newest = dstore.begin();
+    if (newest != dstore.end()) {
+        if (pair==name("eosusd"))
+          return newest->median;
+        else
+          return (uint64_t)(1000000.0*((newest->median/1000000.0) * (eosusd/1000000.0)));
+    } else
+        return 0;
   }
 
 //  get median price and store in vector as a historical time series
   ACTION update(){
+    require_auth(_self);
+
+    getprices();
+    calcstats();
+
+  }
+
+//  get median price and store in deque as a historical time series
+  void getprices(){
     require_auth(_self);
 
     pairtoproctb pairtoproc(_self,_self.value);
@@ -148,55 +168,102 @@ ACTION addpair(name newpair) {
         auto itr = pairsname.find(it->aname.value);
         if ( itr != pairsname.end() ) { //pair must exist in the oracle
         uint64_t lastprice = get_last_price(it->aname);
-        eosio::print("pair to process: ", eosio::name{it->aname}, "\n");
-        eosio::print("last price: ", lastprice, "\n");
-        eosio::print("one_day: ", one_day, "\n");
-        eosio::print("mpk: ", mpk, "\n");
-
-        push_last_price(it->aname, one_minute, lastprice);
-        push_last_price(it->aname, five_minute, lastprice);
-        push_last_price(it->aname, fifteen_minute, lastprice);
-        push_last_price(it->aname, one_hour, lastprice);
-        push_last_price(it->aname, four_hour, lastprice);
-        push_last_price(it->aname, one_day, lastprice);
-
+        //eosio::print("pair to process: ", eosio::name{it->aname}, "\n");
+        get_last_price(it->aname, one_minute, lastprice);
+        get_last_price(it->aname, five_minute, lastprice);
+        get_last_price(it->aname, fifteen_minute, lastprice);
+        get_last_price(it->aname, one_hour, lastprice);
+        get_last_price(it->aname, four_hour, lastprice);
+        get_last_price(it->aname, one_day, lastprice);
         };
     }
   }
 
+  //  calculate statistics covariance matrix and correlation matrix
+  void calcstats(){
 
-   //Ensure account cannot push data more often than every 60 seconds
-  void push_last_price(const name pair, const uint64_t freq, const uint64_t lastprice){
+    require_auth(_self);
+
+    pairtoproctb pairtoproc(_self,_self.value);
+    for ( auto it = pairtoproc.begin(); it != pairtoproc.end(); it++ ) {
+          statstable store(_self, it.aname.value);
+          auto itr = store.find(one_minute);
+          if (itr != store.end()) {
+            covariance(itr->aname, one_minute, itr->returns);
+          }
+     //   get_last_price(it->aname, five_minute, lastprice);
+     //   get_last_price(it->aname, fifteen_minute, lastprice);
+      //  get_last_price(it->aname, one_hour, lastprice);
+      //  get_last_price(it->aname, four_hour, lastprice);
+     //   get_last_price(it->aname, one_day, lastprice);
+        };
+    }
+  }
+
+  //  calculate statistics covariance matrix and correlation matrix
+  void covariance(name aname, uint64_t freq, deque<int64_t> returns){
+    require_auth(_self);
+
+    pairtoproctb pairtoproc(_self,_self.value);
+    pairstable pairs(name("oracle111111"), name("oracle111111").value);
+    auto pairsname = pairs.get_index<name("aname")>();
+    for ( auto it = pairtoproc.begin(); it != pairtoproc.end(); it++ ) {
+        auto itr = pairsname.find(it->aname.value);
+        if ( itr != pairsname.end() ) { //pair must exist in the oracle
+
+          statstable store(_self, aname.value);
+          auto itr = store.find(freq);
+          if (itr != store.end()) {
+            itr.returns
+
+          };
+     //   get_last_price(it->aname, five_minute, lastprice);
+     //   get_last_price(it->aname, fifteen_minute, lastprice);
+      //  get_last_price(it->aname, one_hour, lastprice);
+      //  get_last_price(it->aname, four_hour, lastprice);
+     //   get_last_price(it->aname, one_day, lastprice);
+        };
+    }
+  }
+
+   //get last price from the oracle and prepend to time series
+  void get_last_price(const name pair, const uint64_t freq, const uint64_t lastprice){
 
     statstable store(_self, pair.value);
 
     auto itr = store.find(freq);
     uint64_t ctime = current_time();
     if (itr != store.end()) {
-      eosio::print("existing row: ", freq, "\n");
       auto last = store.get(freq);
-      if (last.timestamp + freq <= ctime){
+      if (last.timestamp + freq - cronlag <= ctime){
 
-        if (size(last.price)==3){
+        if (size(last.price)==dequesize){ // append to time series, remove oldest
           store.modify( itr, _self, [&]( auto& s ) {
             s.timestamp = ctime;
-            s.price.push_front(lastprice);
-            s.price.pop_back();
+            uint64_t prevprice = s.price.back();
+            s.price.push_back(lastprice);
+            s.returns.push_back((int64_t)(10000.0*(((double)lastprice/(double)prevprice)-1.0)));
+            s.price.pop_front();
+            s.returns.pop_front();
           });
-        } else {
+        } else { // append to time series, don't remove oldest
           store.modify( itr, _self, [&]( auto& s ) {
             s.timestamp = ctime;
-            s.price.push_front(lastprice);
+            uint64_t prevprice = s.price.back();
+            s.price.push_back(lastprice);
+            s.returns.push_back((int64_t)(10000.0*(((double)lastprice/(double)prevprice)-1.0)));
           });
         }
 
-      } else { // update front with latest price
+      } else { // too early so just overwrite latest point
           store.modify( itr, _self, [&]( auto& s ) {
-            s.price.front() = lastprice;
+            s.price.back() = lastprice;
+            if (s.price.size() > 1)
+              s.returns.back() = (int64_t)(10000.0*(((double)lastprice/(double)s.price[s.price.size()-2])-1.0));
           });
       };
 
-    } else {
+    } else { // first data point
 
           store.emplace(_self, [&](auto& s) {
             s.freq=freq;

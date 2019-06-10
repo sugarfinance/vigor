@@ -159,6 +159,8 @@ cleos push action dummytokens1 transfer '[ "dummytokens1", "testinsure12", "1000
 cleos system newaccount eosio oracle111111 $OWNER_KEY --stake-cpu "50 EOS" --stake-net "10 EOS" --buy-ram-kbytes 50000 --transfer
 #cleos system newaccount eosio eostitanprod $OWNER_KEY --stake-cpu "50 EOS" --stake-net "10 EOS" --buy-ram-kbytes 50000 --transfer
 cleos system newaccount eosio feeder111111 $OWNER_KEY --stake-cpu "50 EOS" --stake-net "10 EOS" --buy-ram-kbytes 50000 --transfer
+cleos system newaccount eosio feeder111112 $OWNER_KEY --stake-cpu "50 EOS" --stake-net "10 EOS" --buy-ram-kbytes 50000 --transfer
+cleos system newaccount eosio feeder111113 $OWNER_KEY --stake-cpu "50 EOS" --stake-net "10 EOS" --buy-ram-kbytes 50000 --transfer
 cleos system newaccount eosio datapreproc1 $OWNER_KEY --stake-cpu "50 EOS" --stake-net "10 EOS" --buy-ram-kbytes 50000 --transfer
 
 ORACLE_ROOT=/home/ab/contracts1.6.0/delphioracle/contract
@@ -170,10 +172,20 @@ eosio-cpp --abigen -I $ORACLE_ROOT -I $EOSIO_CONTRACTS_ROOT/eosio.system/include
 cleos set contract oracle111111 $ORACLE_ROOT $ORACLE_WASM $ORACLE_ABI -p oracle111111@active
 cleos push action oracle111111 configure '{}' -p oracle111111@active
 cd /home/ab/contracts1.6.0/delphioracle/scripts
-node updater2.js
+node updaterEOS_1.js
 cd /home/ab/contracts1.6.0/delphioracle/scripts
-node updater.js
-#cleos push action oracle111111 write '{"owner": "feeder111111","quotes": [{"value":"80000","pair":"eosusd"},{"value":"80000","pair":"eosbtc"}]}' -p feeder111111@active
+node updaterEOS_2.js
+cd /home/ab/contracts1.6.0/delphioracle/scripts
+node updaterEOS_3.js
+cd /home/ab/contracts1.6.0/delphioracle/scripts
+node updaterIQ_1.js
+cd /home/ab/contracts1.6.0/delphioracle/scripts
+node updaterIQ_2.js
+cd /home/ab/contracts1.6.0/delphioracle/scripts
+node updaterIQ_3.js
+#cleos push action oracle111111 write '{"owner": "feeder111111","quotes": [{"value":"10000","pair":"eosusd"},{"value":"80000","pair":"eosbtc"}]}' -p feeder111111@active
+#cleos push action oracle111111 write '{"owner": "feeder111112","quotes": [{"value":"20000","pair":"eosusd"},{"value":"80000","pair":"eosbtc"}]}' -p feeder111112@active
+#cleos push action oracle111111 write '{"owner": "feeder111113","quotes": [{"value":"30000","pair":"eosusd"},{"value":"80000","pair":"eosbtc"}]}' -p feeder111113@active
 #cleos push action oracle111111 write '{"owner": "feeder111111","quotes": [{"value":"70000","pair":"eosusd"},{"value":"70000","pair":"eosbtc"}]}' -p feeder111111@active
 #cleos push action oracle111111 write '{"owner": "feeder111111","quotes": [{"value":"60000","pair":"eosusd"},{"value":"60000","pair":"eosbtc"}]}' -p feeder111111@active
 #cleos push action oracle111111 write '{"owner": "feeder111111","quotes": [{"value":"50000","pair":"eosusd"},{"value":"50000","pair":"eosbtc"}]}' -p feeder111111@active
@@ -200,9 +212,13 @@ cleos set contract datapreproc1 $CONTRACT_ROOT $CONTRACT_WASM $CONTRACT_ABI -p d
 cleos push action datapreproc1 clear '{}' -p datapreproc1@active
 cleos push action datapreproc1 addpair '{"newpair":"eosusd"}' -p datapreproc1@active
 cleos push action datapreproc1 addpair '{"newpair":"iqeos"}' -p datapreproc1@active
-cleos push action datapreproc1 update '{}' -p datapreproc1@active
+#cleos push action datapreproc1 update '{}' -p datapreproc1@active
+cd /home/ab/contracts1.6.0/dataupdate
+node dataupdate.js
 cleos get table datapreproc1 datapreproc1 pairtoproc --limit -1
 cleos get table datapreproc1 eosusd stats
+cleos get table datapreproc1 iqeos stats
+
 
 #cleos -u http://api.eosnewyork.io:80 get code delphioracle --wasm -c delphioracle.wasm
 #cleos -u http://api.eosnewyork.io:80 get code delphioracle --abi delphioracle.abi
