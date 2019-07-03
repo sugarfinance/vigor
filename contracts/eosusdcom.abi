@@ -1,7 +1,6 @@
 {
-    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT ",
+    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT Tue Jul  2 20:13:59 2019",
     "version": "eosio::abi/1.1",
-    "types": [],
     "structs": [
         {
             "name": "account",
@@ -136,12 +135,7 @@
         {
             "name": "doupdate",
             "base": "",
-            "fields": [
-                {
-                    "name": "up",
-                    "type": "bool"
-                }
-            ]
+            "fields": []
         },
         {
             "name": "globalstats",
@@ -394,6 +388,7 @@
             ]
         }
     ],
+    "types": [],
     "actions": [
         {
             "name": "assetin",
@@ -484,5 +479,6 @@
         }
     ],
     "ricardian_clauses": [],
-    "variants": []
+    "variants": [],
+    "abi_extensions": []
 }

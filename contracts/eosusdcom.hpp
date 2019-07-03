@@ -101,8 +101,8 @@ CONTRACT eosusdcom : public eosio::contract {
 
    
          EOSLIB_SERIALIZE(globalstats, (solvency)(valueofcol)(valueofins)(scale)(tesvalue)(svalueofcole)(svalueofins)(stressins)(fxrate)(inreserve)(totaldebt)(support)(collateral))
-      }; typedef eosio::multi_index<"globals"_n, globalstats> globalsm; 
-         typedef eosio::singleton<"globals"_n, globalstats> globals;
+      }; typedef eosio::multi_index<name("globals"), globalstats> globalsm; 
+         typedef eosio::singleton<name("globals"), globalstats> globals;
                                                             globals _globals;
       void riskmodel();
       void update(name usern); 
@@ -111,7 +111,7 @@ CONTRACT eosusdcom : public eosio::contract {
       void pricingmodel(name usern);
 
       map <symbol, name> issueracct {
-         {symbol("EOS",4),	    name("eosio.token")}
+         {symbol("EOS",4),	    name("eosio.token")},
          {symbol("VIG",4),	    name("vig111111111")},
          {symbol("IQ",3),	    name("dummytokens1")},
          {symbol("PEOS",4),	    name("dummytokens1")},
@@ -122,7 +122,7 @@ CONTRACT eosusdcom : public eosio::contract {
       TABLE account {
          asset    balance;
          uint64_t primary_key()const { return balance.symbol.code().raw(); }
-      }; typedef eosio::multi_index< "accounts"_n, account > accounts;
+      }; typedef eosio::multi_index< name("accounts"), account > accounts;
 
       TABLE currency_stats {
          asset    supply;
@@ -133,7 +133,7 @@ CONTRACT eosusdcom : public eosio::contract {
          * assets tracked by the contract
          */
          map <symbol, double> correlation_matrix {
-            {symbol("EOS",4),0.42}
+            {symbol("EOS",4),0.42},
             {symbol("VIG",4), 0.42},
             {symbol("IQ",3), 0.42},
             {symbol("PEOS",4), 0.42},
@@ -145,7 +145,7 @@ CONTRACT eosusdcom : public eosio::contract {
          uint64_t primary_key()const { return supply.symbol.code().raw(); }
 
          EOSLIB_SERIALIZE(currency_stats, (supply)(max_supply)(issuer)(correlation_matrix)(volatility))
-      }; typedef eosio::multi_index< "stat"_n, currency_stats > stats;
+      }; typedef eosio::multi_index< name("stat"), currency_stats > stats;
                                                                 stats _stats;
 
       void sub_balance( name owner, asset value );
@@ -164,7 +164,7 @@ CONTRACT eosusdcom : public eosio::contract {
                      string memo);
       ACTION assetout(name usern, asset assetout, string memo);
 
-      ACTION doupdate(bool up);
+      ACTION doupdate();
 
       ACTION create( name   issuer,
                      asset  maximum_supply);

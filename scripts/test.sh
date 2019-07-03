@@ -1,4 +1,3 @@
-##############################################
 #start the local testnet
 #rm -rf ~/eosio-wallet/*.wallet
 pkill nodeos
@@ -9,18 +8,19 @@ nodeos -e -p eosio --plugin eosio::chain_api_plugin --plugin eosio::history_api_
 ##############################################
 # setup eosio system accounts for local testnet
 #cleos wallet create -n testwallet --to-console
-cleos wallet unlock -n testwallet --password PW5KcXcFzdU9fRrRskrT7YtuTwVmv3XM4FQXuEK2vGG7m3vTbGagK
+cleos wallet unlock -n testwallet --password PW5JfGWx3HGfytVbq8eYAdudxPZbun7MvYpk5PyGaYesTJrSK7cpT
 #
 #cleos wallet import -n testwallet --private-key 5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3
-cd ~/contracts1.6.0/eosio.contracts/contracts/eosio.bios
+cd ~/contracts/eosio.contracts/contracts/eosio.bios
 #eosio-cpp -I include -o eosio.bios.wasm src/eosio.bios.cpp --abigen
-cleos set contract eosio ~/contracts1.6.0/eosio.contracts/contracts/eosio.bios -p eosio@active
-#eosio-cpp -I include -o eosio.system.wasm src/eosio.system.cpp --abigen
-#cleos set contract eosio ~/contracts1.6.0/eosio.contracts/contracts/eosio.system -p eosio@active
+cleos set contract eosio ~/contracts/eosio.contracts/contracts/eosio.bios -p eosio@active
+cd ~/contracts/eosio.contracts/contracts/eosio.system 
+#eosio-cpp -I include -I ../eosio.token/include -o eosio.system.wasm src/eosio.system.cpp --abigen
+#cleos set contract eosio ~/contracts/eosio.contracts/contracts/eosio.system -p eosio@active
 cleos create account eosio eosio.token EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV
-cd ~/contracts1.6.0/eosio.contracts/contracts/eosio.token
+cd ~/contracts/eosio.contracts/contracts/eosio.token
 #eosio-cpp -I include -o eosio.token.wasm src/eosio.token.cpp --abigen
-cleos set contract eosio.token ~/contracts1.6.0/eosio.contracts/contracts/eosio.token --abi eosio.token.abi -p eosio.token@active
+cleos set contract eosio.token ~/contracts/eosio.contracts/contracts/eosio.token --abi eosio.token.abi -p eosio.token@active
 cleos push action eosio.token create '[ "eosio", "1000000000.0000 EOS"]' -p eosio.token@active
 ##############################################
 
@@ -34,13 +34,13 @@ cleos set account permission eosusdcom111 active '{"threshold":1,"keys":[{"key":
 # active EOS6AJMuDLaZGP3pre5BJN1KE2H165HWLhxz8VnnuuwWFwW8EzwA8 5JURzu6SWjKZyPiEAPJr9RukKwNce6VmXrifxnSVnpY3vTDEdcH
 # owner EOS8X7DhpsAGCbBXsw5LUjWTWDDhtzfaC6K91mfp4DQBCVEGJwUsj 5JUPzEesJZ6CsW73r4qK17KxDFpW1rqFF1bFvzz8RGiYGfBbhUQ
 # cleos wallet create -n kylin --to-console
-# PW5JgPVMqN8mpBfHVxvUCNsWTn9dzhE3qvipJqGFYRiZrGiJazJR1
+# PW5KSTURv7yGqJAvMvepASYEAmtER9N26UERwce44XnFauUuXsYp7
 # cleos wallet import -n kylin --private-key 5JgQGN1pgMgYpiaJnKZeZsK2dJgAwCd3eYwkqkX3m7Ams8wNaQr
 # cleos -u https://api.kylin.alohaeos.com system regproducer feeder111111 EOS5vGy7F7AdjUEfnB5Z9YhTSccMrhePhbq4Q2QnuNENGPSJf6Tvi
 # feeder111111 {"msg": "succeeded", "keys": {"active_key": {"public": "EOS5vGy7F7AdjUEfnB5Z9YhTSccMrhePhbq4Q2QnuNENGPSJf6Tvi", "private": "5JgQGN1pgMgYpiaJnKZeZsK2dJgAwCd3eYwkqkX3m7Ams8wNaQr"}, "owner_key": {"public": "EOS58sxSZWPbj2VqCzQXv3KfeZ42Zyr6kACuacgPLpJ9YvvLBveGR", "private": "5JekaFjVjYzcWbXaGSYq9vK6CR2zdQxxyxioMJ4Xx2KzVhXaNVv"}}, "account": "feeder111111"}
-cd ~/contracts1.6.0/eosusd/contracts
+cd ~/contracts/eosusd/contracts
 eosio-cpp -I . -abigen eosusdcom.cpp -o eosusdcom.wasm
-cleos set contract eosusdcom111 ~/contracts1.6.0/eosusd/contracts eosusdcom.wasm eosusdcom.abi -p eosusdcom111@active
+cleos set contract eosusdcom111 ~/contracts/eosusd/contracts eosusdcom.wasm eosusdcom.abi -p eosusdcom111@active
 cleos push action eosusdcom111 create '[ "eosusdcom111", "1000000000.0000 UZD"]' -p eosusdcom111@active
 cleos push action eosusdcom111 setsupply '[ "eosusdcom111", "1000000000.0000 UZD"]' -p eosusdcom111@active
 ##############################################
@@ -66,9 +66,9 @@ cleos push action eosio.token issue '[ "testinsure12", "100000.0000 EOS", "m" ]'
 ##############################################
 # create the VIG token
 cleos create account eosio vig111111111 EOS6RYBoZJzGFR35mdQMyb7SBUuZQuupM2ZuqGnbtFJ4wLW3fXbb8 EOS6RYBoZJzGFR35mdQMyb7SBUuZQuupM2ZuqGnbtFJ4wLW3fXbb8
-cd ~/contracts1.6.0/eosio.contracts/contracts/eosio.token
+cd ~/contracts/eosio.contracts/contracts/eosio.token
 #eosio-cpp -I include -o eosio.token.wasm src/eosio.token.cpp --abigen
-cleos set contract vig111111111 ~/contracts1.6.0/eosio.contracts/contracts/eosio.token --abi eosio.token.abi -p vig111111111@active
+cleos set contract vig111111111 ~/contracts/eosio.contracts/contracts/eosio.token --abi eosio.token.abi -p vig111111111@active
 cleos push action vig111111111 create '[ "vig111111111", "1000000000.0000 VIG"]' -p vig111111111@active
 cleos push action vig111111111 issue '[ "testborrow11", "100000.0000 VIG", "m" ]' -p vig111111111@active
 cleos push action vig111111111 issue '[ "testborrow12", "100000.0000 VIG", "m" ]' -p vig111111111@active
@@ -79,9 +79,9 @@ cleos push action vig111111111 issue '[ "testinsure12", "100000.0000 VIG", "m" ]
 ##############################################
 # create dummy tokens
 cleos create account eosio dummytokens1 EOS6RYBoZJzGFR35mdQMyb7SBUuZQuupM2ZuqGnbtFJ4wLW3fXbb8 EOS6RYBoZJzGFR35mdQMyb7SBUuZQuupM2ZuqGnbtFJ4wLW3fXbb8
-cd ~/contracts1.6.0/eosio.contracts/contracts/eosio.token
+cd ~/contracts/eosio.contracts/contracts/eosio.token
 #eosio-cpp -I include -o eosio.token.wasm src/eosio.token.cpp --abigen
-cleos set contract dummytokens1 ~/contracts1.6.0/eosio.contracts/contracts/eosio.token --abi eosio.token.abi -p dummytokens1@active
+cleos set contract dummytokens1 ~/contracts/eosio.contracts/contracts/eosio.token --abi eosio.token.abi -p dummytokens1@active
 cleos push action dummytokens1 create '[ "dummytokens1", "1000000000.0000 IQ"]' -p dummytokens1@active
 cleos push action dummytokens1 create '[ "dummytokens1", "1000000000.0000 UTG"]' -p dummytokens1@active
 cleos push action dummytokens1 create '[ "dummytokens1", "1000000000.0000 PTI"]' -p dummytokens1@active
@@ -116,10 +116,10 @@ cleos create account eosio eostitanprod EOS6RYBoZJzGFR35mdQMyb7SBUuZQuupM2ZuqGnb
 cleos create account eosio feeder111111 EOS6RYBoZJzGFR35mdQMyb7SBUuZQuupM2ZuqGnbtFJ4wLW3fXbb8 EOS6RYBoZJzGFR35mdQMyb7SBUuZQuupM2ZuqGnbtFJ4wLW3fXbb8
 cleos create account eosio feeder211111 EOS6RYBoZJzGFR35mdQMyb7SBUuZQuupM2ZuqGnbtFJ4wLW3fXbb8 EOS6RYBoZJzGFR35mdQMyb7SBUuZQuupM2ZuqGnbtFJ4wLW3fXbb8
 
-cd ~/contracts1.6.0/delphioracle/contract
+cd ~/contracts/delphioracle/contract
 cleos -u http://api.eosnewyork.io:80 get code delphioracle --wasm -c delphioracle.wasm
 cleos -u http://api.eosnewyork.io:80 get code delphioracle --abi delphioracle.abi
-cleos set contract oracle111111 ~/contracts1.6.0/delphioracle/contract delphioracle.wasm delphioracle.abi -p oracle111111@active
+cleos set contract oracle111111 ~/contracts/delphioracle/contract delphioracle.wasm delphioracle.abi -p oracle111111@active
 
 cleos push action oracle111111 setoracles '{"oracleslist":["feeder111111","feeder211111"]}' -p eostitanprod@active
 cleos push action oracle111111 write '{"owner":"feeder111111", "value":63800}' -p feeder111111@active
@@ -128,10 +128,10 @@ cleos push action oracle111111 write '{"owner":"feeder111111", "value":63800}' -
 ###### OPTIONAL FOR LOCAL TESTNET #############
 # launch two oracle feeders
 #in a new shell
-cd ~/contracts1.6.0/delphioracle/scripts
+cd ~/contracts/delphioracle/scripts
 nodeosurl='http://127.0.0.1:8888' interval=15000 account="oracle111111" defaultPrivateKey="5J7UbUYpJfywWRtvq94b3RBzQvKYfRcUA3NSi1ApRsh8HuKfCy3" feeder="feeder111111" node updater2.js
 #in another shell
-cd ~/contracts1.6.0/delphioracle/scripts
+cd ~/contracts/delphioracle/scripts
 nodeosurl='http://127.0.0.1:8888' interval=15000 account="oracle111111" defaultPrivateKey="5J7UbUYpJfywWRtvq94b3RBzQvKYfRcUA3NSi1ApRsh8HuKfCy3" feeder="feeder211111" node updater2.js
 #cleos get table oracle111111 oracle111111 eosusd --limit 1
 #cleos get table oracle111111 oracle111111 oracles

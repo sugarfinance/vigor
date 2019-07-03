@@ -100,9 +100,9 @@ void eosusdcom::issue( name to, asset quantity, string memo )
     add_balance( st.issuer, quantity, st.issuer );
 
     if( to != st.issuer ) {
-      SEND_INLINE_ACTION( *this, transfer, { {st.issuer, "active"_n} },
-                          { st.issuer, to, quantity, memo }
-      );
+   //   SEND_INLINE_ACTION( *this, transfer, { {st.issuer, "active"_n} },
+     //                     { st.issuer, to, quantity, memo }
+     // );
     }
 }
 

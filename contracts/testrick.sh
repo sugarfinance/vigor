@@ -1,6 +1,71 @@
 #!/bin/bash
 # Usage: ./test.sh
+#eosio
+sudo apt remove eosio
+wget https://github.com/eosio/eos/releases/download/v1.7.4/eosio_1.7.4-1-ubuntu-18.04_amd64.deb
+sudo apt install ./eosio_1.7.4-1-ubuntu-18.04_amd64.deb
 
+git clone --recursive https://github.com/EOSIO/eos.git --branch v1.7.4 --single-branch
+cd scripts
+#Could not find a package configuration file provided by "libbsoncxx" with
+# eos/plugins/mongo_db_plugin/CMakeLists.txt find_package(libbsoncxx-static REQUIRED) -> find_package(libbsoncxx REQUIRED)
+# eos/plugins/mongo_db_plugin/CMakeLists.txt : if (LIBMONGOC-1.0_FOUND) -> if (LIBMONGOC_FOUND)
+# eos/scripts/eosio_build.sh --> -DBUILD_MONGO_DB_PLUGIN=false 
+./eosio_build.sh
+sudo ./eosio_install.sh
+
+#put into .bashrc
+alias nodeos=~/opt/eosio/bin/nodeos
+alias cleos=~/opt/eosio/bin/cleos
+alias keosd=~/opt/eosio/bin/keosd
+source ~/.bashrc
+
+
+#Could not find a package configuration file provided by "libbsoncxx" with
+wget https://github.com/mongodb/mongo-c-driver/releases/download/1.14.0/mongo-c-driver-1.14.0.tar.gz
+tar xzf mongo-c-driver-1.14.0.tar.gz
+cd mongo-c-driver-1.14.0
+mkdir cmake-build
+cd cmake-build
+cmake -DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF ..
+
+git clone https://github.com/mongodb/mongo-cxx-driver.git --branch r3.4.0 --single-branch
+--branch releases/stable --depth 1
+cd mongo-cxx-driver/build
+cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local ..
+make -j$( sysctl -in machdep.cpu.core_count )
+sudo make install
+
+#boost 1.67
+git clone --recursive https://github.com/boostorg/boost.git --branch boost-1.67.0 --single-branch
+cd boost
+./bootstrap.sh
+sudo ./b2 install
+ cat /usr/include/boost/version.hpp | grep "BOOST_LIB_VERSION"
+ cat /usr/local/include/boost/version.hpp | grep "BOOST_LIB_VERSION"
+ sudo add-apt-repository ppa:mhier/libboost-latest
+sudo apt update
+sudo apt install libboost1.67
+sudo ldconfig
+##############################################
+
+#eosio.contracts
+git clone --recursive https://github.com/EOSIO/eosio.contracts.git --branch v1.6.1 --single-branch
+git tag -l
+git checkout tags/v1.6.1
+git show
+git log -1
+
+#eosio-cdt
+sudo apt remove eosio.cdt
+wget https://github.com/EOSIO/eosio.cdt/releases/download/v1.5.0/eosio.cdt_1.5.0-1_amd64.deb
+sudo apt install ./eosio.cdt_1.5.0-1_amd64.deb
+#eosio-cdt
+git clone --recursive https://github.com/eosio/eosio.cdt --branch v1.5.0 --single-branch
+cd eosio.cdt
+./build.sh
+sudo ./install.sh
+##############################################
 #=================================================================================#
 # SETUP
 # 
@@ -14,8 +79,8 @@ CYAN='\033[1;36m'
 NC='\033[0m'
 
 # CHANGE PATH
-EOSIO_CONTRACTS_ROOT=/home/ab/contracts1.6.0/eosio.contracts/contracts
-CONTRACT_ROOT=/home/ab/contracts1.6.0/eosusd/contracts
+EOSIO_CONTRACTS_ROOT=/home/gg/contracts/eosio.contracts/contracts
+CONTRACT_ROOT=/home/gg/contracts/vigor/contracts
 CONTRACT="eosusdcom"
 CONTRACT_WASM="$CONTRACT.wasm"
 CONTRACT_ABI="$CONTRACT.abi"
@@ -25,7 +90,7 @@ OWNER_KEY="EOS6TnW2MQbZwXHWDHAYQazmdc3Sc1KGv4M9TSgsKZJSo43Uxs2Bx"
 OWNER_ACCT="5J3TQGkkiRQBKcg8Gg2a7Kk5a2QAQXsyGrkCnnq4krSSJSUkW12"
 
 #cleos wallet create --to-console
-cleos wallet unlock -n default --password PW5KDyCJVL3ypUGia4yf5TatcCQ4UjyrDQ296Dh2pe8ZjrLVDPh91
+cleos wallet unlock -n default --password PW5HzuR3R2g77WZCsqaSMD91aC3WPFQzmeHkyzyEREbPTB3EmHeMC
 #cleos wallet import -n default --private-key $OWNER_ACCT
 
 #=================================================================================#
@@ -56,14 +121,21 @@ cleos create account eosio eosio.stake EOS5an8bvYFHZBmiCAzAtVSiEiixbJhLY8Uy5Z7cp
 #cleos create account eosio eosio.token EOS7JPVyejkbQHzE9Z4HwewNzGss11GB21NPkwTX2MQFmruYFqGXm
 cleos create account eosio eosio.token EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV
 cleos create account eosio eosio.vpay EOS6szGbnziz224T1JGoUUFu2LynVG72f8D3UVAS25QgwawdH983U
+cleos create account eosio eosio.rex EOS6szGbnziz224T1JGoUUFu2LynVG72f8D3UVAS25QgwawdH983U
+
+
 
 # Bootstrap new system contracts
 echo -e "${CYAN}-----------------------SYSTEM CONTRACTS-----------------------${NC}"
-#eosio-cpp -I $EOSIO_CONTRACTS_ROOT/eosio.msig/include -o $EOSIO_CONTRACTS_ROOT/eosio.msig/eosio.msig.wasm $EOSIO_CONTRACTS_ROOT/eosio.msig/src/eosio.msig.cpp --abigen
-#eosio-cpp -I $EOSIO_CONTRACTS_ROOT/eosio.system/include -I $EOSIO_CONTRACTS_ROOT/eosio.token/include -o $EOSIO_CONTRACTS_ROOT/eosio.system/eosio.system.wasm $EOSIO_CONTRACTS_ROOT/eosio.system/src/eosio.system.cpp --abigen
-#eosio-cpp -I $EOSIO_CONTRACTS_ROOT/eosio.wrap/include -o $EOSIO_CONTRACTS_ROOT/eosio.wrap/eosio.wrap.wasm $EOSIO_CONTRACTS_ROOT/eosio.wrap/src/eosio.wrap.cpp --abigen
+#eosio-cpp -contract=eosio.msig -I=$EOSIO_CONTRACTS_ROOT/eosio.msig/include -o=$EOSIO_CONTRACTS_ROOT/eosio.msig/eosio.msig.wasm -abigen $EOSIO_CONTRACTS_ROOT/eosio.msig/src/eosio.msig.cpp
+#eosio-cpp -contract=eosio.system -I=$EOSIO_CONTRACTS_ROOT/eosio.system/include -I=$EOSIO_CONTRACTS_ROOT/eosio.token/include -o=$EOSIO_CONTRACTS_ROOT/eosio.system/eosio.system.wasm -abigen $EOSIO_CONTRACTS_ROOT/eosio.system/src/eosio.system.cpp
+#eosio-cpp -contract=eosio.wrap -I=$EOSIO_CONTRACTS_ROOT/eosio.wrap/include -o=$EOSIO_CONTRACTS_ROOT/eosio.wrap/eosio.wrap.wasm -abigen $EOSIO_CONTRACTS_ROOT/eosio.wrap/src/eosio.wrap.cpp
+#eosio-cpp -contract=eosio.token -I=$EOSIO_CONTRACTS_ROOT/eosio.token/include -o=$EOSIO_CONTRACTS_ROOT/eosio.token/eosio.token.wasm -abigen $EOSIO_CONTRACTS_ROOT/eosio.token/src/eosio.token.cpp
+#eosio-cpp -contract=eosio.bios -I=$EOSIO_CONTRACTS_ROOT/eosio.bios/include -o=$EOSIO_CONTRACTS_ROOT/eosio.bios/eosio.bios.wasm -abigen $EOSIO_CONTRACTS_ROOT/eosio.bios/src/eosio.bios.cpp
+cleos system newaccount eosio --transfer accountnum11 EOS8mUftJXepGzdQ2TaCduNuSPAfXJHf22uex4u41ab1EVv9EAhWt --stake-net "100000.0000 SYS" --stake-cpu "100000.0000 SYS" --buy-ram-kbytes 8192
+
 cleos set contract eosio.token $EOSIO_CONTRACTS_ROOT/eosio.token/
-cleos set contract eosio.msig $EOSIO_CONTRACTS_ROOT/eosio.msig/
+cleos set contract eosio.msig $EOSIO_CONTRACTS_ROOT/eosio.msig
 cleos push action eosio.token create '[ "eosio", "100000000000.0000 EOS" ]' -p eosio.token
 cleos push action eosio.token create '[ "eosio", "100000000000.0000 SYS" ]' -p eosio.token
 echo -e "      EOS TOKEN CREATED"
@@ -75,8 +147,8 @@ echo -e "      BIOS SET"
 cleos set contract eosio $EOSIO_CONTRACTS_ROOT/eosio.system/
 echo -e "      SYSTEM SET"
 cleos push action eosio setpriv '["eosio.msig", 1]' -p eosio@active
-cleos push action eosio init '[0, "4,EOS"]' -p eosio@active
-#cleos push action eosio init '[0, "4,SYS"]' -p eosio@active
+cleos push action eosio init '["0", "4,EOS"]' -p eosio@active
+#cleos push action eosio init '["0", "4,SYS"]' -p eosio@active
 
 # Deploy eosio.wrap
 echo -e "${CYAN}-----------------------EOSIO WRAP-----------------------${NC}"
@@ -90,7 +162,7 @@ cleos set contract eosio.wrap $EOSIO_CONTRACTS_ROOT/eosio.wrap/
 
 cleos system newaccount eosio eosusdcom111 $OWNER_KEY --stake-cpu "50 EOS" --stake-net "10 EOS" --buy-ram-kbytes 50000 --transfer
 cleos set account permission eosusdcom111 active '{"threshold":1,"keys":[{"key":"EOS6TnW2MQbZwXHWDHAYQazmdc3Sc1KGv4M9TSgsKZJSo43Uxs2Bx","weight":1}],"accounts":[{"permission":{"actor":"eosusdcom111","permission":"eosio.code"},"weight":1}],"waits":[]}' -p eosusdcom111@active
-#eosio-cpp -I $CONTRACT_ROOT -o "$CONTRACT_ROOT/$CONTRACT_WASM" "$CONTRACT_ROOT/$CONTRACT_CPP" --abigen
+#eosio-cpp -contract=$CONTRACT -o="$CONTRACT_ROOT/$CONTRACT_WASM" -I "$CONTRACT_ROOT" -abigen "$CONTRACT_ROOT/$CONTRACT_CPP"
 cleos set contract eosusdcom111 $CONTRACT_ROOT $CONTRACT_WASM $CONTRACT_ABI -p eosusdcom111@active
 cleos push action eosusdcom111 create '[ "eosusdcom111", "1000000000.0000 UZD"]' -p eosusdcom111@active
 cleos push action eosusdcom111 setsupply '[ "eosusdcom111", "1000000000.0000 UZD"]' -p eosusdcom111@active
@@ -163,7 +235,7 @@ cleos system newaccount eosio feeder111112 $OWNER_KEY --stake-cpu "50 EOS" --sta
 cleos system newaccount eosio feeder111113 $OWNER_KEY --stake-cpu "50 EOS" --stake-net "10 EOS" --buy-ram-kbytes 50000 --transfer
 cleos system newaccount eosio datapreproc1 $OWNER_KEY --stake-cpu "50 EOS" --stake-net "10 EOS" --buy-ram-kbytes 50000 --transfer
 
-ORACLE_ROOT=/home/ab/contracts1.6.0/delphioracle/contract
+ORACLE_ROOT=/home/gg/contracts/delphioracle/contract
 ORACLE="oracle"
 ORACLE_WASM="$ORACLE.wasm"
 ORACLE_ABI="$ORACLE.abi"
@@ -171,17 +243,17 @@ ORACLE_CPP="$ORACLE.cpp"
 eosio-cpp --abigen -I $ORACLE_ROOT -I $EOSIO_CONTRACTS_ROOT/eosio.system/include -o "$ORACLE_ROOT/$ORACLE_WASM" "$ORACLE_ROOT/$ORACLE_CPP" 
 cleos set contract oracle111111 $ORACLE_ROOT $ORACLE_WASM $ORACLE_ABI -p oracle111111@active
 cleos push action oracle111111 configure '{}' -p oracle111111@active
-cd /home/ab/contracts1.6.0/delphioracle_bac2/scripts
+cd /home/gg/contracts/delphioracle_bac2/scripts
 node updaterEOS_1.js
-cd /home/ab/contracts1.6.0/delphioracle_bac2/scripts
+cd /home/gg/contracts/delphioracle_bac2/scripts
 node updaterEOS_2.js
-cd /home/ab/contracts1.6.0/delphioracle_bac2/scripts
+cd /home/gg/contracts/delphioracle_bac2/scripts
 node updaterEOS_3.js
-cd /home/ab/contracts1.6.0/delphioracle_bac2/scripts
+cd /home/gg/contracts/delphioracle_bac2/scripts
 node updaterIQ_1.js
-cd /home/ab/contracts1.6.0/delphioracle_bac2/scripts
+cd /home/gg/contracts/delphioracle_bac2/scripts
 node updaterIQ_2.js
-cd /home/ab/contracts1.6.0/delphioracle_bac2/scripts
+cd /home/gg/contracts/delphioracle_bac2/scripts
 node updaterIQ_3.js
 #cleos push action oracle111111 write '{"owner": "feeder111111","quotes": [{"value":"20000","pair":"eosusd", "base": {"sym": "4,EOS", "con": "eosio.token"}}]}' -p feeder111111@active
 #cleos push action oracle111111 write '{"owner": "feeder111111","quotes": [{"value":"10000","pair":"eosusd"},{"value":"80000","pair":"eosbtc"}]}' -p feeder111111@active
@@ -202,19 +274,19 @@ cleos get table oracle111111 eosbtc datapoints --limit -1
 cleos get table oracle111111 oracle111111 stats
 cleos get table oracle111111 oracle111111 pairs
 
-CONTRACT_ROOT=/home/ab/contracts1.6.0/eosusd/contracts
+CONTRACT_ROOT=/home/gg/contracts/vigor/contracts
 CONTRACT="datapreproc"
 CONTRACT_WASM="$CONTRACT.wasm"
 CONTRACT_ABI="$CONTRACT.abi"
 CONTRACT_CPP="$CONTRACT.cpp"
-EOSIO_CONTRACTS_ROOT=/home/ab/contracts1.6.0/eosio.contracts/contracts
+EOSIO_CONTRACTS_ROOT=/home/gg/contracts/eosio.contracts/contracts
 eosio-cpp -abigen -I $CONTRACT_ROOT -I $EOSIO_CONTRACTS_ROOT/eosio.system/include -o "$CONTRACT_ROOT/$CONTRACT_WASM" "$CONTRACT_ROOT/$CONTRACT_CPP" 
 cleos set contract datapreproc1 $CONTRACT_ROOT $CONTRACT_WASM $CONTRACT_ABI -p datapreproc1@active
 cleos push action datapreproc1 clear '{}' -p datapreproc1@active
 cleos push action datapreproc1 addpair '{"newpair":"eosusd"}' -p datapreproc1@active
 cleos push action datapreproc1 addpair '{"newpair":"iqeos"}' -p datapreproc1@active
 #cleos push action datapreproc1 update '{}' -p datapreproc1@active
-cd /home/ab/contracts1.6.0/dataupdate
+cd /home/gg/contracts/dataupdate
 node dataupdate.js
 cleos get table datapreproc1 datapreproc1 pairtoproc --limit -1
 cleos get table datapreproc1 eosusd stats
@@ -231,7 +303,7 @@ cleos get table datapreproc1 iqeos stats
 #=================================================================================#
 
 ###### OPTIONAL FOR LOCAL TESTNET #############
-# cd ~/contracts1.6.0/delphioracle/scripts
+# cd ~/contracts/delphioracle/scripts
 # nodeosurl='http://127.0.0.1:8888' interval=15000 account="oracle111111" defaultPrivateKey="5J3TQGkkiRQBKcg8Gg2a7Kk5a2QAQXsyGrkCnnq4krSSJSUkW12" feeder="feeder111111" node updater2.js
 #cleos get table oracle111111 oracle111111 eosusd --limit 1
 #cleos get table oracle111111 oracle111111 oracles
