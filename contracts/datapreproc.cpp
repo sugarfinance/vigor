@@ -75,8 +75,8 @@ CONTRACT datapreproc : public eosio::contract {
     uint64_t timestamp;
     std::deque<uint64_t> price;
     std::deque<int64_t> returns;
-    std::deque<extended_asset> cov;
-    std::deque<extended_asset> cor;
+    std::map <symbol, int64_t> correlation_matrix;
+    std::deque<uint64_t> vol;
 
     uint64_t primary_key() const {return freq;}
 
@@ -87,7 +87,7 @@ CONTRACT datapreproc : public eosio::contract {
 //add to the list of pairs to process
 ACTION addpair(name newpair) {
     
-    require_auth(_self);
+    //require_auth(_self);
 
     pairstable pairs(name("oracle111111"), name("oracle111111").value);
     auto pairsname = pairs.get_index<name("aname")>();
@@ -110,7 +110,7 @@ ACTION addpair(name newpair) {
   //Clear the list of pairs to process
   ACTION clear() {
 
-    require_auth(_self);
+    //require_auth(_self);
    
     pairtoproctb pairtoproc(_self,_self.value);
 
@@ -155,16 +155,16 @@ ACTION addpair(name newpair) {
 
 //  get median price and store in vector as a historical time series
   ACTION update(){
-    require_auth(_self);
-
+eosio::print("a", "\n");
+eosio::print("b", "\n");
+eosio::print("c", "\n");
     getprices();
-    calcstats();
+    calcstats(one_minute);
 
   }
 
 //  get median price and store in deque as a historical time series
   void getprices(){
-    require_auth(_self);
 
     pairtoproctb pairtoproc(_self,_self.value);
     pairstable pairs(name("oracle111111"), name("oracle111111").value);
@@ -185,43 +185,84 @@ ACTION addpair(name newpair) {
   }
 
   //  calculate statistics covariance matrix and correlation matrix
-  void calcstats(){
-
-    require_auth(_self);
-
+  void calcstats(uint64_t freq){
+    pairstable pairs(name("oracle111111"), name("oracle111111").value);
+    auto pairsname = pairs.get_index<name("aname")>();
+    uint64_t ctime = current_time();
+    eosio::print("1", "\n");
+    eosio::print("1.5", "\n");
     pairtoproctb pairtoproc(_self,_self.value);
     for ( auto it = pairtoproc.begin(); it != pairtoproc.end(); it++ ) {
+        auto ito = pairsname.find(it->aname.value);
+        if ( ito != pairsname.end() ) { //pair must exist in the oracle
           statstable store(_self, it->aname.value);
-          auto itr = store.find(one_minute);
+          auto itr = store.find(freq);
           if (itr != store.end()) {
-            covariance(it->aname, one_minute, itr->returns);
+            auto last = store.get(freq);
+            
+        eosio::print("2", "\n");
+            for ( auto jt = pairtoproc.begin(); jt != pairtoproc.end(); jt++ ) {
+                auto jto = pairsname.find(jt->aname.value);
+                if ( jto != pairsname.end() ) { //pair must exist in the oracle
+
+                  statstable storej(_self, jt->aname.value);
+                  auto jtr = storej.find(freq);
+                  if (jtr != storej.end()) {
+                    auto lastj = storej.get(freq);
+                    eosio::print("3", "\n");
+                    if (last.timestamp + freq - cronlag <= ctime) {
+    eosio::print("4", "\n");
+                      int64_t corr = 5000;
+                      if (size(lastj.price)==dequesize){
+                        corr = corrCalc(last.returns, lastj.returns, sizeof(last.returns));
+                    //  std::map<symbol,int64_t>::iterator itm = itr.correlation_matrix.find(jtr->base.symbol);
+                    //  if (itm != itr.correlation_matrix.end()){ //cor exists already so modify it
+                        store.modify( itr, _self, [&]( auto& s ) {
+                          s.correlation_matrix[jt->base.get_symbol()] = corr;
+                        });
+                    
+                      }
+                    }
+
+                  }
+                }
+            }
           }
-     //   get_last_price(it->aname, five_minute, lastprice);
-     //   get_last_price(it->aname, fifteen_minute, lastprice);
-      //  get_last_price(it->aname, one_hour, lastprice);
-      //  get_last_price(it->aname, four_hour, lastprice);
-     //   get_last_price(it->aname, one_day, lastprice);
-        };
+          }
+    
     }
+  }
   
 
   //  calculate statistics covariance matrix and correlation matrix
-  void covariance(name aname, uint64_t freq, std::deque<int64_t> returns){
-    require_auth(_self);
-
+  void corr(const std::vector<uint64_t>::const_iterator iter, uint64_t freq){
+  /* 
     pairtoproctb pairtoproc(_self,_self.value);
     pairstable pairs(name("oracle111111"), name("oracle111111").value);
     auto pairsname = pairs.get_index<name("aname")>();
     for ( auto it = pairtoproc.begin(); it != pairtoproc.end(); it++ ) {
-        auto itr = pairsname.find(it->aname.value);
-        if ( itr != pairsname.end() ) { //pair must exist in the oracle
+        auto itrx = pairsname.find(it->aname.value);
+        if ( itrx != pairsname.end() ) { //pair must exist in the oracle
 
-          statstable store(_self, aname.value);
+          statstable store(_self, it->aname.value);
           auto itr = store.find(freq);
           if (itr != store.end()) {
-        //    itr->returns
+
+            int64_t quantity = corrCalc(iter->returns, itr->returns, sizeof(iter->returns));
+
+            store.modify( itr, _self, [&]( auto& s ) {
+
+              std::deque<extended_symbol> s.corrsyms.corr.push_front(itr->aname);
+              std::deque<int64_t> s.corr.push_front(quantity);
+              std::deque<uint64_t> s.vol.push_front(vol);
+              s.price.push_back(lastprice);
+              s.returns.push_back((int64_t)(10000.0*(((double)lastprice/(double)prevprice)-1.0)));
+              s.price.pop_front();
+              s.returns.pop_front();
+            });
 
           };
+          
      //   get_last_price(it->aname, five_minute, lastprice);
      //   get_last_price(it->aname, fifteen_minute, lastprice);
       //  get_last_price(it->aname, one_hour, lastprice);
@@ -229,7 +270,56 @@ ACTION addpair(name newpair) {
      //   get_last_price(it->aname, one_day, lastprice);
         };
     }
+    */
   }
+  
+// correlation coefficient
+int64_t corrCalc(std::deque<int64_t> X, std::deque<int64_t> Y, uint64_t n) 
+{ 
+  
+    int64_t sum_X = 0, sum_Y = 0, sum_XY = 0; 
+    int64_t squareSum_X = 0, squareSum_Y = 0; 
+  
+    for (uint64_t i = 0; i < n; i++) 
+    { 
+        // sum of elements of array X. 
+        sum_X = sum_X + X[i]; 
+  
+        // sum of elements of array Y. 
+        sum_Y = sum_Y + Y[i]; 
+  
+        // sum of X[i] * Y[i]. 
+        sum_XY = sum_XY + X[i] * Y[i]; 
+  
+        // sum of square of array elements. 
+        squareSum_X = squareSum_X + X[i] * X[i]; 
+        squareSum_Y = squareSum_Y + Y[i] * Y[i]; 
+    } 
+  
+    // use formula for calculating correlation coefficient. 
+    int64_t corr = 10000*(double)(n * sum_XY - sum_X * sum_Y)  
+                  / sqrt((n * squareSum_X - sum_X * sum_X)  
+                      * (n * squareSum_Y - sum_Y * sum_Y)); 
+  
+    return corr; 
+} 
+
+uint64_t volCalc(std::deque<int64_t> returns, uint64_t n) {
+
+     int64_t variance = 0;
+     int64_t t = returns[0];
+     for (int i = 1; i < n; i++)
+     {
+          t += returns[i];
+          int64_t diff = ((i + 1) * returns[i]) - t;
+          variance += (diff * diff) / ((i + 1) *i);
+     }
+
+     return sqrt(variance / (n - 1));
+}
+
+  
+
 
    //store last price from the oracle, append to time series
   void store_last_price(const name pair, const uint64_t freq, const uint64_t lastprice){

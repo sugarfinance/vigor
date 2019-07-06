@@ -6,9 +6,9 @@
 pkill nodeos
 rm -rf ~/.local/share/eosio/nodeos/data
 #rm -rf ./node2
-nodeos -e -p eosio --http-validate-host=false --delete-all-blocks --contracts-console --plugin eosio::chain_api_plugin --plugin eosio::history_api_plugin --plugin eosio::producer_plugin --plugin eosio::http_plugin --max-transaction-time=10000
-
-
+nodeos -e -p eosio --http-validate-host=false --delete-all-blocks --plugin eosio::chain_api_plugin --plugin eosio::producer_plugin --plugin eosio::http_plugin --max-transaction-time=10000
+--contracts-console
+--plugin eosio::history_api_plugin 
 CYAN='\033[1;36m'
 NC='\033[0m'
 
@@ -96,6 +96,8 @@ cleos set contract eosio.wrap $EOSIO_CONTRACTS_ROOT/eosio.wrap/
 cleos system newaccount eosio eosusdcom111 $OWNER_KEY --stake-cpu "50 EOS" --stake-net "10 EOS" --buy-ram-kbytes 50000 --transfer
 cleos set account permission eosusdcom111 active '{"threshold":1,"keys":[{"key":"EOS6TnW2MQbZwXHWDHAYQazmdc3Sc1KGv4M9TSgsKZJSo43Uxs2Bx","weight":1}],"accounts":[{"permission":{"actor":"eosusdcom111","permission":"eosio.code"},"weight":1}],"waits":[]}' -p eosusdcom111@active
 #eosio-cpp -contract=$CONTRACT -o="$CONTRACT_ROOT/$CONTRACT_WASM" -I "$CONTRACT_ROOT" -abigen "$CONTRACT_ROOT/$CONTRACT_CPP"
+#cleos set contract eosusdcom111 . hello.wasm hello.abi -p eosusdcom111@active
+#cleos push action eosusdcom111 hi '["name","asdf"]'
 cleos set contract eosusdcom111 $CONTRACT_ROOT $CONTRACT_WASM $CONTRACT_ABI -p eosusdcom111@active
 cleos push action eosusdcom111 create '[ "eosusdcom111", "1000000000.0000 UZD"]' -p eosusdcom111@active
 cleos push action eosusdcom111 setsupply '[ "eosusdcom111", "1000000000.0000 UZD"]' -p eosusdcom111@active
@@ -174,21 +176,16 @@ ORACLE_WASM="$ORACLE.wasm"
 ORACLE_ABI="$ORACLE.abi"
 ORACLE_CPP="$ORACLE.cpp"
 EOSIO_CONTRACTS_ROOT=/home/gg/contracts/eosio.contracts/contracts
-eosio-cpp -contract=$ORACLE -I=$ORACLE_ROOT -I=$EOSIO_CONTRACTS_ROOT/eosio.system/include -o="$ORACLE_ROOT/$ORACLE_WASM" -abigen "$ORACLE_ROOT/$ORACLE_CPP" 
+#eosio-cpp -contract=$ORACLE -I=$ORACLE_ROOT -I=$EOSIO_CONTRACTS_ROOT/eosio.system/include -o="$ORACLE_ROOT/$ORACLE_WASM" -abigen "$ORACLE_ROOT/$ORACLE_CPP" 
 cleos set contract oracle111111 $ORACLE_ROOT $ORACLE_WASM $ORACLE_ABI -p oracle111111@active
 cleos push action oracle111111 configure '{}' -p oracle111111@active
-cd /home/gg/contracts/delphioracle/scripts
-node updater.js
-cd /home/gg/contracts/delphioracle_bac2/scripts
-node updaterEOS_2.js
-cd /home/gg/contracts/delphioracle_bac2/scripts
-node updaterEOS_3.js
-cd /home/gg/contracts/delphioracle_bac2/scripts
-node updaterIQ_1.js
-cd /home/gg/contracts/delphioracle_bac2/scripts
-node updaterIQ_2.js
-cd /home/gg/contracts/delphioracle_bac2/scripts
-node updaterIQ_3.js
+cd /home/gg/contracts/delphioracle/scripts && ORACLE=feeder111111 node updater_eosusd.js
+cd /home/gg/contracts/delphioracle/scripts && ORACLE=feeder111112 node updater_eosusd.js
+cd /home/gg/contracts/delphioracle/scripts && ORACLE=feeder111113 node updater_eosusd.js
+cd /home/gg/contracts/delphioracle/scripts && ORACLE=feeder111111 node updater_iqeos.js
+cd /home/gg/contracts/delphioracle/scripts && ORACLE=feeder111112 node updater_iqeos.js
+cd /home/gg/contracts/delphioracle/scripts && ORACLE=feeder111113 node updater_iqeos.js
+
 #cleos push action oracle111111 write '{"owner": "feeder111111","quotes": [{"value":"20000","pair":"eosusd", "base": {"sym": "4,EOS", "con": "eosio.token"}}]}' -p feeder111111@active
 #cleos push action oracle111111 write '{"owner": "feeder111111","quotes": [{"value":"10000","pair":"eosusd"},{"value":"80000","pair":"eosbtc"}]}' -p feeder111111@active
 #cleos push action oracle111111 write '{"owner": "feeder111112","quotes": [{"value":"20000","pair":"eosusd"},{"value":"80000","pair":"eosbtc"}]}' -p feeder111112@active
@@ -214,14 +211,13 @@ CONTRACT_WASM="$CONTRACT.wasm"
 CONTRACT_ABI="$CONTRACT.abi"
 CONTRACT_CPP="$CONTRACT.cpp"
 EOSIO_CONTRACTS_ROOT=/home/gg/contracts/eosio.contracts/contracts
-eosio-cpp -contract=$CONTRACT -I=$CONTRACT_ROOT -I=$EOSIO_CONTRACTS_ROOT/eosio.system/include -o="$CONTRACT_ROOT/$CONTRACT_WASM" -abigen "$CONTRACT_ROOT/$CONTRACT_CPP" 
+#eosio-cpp -contract=$CONTRACT -I=$CONTRACT_ROOT -I=$EOSIO_CONTRACTS_ROOT/eosio.system/include -o="$CONTRACT_ROOT/$CONTRACT_WASM" -abigen "$CONTRACT_ROOT/$CONTRACT_CPP" 
 cleos set contract datapreproc1 $CONTRACT_ROOT $CONTRACT_WASM $CONTRACT_ABI -p datapreproc1@active
 cleos push action datapreproc1 clear '{}' -p datapreproc1@active
 cleos push action datapreproc1 addpair '{"newpair":"eosusd"}' -p datapreproc1@active
 cleos push action datapreproc1 addpair '{"newpair":"iqeos"}' -p datapreproc1@active
-#cleos push action datapreproc1 update '{}' -p datapreproc1@active
-cd /home/gg/contracts/dataupdate
-node dataupdate.js
+#cleos push action datapreproc1 update '{}' -p feeder111111@active
+cd /home/gg/contracts/vigor/scripts && CONTRACT=datapreproc1 OWNER=feeder111111 node dataupdate.js
 cleos get table datapreproc1 datapreproc1 pairtoproc --limit -1
 cleos get table datapreproc1 eosusd stats
 cleos get table datapreproc1 iqeos stats
