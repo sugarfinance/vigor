@@ -5,10 +5,10 @@
 # 
 pkill nodeos
 rm -rf ~/.local/share/eosio/nodeos/data
-#rm -rf ./node2
-nodeos -e -p eosio --http-validate-host=false --delete-all-blocks --plugin eosio::chain_api_plugin --plugin eosio::producer_plugin --plugin eosio::http_plugin --max-transaction-time=10000
---contracts-console
---plugin eosio::history_api_plugin 
+nodeos -e -p eosio --http-validate-host=false --delete-all-blocks --plugin eosio::chain_api_plugin --contracts-console --plugin eosio::http_plugin --plugin eosio::history_api_plugin --verbose-http-errors --max-transaction-time=10000
+#nodeos -e -p eosio --plugin eosio::producer_plugin --plugin eosio::chain_api_plugin --plugin eosio::http_plugin --plugin eosio::state_history_plugin --access-control-allow-origin='*' --contracts-console --http-validate-host=false --trace-history --chain-state-history --verbose-http-errors --filter-on='*' --disable-replay-opts >> nodeos.log 2>&1 &
+
+
 CYAN='\033[1;36m'
 NC='\033[0m'
 
@@ -95,9 +95,11 @@ cleos set contract eosio.wrap $EOSIO_CONTRACTS_ROOT/eosio.wrap/
 
 cleos system newaccount eosio eosusdcom111 $OWNER_KEY --stake-cpu "50 EOS" --stake-net "10 EOS" --buy-ram-kbytes 50000 --transfer
 cleos set account permission eosusdcom111 active '{"threshold":1,"keys":[{"key":"EOS6TnW2MQbZwXHWDHAYQazmdc3Sc1KGv4M9TSgsKZJSo43Uxs2Bx","weight":1}],"accounts":[{"permission":{"actor":"eosusdcom111","permission":"eosio.code"},"weight":1}],"waits":[]}' -p eosusdcom111@active
-#eosio-cpp -contract=$CONTRACT -o="$CONTRACT_ROOT/$CONTRACT_WASM" -I "$CONTRACT_ROOT" -abigen "$CONTRACT_ROOT/$CONTRACT_CPP"
+#eosio-cpp -contract=$CONTRACT -o="$CONTRACT_ROOT/$CONTRACT_WASM" -I="$CONTRACT_ROOT" -abigen "$CONTRACT_ROOT/$CONTRACT_CPP"
+#cd ~/contracts/eosio.cdt/examples/hello/src
+#eosio-cpp -contract=hello -o=hello.wasm -I=../include -abigen hello.cpp
 #cleos set contract eosusdcom111 . hello.wasm hello.abi -p eosusdcom111@active
-#cleos push action eosusdcom111 hi '["name","asdf"]'
+#cleos push action eosusdcom111 hi '["name","asdf"]' -p eosusdcom111@active
 cleos set contract eosusdcom111 $CONTRACT_ROOT $CONTRACT_WASM $CONTRACT_ABI -p eosusdcom111@active
 cleos push action eosusdcom111 create '[ "eosusdcom111", "1000000000.0000 UZD"]' -p eosusdcom111@active
 cleos push action eosusdcom111 setsupply '[ "eosusdcom111", "1000000000.0000 UZD"]' -p eosusdcom111@active
