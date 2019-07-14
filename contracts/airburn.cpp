@@ -81,11 +81,13 @@ CONTRACT airburn : public eosio::contract {
           name      account;
           asset     quantity;
           uint64_t  primary_key()const { return id; }
+          uint64_t by_user()const { return account.value; }
           uint128_t get_ordbycycle()const { return ordbycycle(cycle_number, account); }
           uint128_t get_ordbyuser()const { return ordbyuser(cycle_number, account); }
         };
 
         typedef eosio::multi_index<"payment"_n, payment,
+          indexed_by<"user"_n, const_mem_fun<payment, uint64_t, &payment::by_user>>,
           indexed_by<"ordbycycle"_n, const_mem_fun<payment, uint128_t, &payment::get_ordbycycle>>,
           indexed_by<"ordbyuser"_n, const_mem_fun<payment, uint128_t, &payment::get_ordbyuser>>
           > payments_t;
