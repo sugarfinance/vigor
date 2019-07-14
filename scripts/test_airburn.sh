@@ -19,9 +19,13 @@ EOSIO_CONTRACTS_ROOT=/home/gg/contracts/eosio.contracts/contracts
 OWNER_KEY="EOS6TnW2MQbZwXHWDHAYQazmdc3Sc1KGv4M9TSgsKZJSo43Uxs2Bx"
 OWNER_ACCT="5J3TQGkkiRQBKcg8Gg2a7Kk5a2QAQXsyGrkCnnq4krSSJSUkW12"
 
+#cleos wallet create -n testuser --to-console
+cleos wallet unlock -n testuser --password PW5J5Q8suG6RbrjgD8on3BGwZtGbdGdmu7k2Q3tszvYMz7pokrfzL
+cleos wallet import -n testuser --private-key $OWNER_ACCT
 #cleos wallet create --to-console
 cleos wallet unlock -n default --password PW5HzuR3R2g77WZCsqaSMD91aC3WPFQzmeHkyzyEREbPTB3EmHeMC
-#cleos wallet import -n default --private-key $OWNER_ACCT
+
+#cleos wallet remove_key -n default $OWNER_KEY --password PW5HzuR3R2g77WZCsqaSMD91aC3WPFQzmeHkyzyEREbPTB3EmHeMC
 
 #=================================================================================#
 # BOOTSTRAP EOS CRAP
@@ -94,7 +98,7 @@ cleos set account permission vigorairburn active '{"threshold":1,"keys":[{"key":
 
 
 CONTRACT_ROOT=/home/gg/contracts/vigor/contracts
-CONTRACT="microauctions"
+CONTRACT="airburn"
 CONTRACT_WASM="$CONTRACT.wasm"
 CONTRACT_ABI="$CONTRACT.abi"
 CONTRACT_CPP="$CONTRACT.cpp"
@@ -129,7 +133,7 @@ cleos push action vig111111111 issue '[ "vig111111111", "1000000000.0000 VIG", "
      {"whitelist": "vigorairburn",
                     "tokens_account": "vigorairburn",
                     "savings_account": "testsavings1",
-                    "cycles": 3,
+                    "cycles": 2,
                     "seconds_per_cycle": 60,
                     "start_ts": '$(($(date +%s%N)/1000))',
                     "quota_per_cycle": {
@@ -168,27 +172,30 @@ echo '{
 }' > airburn_owner.json
 cleos set account permission vigorairburn owner ./airburn_owner.json '' -p vigorairburn@owner
 
-cleos push action vig111111111 transfer '[ "vig111111111", "vigorairburn", "100000000.0000 VIG", "seed transfer" ]' -p vig111111111@active
+cleos push action vig111111111 transfer '[ "vig111111111", "vigorairburn", "200.0000 VIG", "seed transfer" ]' -p vig111111111@active
 
 #buy from 0th cycle
 cleos push action eosio.token transfer '[ "testbuy11111", "vigorairburn", "100.0000 EOS", "" ]' -p testbuy11111@active
 cleos push action eosio.token transfer '[ "testbuy11112", "vigorairburn", "200.0000 EOS", "" ]' -p testbuy11112@active
+#pause 60 seconds
 cleos push action vigorairburn claim '[ "testbuy11111"]' -p testbuy11111@active
 cleos push action vigorairburn claim '[ "testbuy11112"]' -p testbuy11111@active
-
-#pause 60 seconds
 #buy from 1st cycle
 cleos push action eosio.token transfer '[ "testbuy11111", "vigorairburn", "100.0000 EOS", "" ]' -p testbuy11111@active
 cleos push action eosio.token transfer '[ "testbuy11112", "vigorairburn", "200.0000 EOS", "" ]' -p testbuy11112@active
+#pause 60 seconds
 cleos push action vigorairburn claim '[ "testbuy11111"]' -p testbuy11111@active
 cleos push action vigorairburn claim '[ "testbuy11112"]' -p testbuy11111@active
 
 #check balances of all users, and sale proceeds were sent to savings
+cleos get table eosio.token vigorairburn accounts
+cleos get table vig111111111 vigorairburn accounts
+
 cleos get table vigorairburn vigorairburn payment
 cleos get table vigorairburn vigorairburn cycle
-cleos get table vig111111111 vigorairburn accounts
+cleos get table vig111111111 VIG stat
 cleos get table vig111111111 vig111111111 accounts
 cleos get table vig111111111 testbuy11111 accounts
 cleos get table vig111111111 testbuy11112 accounts
 cleos get table eosio.token testsavings1 accounts
-cleos get table eosio.token vigorairburn accounts
+cleos push action eosio.token transfer '[ "vigorairburn", "testbuy11111", "100.0000 EOS", "m" ]' -p vigorairburn

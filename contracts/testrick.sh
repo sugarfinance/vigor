@@ -213,7 +213,7 @@ CONTRACT_WASM="$CONTRACT.wasm"
 CONTRACT_ABI="$CONTRACT.abi"
 CONTRACT_CPP="$CONTRACT.cpp"
 EOSIO_CONTRACTS_ROOT=/home/gg/contracts/eosio.contracts/contracts
-#eosio-cpp -contract=$CONTRACT -I=$CONTRACT_ROOT -I=$EOSIO_CONTRACTS_ROOT/eosio.system/include -o="$CONTRACT_ROOT/$CONTRACT_WASM" -abigen "$CONTRACT_ROOT/$CONTRACT_CPP" 
+eosio-cpp -contract=$CONTRACT -I=$CONTRACT_ROOT -I=$EOSIO_CONTRACTS_ROOT/eosio.system/include -o="$CONTRACT_ROOT/$CONTRACT_WASM" -abigen "$CONTRACT_ROOT/$CONTRACT_CPP" 
 cleos set contract datapreproc1 $CONTRACT_ROOT $CONTRACT_WASM $CONTRACT_ABI -p datapreproc1@active
 cleos push action datapreproc1 clear '{}' -p datapreproc1@active
 cleos push action datapreproc1 addpair '{"newpair":"eosusd"}' -p datapreproc1@active

@@ -39,7 +39,7 @@ inline uint128_t ordbyuser(uint64_t cycle_number, name account) {
 
 
 
-CONTRACT microauctions : public eosio::contract {
+CONTRACT airburn : public eosio::contract {
     using contract::contract;
     public:
 
@@ -331,7 +331,7 @@ CONTRACT microauctions : public eosio::contract {
 
         action(permission_level{_self, "active"_n},
            quantity.contract, "transfer"_n,
-           std::make_tuple(current_settings.tokens_account, to, quantity.quantity, std::string("DAPP token auction")))
+           std::make_tuple(current_settings.tokens_account, to, quantity.quantity, std::string("VIG token airburn")))
         .send();
       }
       
@@ -351,11 +351,11 @@ extern "C" {
   void apply(uint64_t receiver, uint64_t code, uint64_t action) {
     if (action == "transfer"_n.value && code != receiver) {
       eosio::execute_action(eosio::name(receiver), eosio::name(code),
-                            &microauctions::transfer);
+                            &airburn::transfer);
     }
     if (code == receiver) {
       switch (action) {
-        EOSIO_DISPATCH_HELPER(microauctions, (init)(sendtokens)(claim)(receipt)(setlimit))
+        EOSIO_DISPATCH_HELPER(airburn, (init)(sendtokens)(claim)(receipt)(setlimit))
       }
     }
     eosio_exit(0);
