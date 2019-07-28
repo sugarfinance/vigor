@@ -22,6 +22,9 @@ EOSIO_CONTRACTS_ROOT=/home/gg/contracts/eosio.contracts/contracts
 #=================================================================================#
 
 #=================================================================================#
+#vigairburn14
+#EOS6USbDgMcUwWpHV8gvqyudufqypwYKejgXtLrQkcKL5VYQhpkAZ 
+#5KWQTxtZDzNNWj68ToKHdyhqutupsejnmpEZYMv7sBBcuX5dmf2 Public
 #vigairburn13
 #EOS8e6v5AtCLqY6mVaYdASTgVwq9YKkdrGzJUpom7EVgDXUdceYnH 
 #5KUDqwsM4AAn6tBUMQXLEtckdmAxzYY4qfBz1XceEd1CJaR9xMh Public
@@ -30,14 +33,14 @@ EOSIO_CONTRACTS_ROOT=/home/gg/contracts/eosio.contracts/contracts
 #5J1294hRG7g21AnXVRu5ndSPTjGqLUuK1vu1GYPZtjo9c82Y9kC
 #cleos wallet create -n testburn --to-console
 cleos wallet unlock -n testburn --password PW5JgePS8hWi1bN8kEywVVt1nT83o1nDJhLRrwf4rcjBRivrJWiw5
-#cleos wallet import -n testburn --private-key 5KUDqwsM4AAn6tBUMQXLEtckdmAxzYY4qfBz1XceEd1CJaR9xMh
+#cleos wallet import -n testburn --private-key 5KWQTxtZDzNNWj68ToKHdyhqutupsejnmpEZYMv7sBBcuX5dmf2
 #old
 #vigairburn11
 #EOS8VKfwWGHeiKSVtUQYvPtmihT59oJgAzgJr3tNYRnf334xMubAy
 #5JkAWv8E6wRZov4NeCYmUoc1XKjQsUSFnBJcNtNfyQKjyeMR4WR
 
-./jungle.sh system buyram vigairburn13 vigairburn13 "25.0000 EOS" -p vigairburn13
-./jungle.sh system delegatebw vigairburn13 vigairburn13 "20.000 EOS" "20.000 EOS" -p vigairburn13
+./jungle.sh system buyram vigairburn14 vigairburn14 "25.0000 EOS" -p vigairburn14
+./jungle.sh system delegatebw vigairburn14 vigairburn14 "20.000 EOS" "20.000 EOS" -p vigairburn14
 CONTRACT_ROOT=/home/gg/contracts/vigor/contracts
 CONTRACT="airburn"
 CONTRACT_WASM="$CONTRACT.wasm"
@@ -46,8 +49,8 @@ CONTRACT_CPP="$CONTRACT.cpp"
 EOSIO_CONTRACTS_ROOT=/home/gg/contracts/eosio.contracts/contracts
 eosio-cpp -contract=$CONTRACT -I=$CONTRACT_ROOT -I=$EOSIO_CONTRACTS_ROOT/eosio.system/include -o="$CONTRACT_ROOT/$CONTRACT_WASM" -abigen "$CONTRACT_ROOT/$CONTRACT_CPP"
 
-./jungle.sh set account permission vigairburn13 active '{"threshold":1,"keys":[{"key":"EOS5hW2mgJVG4WpZwLvgNVZAGzGeZ65VbLvNX5Z1kBpeiib3t8MSy","weight":1}],"accounts":[{"permission":{"actor":"vigairburn13","permission":"eosio.code"},"weight":1}],"waits":[]}' -p vigairburn13@active
-./jungle.sh set contract vigairburn13 $CONTRACT_ROOT $CONTRACT_WASM $CONTRACT_ABI -p vigairburn13@active
+./jungle.sh set account permission vigairburn14 active '{"threshold":1,"keys":[{"key":"EOS6USbDgMcUwWpHV8gvqyudufqypwYKejgXtLrQkcKL5VYQhpkAZ","weight":1}],"accounts":[{"permission":{"actor":"vigairburn14","permission":"eosio.code"},"weight":1}],"waits":[]}' -p vigairburn14@active
+./jungle.sh set contract vigairburn14 $CONTRACT_ROOT $CONTRACT_WASM $CONTRACT_ABI -p vigairburn14@active
 #=================================================================================#
 
 
@@ -55,18 +58,18 @@ eosio-cpp -contract=$CONTRACT -I=$CONTRACT_ROOT -I=$EOSIO_CONTRACTS_ROOT/eosio.s
 #=================================================================================#
 #initiate the airburn
  echo '{"setting":
-     {"whitelist": "vigairburn13",
-                    "tokens_account": "vigairburn13",
+     {"whitelist": "airburn11111",
+                    "tokens_account": "airburn11111",
                     "savings_account": "testsavings1",
-                    "cycles": 30000,
-                    "seconds_per_cycle": 15,
-                    "start_ts": '$(($(date +%s%N)/1000))',
+                    "cycles": 10,
+                    "seconds_per_cycle": 64800,
+                    "start_ts": '$(($(date +%s%N)/1000000*1000))',
                     "quota_per_cycle": {
-                            "quantity": "100.0000 VIG",
+                            "quantity": "1.0000 VIG",
                             "contract": "vig111111111",
                     },
                     "accepted_token": {
-                            "quantity": "0.1000 EOS",
+                            "quantity": "0.0100 EOS",
                             "contract": "eosio.token",
                     },
                     "payouts_per_payin": 0,
@@ -74,18 +77,20 @@ eosio-cpp -contract=$CONTRACT -I=$CONTRACT_ROOT -I=$EOSIO_CONTRACTS_ROOT/eosio.s
                     "payout_cycles_per_user": 10}
                     }'> "$CONTRACT_ROOT/settings.json"
 
-./jungle.sh push action vigairburn13 init "$CONTRACT_ROOT/settings.json" -p vigairburn13
+
+
+./jungle.sh push action vigairburn14 init "$CONTRACT_ROOT/settings.json" -p vigairburn14
 
 echo '{
     "threshold": 1,
     "keys": [],
     "accounts": [
         {"permission":{"actor":"eosio", "permission":"active"}, "weight":1},
-        {"permission":{"actor":"vigairburn13", "permission":"eosio.code"}, "weight":1}
+        {"permission":{"actor":"vigairburn14", "permission":"eosio.code"}, "weight":1}
     ],
     "waits": []
 }' > airburn_active.json
-./jungle.sh set account permission vigairburn13 active ./airburn_active.json '' -p vigairburn13@active
+./jungle.sh set account permission vigairburn14 active ./airburn_active.json '' -p vigairburn14@active
 
 echo '{
     "threshold": 1,
@@ -95,13 +100,13 @@ echo '{
     ],
     "waits": []
 }' > airburn_owner.json
-./jungle.sh set account permission vigairburn13 owner ./airburn_owner.json '' -p vigairburn13@owner
+./jungle.sh set account permission vigairburn14 owner ./airburn_owner.json '' -p vigairburn14@owner
 
 #=================================================================================#
 
 #=================================================================================#
 #add seed funds and buy/claim
-./jungle.sh push action vig111111111 transfer '[ "vig111111111", "vigairburn13", "10000.0000 VIG", "seed transfer" ]' -p vig111111111@active
+./jungle.sh push action vig111111111 transfer '[ "vig111111111", "vigairburn14", "50000.0000 VIG", "seed transfer" ]' -p vig111111111@active
 
 
 #andrewpbrya3
@@ -113,20 +118,21 @@ cleos wallet unlock -n andrewpbrya3 --password PW5JDdcwzMW1ubtngaJ8t4qse6iFojfA2
 #cleos wallet import -n andrewpbrya3 --private-key 5J5mF2dNMABPN1yWXFoLbWwSuyHiwcf6w9wszDGZD353JVdNdgC
 
 #buy from 0th cycle
-./jungle.sh push action eosio.token transfer '[ "andrewpbrya3", "vigairburn13", "1.0000 EOS", "" ]' -p andrewpbrya3@active
+./jungle.sh push action eosio.token transfer '[ "andrewpbrya3", "vigairburn14", "1.0000 EOS", "" ]' -p andrewpbrya3@active
 #wait 15 seconds till cycle is over
-./jungle.sh push action vigairburn13 claim '[ "andrewpbrya3"]' -p andrewpbrya3@active
+./jungle.sh push action vigairburn14 claim '[ "andrewpbrya3"]' -p andrewpbrya3@active
 
 #check balances of all users, and sale proceeds were sent to savings
-./jungle.sh get table eosio.token vigairburn13 accounts
-./jungle.sh get table vig111111111 vigairburn13 accounts
-./jungle.sh get table vigairburn13 vigairburn13 payment
-./jungle.sh get table vigairburn13 vigairburn13 cycle
+./jungle.sh get table eosio.token vigairburn14 accounts
+./jungle.sh get table vig111111111 vigairburn14 accounts
+./jungle.sh get table vigairburn14 vigairburn14 payment
+./jungle.sh get table vigairburn14 vigairburn14 cycle
 ./jungle.sh get table vig111111111 VIG stat
 ./jungle.sh get table vig111111111 vig111111111 accounts
 
-./jungle.sh  push action eosio.token transfer '[ "vigairburn13", "andrewpbrya3", "10.0000 EOS", "m" ]' -p vigairburn13@active
+./jungle.sh  push action eosio.token transfer '[ "vigairburn14", "andrewpbrya3", "10.0000 EOS", "m" ]' -p vigairburn14@active
 
 #=================================================================================#
 
-./jungle.sh get table vigairburn13 vigairburn13 payment --limit -1 --index 2
+./jungle.sh get table vigairburn14 vigairburn14 payment -Landrewpbrya3 -Uandrewpbrya3 --limit -1 --index 2 --key-type i64
+

@@ -199,3 +199,4 @@ cleos get table vig111111111 testbuy11111 accounts
 cleos get table vig111111111 testbuy11112 accounts
 cleos get table eosio.token testsavings1 accounts
 cleos push action eosio.token transfer '[ "vigorairburn", "testbuy11111", "100.0000 EOS", "m" ]' -p vigorairburn
+cleos get table vigorairburn vigorairburn payment -Ltestbuy11111 --limit -1 --index 1 --key-type i64

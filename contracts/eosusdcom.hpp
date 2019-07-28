@@ -85,7 +85,7 @@ CONTRACT eosusdcom : public eosio::contract {
          double svalueofins = 0.0; // model suggested dollar value of the total insurance asset portfolio in a stress event. [ (1 - stressins ) * INS ]
          double stressins = 0.0; // model suggested percentage loss that the total insurance asset portfolio would experience in a stress event.
 
-         map <symbol, uint64_t> fxrate = { 
+  /*        map <symbol, uint64_t> fxrate = { 
             { symbol("EOS", 4), 61000 },
             { symbol("VIG", 4), 200 },
             { symbol("IQ", 3), 42 },
@@ -93,14 +93,15 @@ CONTRACT eosusdcom : public eosio::contract {
             { symbol("DICE", 4), 12 },
             { symbol("TPT", 4), 30 }
          };
+         */
          uint64_t inreserve = 0; // vig
-         asset totaldebt = asset( 0, symbol("UZD", 4) ); // uzd
+         asset totaldebt = asset( 0, symbol("VIGOR", 4) ); // VIGOR
          
          vector<asset> support;
          vector<asset> collateral;
 
    
-         EOSLIB_SERIALIZE(globalstats, (solvency)(valueofcol)(valueofins)(scale)(tesvalue)(svalueofcole)(svalueofins)(stressins)(fxrate)(inreserve)(totaldebt)(support)(collateral))
+         EOSLIB_SERIALIZE(globalstats, (solvency)(valueofcol)(valueofins)(scale)(tesvalue)(svalueofcole)(svalueofins)(stressins)(inreserve)(totaldebt)(support)(collateral))
       }; typedef eosio::multi_index<name("globals"), globalstats> globalsm; 
          typedef eosio::singleton<name("globals"), globalstats> globals;
                                                             globals _globals;
@@ -118,6 +119,23 @@ CONTRACT eosusdcom : public eosio::contract {
          {symbol("DICE",4),	    name("dummytokens1")},
          {symbol("TPT",4),	    name("dummytokens1")},
       };
+
+      map <symbol, name> issuerfeed {
+         {symbol("EOS",4),	    name("eosusd")},
+         {symbol("VIG",4),	    name("vigeos")},
+         {symbol("IQ",3),	    name("iqeos")},
+         {symbol("PEOS",4),	    name("peoseos")},
+         {symbol("DICE",4),	    name("diceeos")},
+         {symbol("TPT",4),	    name("tpteos")},
+      };
+
+      const uint64_t one_minute = 1000000.0 * 60.0; 
+      const uint64_t five_minute = 1000000.0 * 60.0 * 5.0;
+      const uint64_t fifteen_minute = 1000000.0 * 60.0 * 15.0;
+      const uint64_t one_hour = 1000000.0 * 60.0 * 60.0;
+      const uint64_t four_hour = 1000000.0 * 60.0 * 60.0 * 4.0; 
+      const uint64_t one_day = 1000000.0 * 60.0 * 60.0 * 24.0;
+      const uint64_t volPrecision = 1000000.0;
 
       TABLE account {
          asset    balance;
@@ -148,6 +166,22 @@ CONTRACT eosusdcom : public eosio::contract {
       }; typedef eosio::multi_index< name("stat"), currency_stats > stats;
                                                                 stats _stats;
 
+      //From datepreproc, holds the time series of prices, returns, volatility and correlation
+      TABLE statspre {
+         uint64_t freq;
+         uint64_t timestamp;
+         std::deque<uint64_t> price;
+         std::deque<int64_t> returns;
+         std::map <symbol, int64_t> correlation_matrix;
+         std::uint64_t vol = 1000;
+
+         uint64_t primary_key() const {return freq;}
+
+      };
+
+      typedef eosio::multi_index<name("stats"), statspre> statstable;
+                                                         statstable _statstable;
+
       void sub_balance( name owner, asset value );
       void add_balance( name owner, asset value, name ram_payer );
 
@@ -155,7 +189,8 @@ CONTRACT eosusdcom : public eosio::contract {
       using contract::contract;
       eosusdcom(name receiver, name code, datastream<const char*> ds):contract(receiver, code, ds), 
       _user(receiver, receiver.value), _datapointstable(receiver, receiver.value),
-      _stats(receiver, receiver.value), _globals(receiver, receiver.value)  {}
+      _stats(receiver, receiver.value), _globals(receiver, receiver.value),
+      _statstable(receiver, receiver.value)  {}
      
       //ACTION deleteuser(name user);
       ACTION assetin( name   from,

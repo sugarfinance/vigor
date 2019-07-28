@@ -1,4 +1,4 @@
-#include <eosio.system/eosio.system.hpp>
+#include <eosiolib/asset.hpp>
 #include <eosiolib/symbol.hpp>
 #include <eosiolib/chain.h>
 #include <eosiolib/time.hpp>
@@ -36,7 +36,7 @@ CONTRACT datapreproc : public eosio::contract {
  //Holds the latest datapoints from qualified oracles
   TABLE datapoints {
     uint64_t id;
-    name owner; 
+    name owner;
     uint64_t value;
     uint64_t median;
     uint64_t timestamp;
@@ -107,7 +107,7 @@ CONTRACT datapreproc : public eosio::contract {
 
 
   //Holds the time series of prices, returns, volatility and correlation
-  TABLE stats {
+  TABLE statspre {
     uint64_t freq;
     uint64_t timestamp;
     std::deque<uint64_t> price;
@@ -119,7 +119,7 @@ CONTRACT datapreproc : public eosio::contract {
 
   };
 
-  typedef eosio::multi_index<name("stats"), stats> statstable;
+  typedef eosio::multi_index<name("stats"), statspre> statstable;
 
 //add to the list of pairs to process
 ACTION addpair(name newpair) {
@@ -149,8 +149,8 @@ ACTION addpair(name newpair) {
 }
 
   //Clear the list of pairs to process
-  ACTION clear() {
-
+  ACTION clear() {  
+  
     //require_auth(_self);
    
     pairtoproctb pairtoproc(_self,_self.value);
@@ -191,9 +191,9 @@ ACTION addpair(name newpair) {
     auto newest = dstore.begin();
     if (newest != dstore.end()) {
         if (pair==name("eosusd"))
-          return newest->median;
+          return std::pow(10.0,6)*(newest->median/std::pow(10.0,eos_precision));
         else
-          return (uint64_t)(std::pow(10.0,quoted_precision)*((newest->median/std::pow(10.0,quoted_precision)) * (eosusd/std::pow(10.0,eos_precision))));
+          return (uint64_t)(std::pow(10.0,6)*((newest->median/std::pow(10.0,quoted_precision)) * (eosusd/std::pow(10.0,eos_precision))));
     } else
         return 0;
   }
@@ -277,15 +277,15 @@ int64_t corrCalc(std::deque<int64_t> X, std::deque<int64_t> Y, uint64_t n)
   
     for (uint64_t i = 0; i < n; i++) 
     { 
-        x = X[i]/10000.0;
-        y = Y[i]/10000.0;
+        x = X[i]/1000000.0;
+        y = Y[i]/1000000.0;
         sum_X = sum_X + x; 
         sum_Y = sum_Y + y; 
         sum_XY = sum_XY + x * y; 
         squareSum_X = squareSum_X + x * x; 
         squareSum_Y = squareSum_Y + y * y; 
     } 
-    int64_t corr = (int64_t)(10000.0)*(n * sum_XY - sum_X * sum_Y)  
+    int64_t corr = (int64_t)(1000000.0)*(n * sum_XY - sum_X * sum_Y)  
                   / sqrt((n * squareSum_X - sum_X * sum_X)  
                       * (n * squareSum_Y - sum_Y * sum_Y)); 
     return corr; 
@@ -294,11 +294,11 @@ int64_t corrCalc(std::deque<int64_t> X, std::deque<int64_t> Y, uint64_t n)
 uint64_t volCalc(std::deque<int64_t> returns, uint64_t n) {
 
      double variance = 0.0;
-     double t = returns[0]/10000.0;
+     double t = returns[0]/1000000.0;
      for (int i = 1; i < n; i++)
      {
-          t += returns[i]/10000.0;
-          double diff = ((i + 1) * returns[i]/10000.0) - t;
+          t += returns[i]/1000000.0;
+          double diff = ((i + 1) * returns[i]/1000000.0) - t;
          
           variance += (diff * diff) / ((i + 1) *i);
      }
@@ -323,7 +323,7 @@ uint64_t volCalc(std::deque<int64_t> returns, uint64_t n) {
             s.timestamp = ctime;
             uint64_t prevprice = s.price.back();
             s.price.push_back(lastprice);
-            s.returns.push_back((int64_t)(10000.0*(((double)lastprice/(double)prevprice)-1.0)));
+            s.returns.push_back((int64_t)(1000000.0*(((double)lastprice/(double)prevprice)-1.0)));
             s.price.pop_front();
             s.returns.pop_front();
           });
@@ -332,7 +332,7 @@ uint64_t volCalc(std::deque<int64_t> returns, uint64_t n) {
             s.timestamp = ctime;
             uint64_t prevprice = s.price.back();
             s.price.push_back(lastprice);
-            s.returns.push_back((int64_t)(10000.0*(((double)lastprice/(double)prevprice)-1.0)));
+            s.returns.push_back((int64_t)(1000000.0*(((double)lastprice/(double)prevprice)-1.0)));
           });
         }
       calcstats(freq);
@@ -340,7 +340,7 @@ uint64_t volCalc(std::deque<int64_t> returns, uint64_t n) {
           store.modify( itr, _self, [&]( auto& s ) {
             s.price.back() = lastprice;
             if (s.price.size() > 1)
-              s.returns.back() = (int64_t)(10000.0*(((double)lastprice/(double)s.price[s.price.size()-2])-1.0));
+              s.returns.back() = (int64_t)(1000000.0*(((double)lastprice/(double)s.price[s.price.size()-2])-1.0));
           });
       };
     } else { // first data point

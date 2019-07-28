@@ -3,27 +3,11 @@
 void eosusdcom::doupdate()
 {
    //require_auth(_self);
-  globalstats gstats = _globals.get();
-
-    gstats.fxrate[symbol("EOS",4)] = 61000;
-    gstats.fxrate[symbol("VIG",4)] = 200;
-    gstats.fxrate[symbol("IQ",3)] = 42;
-    gstats.fxrate[symbol("PEOS",4)] = 661;
-    gstats.fxrate[symbol("DICE",4)] = 12;
-    gstats.fxrate[symbol("TPT",4)] = 30;
-//    datapointstable dstore = _datapointstable.get();
-//   datapointstable dstore(name("oracle111111"),name("eosusd").value);
-//    auto iterator = eosusdtable.begin();
-//    gstats.fxrate[symbol("EOS",4)] = iterator->average;
-
- _globals.set(gstats, _self);
-
   for ( auto it = _user.begin(); it != _user.end(); it++ ) {
     update(it->usern);
     _user.modify(it, _self, [&]( auto& modified_user) {
       modified_user.lastupdate = now();
     });
-    //eosio::print( "update complete for: ", eosio::name{it->usern}, "\n");
   }
   //  transaction txn{};
   //  txn.actions.emplace_back(  permission_level { _self, "active"_n },
@@ -113,7 +97,7 @@ void eosusdcom::retire( asset quantity, string memo )
     eosio_assert( memo.size() <= 256, "memo has more than 256 bytes" );
 
     auto existing = _stats.find( sym.code().raw() );
-    eosio_assert( existing != _stats.end(), "token with symbol does not exist" );
+    eosio_assert( existing != _stats.end(), "token with symbol does not exist 6" );
     const auto& st = *existing;
 
     require_auth( st.issuer );
@@ -142,7 +126,7 @@ void eosusdcom::transfer(name    from,
 
     auto payer = has_auth( to ) ? to : from;
 
-    if (to == _self && quantity.symbol == symbol("UZD", 4)) {
+    if (to == _self && quantity.symbol == symbol("VIGOR", 4)) {
       auto &user = _user.get(from.value,"User not found");
       
       eosio_assert(user.debt.amount >= quantity.amount, "Payment too high");
@@ -200,7 +184,7 @@ void eosusdcom::open( name owner, const symbol& symbol, name ram_payer )
    require_auth( ram_payer );
 
    auto sym_code_raw = symbol.code().raw();
-   const auto& st = _stats.get( sym_code_raw, "symbol does not exist" );
+   const auto& st = _stats.get( sym_code_raw, "symbol does not exist 7" );
 
    eosio_assert( st.supply.symbol == symbol, "symbol precision mismatch" );
 
@@ -243,11 +227,11 @@ void eosusdcom::assetin( name   from,
       new_user.usern = from;
       new_user.creditscore = 500;
       new_user.lastupdate = now();
-      new_user.debt = asset( 0, symbol("UZD", 4) );
+      new_user.debt = asset( 0, symbol("VIGOR", 4) );
     });
     action( permission_level{ _self, name("active") },
       _self, name("open"), std::make_tuple(
-        from, symbol("UZD", 4), _self
+        from, symbol("VIGOR", 4), _self
       )).send();
   }
 
@@ -325,8 +309,8 @@ void eosusdcom::assetout(name usern, asset assetout, string memo)
   bool found = false;
 
   if ( memo.c_str() == string("borrow") ) {
-    eosio_assert( assetout.symbol == symbol("UZD", 4), 
-                  "Borrow asset type must be UZD" 
+    eosio_assert( assetout.symbol == symbol("VIGOR", 4), 
+                  "Borrow asset type must be VIGOR" 
                 );
     asset debt = user.debt + assetout;
     /*
@@ -346,7 +330,7 @@ void eosusdcom::assetout(name usern, asset assetout, string memo)
 
     action( permission_level{_self, name("active")},
       _self, name("issue"), std::make_tuple(
-        usern, assetout, std::string("UZD issued to ") + usern.to_string()
+        usern, assetout, std::string("VIGOR issued to ") + usern.to_string()
       )).send();
   }
   else {
@@ -380,7 +364,11 @@ void eosusdcom::assetout(name usern, asset assetout, string memo)
           "Insufficient collateral assets available." );
           
           double valueofasset = assetout.amount / std::pow(10.0, it->symbol.precision());
-          valueofasset *= gstats.fxrate.at(assetout.symbol) / std::pow(10.0, it->symbol.precision());
+
+          statstable stats(name("datapreproc1"),name(issuerfeed[assetout.symbol]).value);
+          auto itr = stats.find(one_minute);
+          valueofasset *= itr->price[0] / std::pow(10.0, 6);
+
           double valueofcol = user.valueofcol - valueofasset;
 
           eosio_assert( valueofcol >= 1.01 * ( user.debt.amount / std::pow(10.0, 4) ),
@@ -438,29 +426,39 @@ void eosusdcom::pricingmodel(name usern) {
     auto sym_code_raw = i->symbol.code().raw();
     const auto& iV = _stats.get( sym_code_raw, "symbol does not exist" );
     
-    double iW = gstats.fxrate.at(i->symbol) / std::pow(10.0, i->symbol.precision());
+    statstable stats(name("datapreproc1"),name(issuerfeed[i->symbol]).value);
+    auto itr = stats.find(one_minute);
+    eosio::print( "(double)itr->vol : ", (double)itr->vol, "\n");
+    eosio::print( "(double)itr->vol/(double)volPrecision : ", (double)itr->vol/(double)volPrecision, "\n");
+    double iVvol = std::sqrt(1800)*((double)itr->vol/(double)volPrecision);
+    eosio::print( "iVvol : ", iVvol, "\n");
+    double iW = itr->price[0] / std::pow(10.0, 6);
     iW *= i->amount / std::pow(10.0, i->symbol.precision()); 
     iW /= user.valueofcol;
 
     for (auto j = i + 1; j != user.collateral.end(); ++j ) {
-      double c = iV.correlation_matrix.at(j->symbol);
+      double c = (double)itr->correlation_matrix.at(j->symbol)/std::pow(10.0, 6);
+      //double c = iV.correlation_matrix.at(j->symbol);
       sym_code_raw = j->symbol.code().raw();
       const auto& jV = _stats.get( sym_code_raw, "symbol does not exist" );
 
-      double jW = gstats.fxrate.at(j->symbol) / std::pow(10.0, j->symbol.precision()); 
+      statstable statsj(name("datapreproc1"),name(issuerfeed[j->symbol]).value);
+      auto itr = statsj.find(one_minute);
+      double jVvol = std::sqrt(1800)*((double)itr->vol/(double)volPrecision);
+      double jW = itr->price[0] / std::pow(10.0, 6);
       jW *= j->amount / std::pow(10.0, j->symbol.precision());
       jW /= user.valueofcol; 
 
-      portVariance += 2.0 * iW * jW * c * iV.volatility * jV.volatility;
+      portVariance += 2.0 * iW * jW * c * iVvol * jVvol;
     }
-    portVariance += std::pow(iW, 2) * std::pow(iV.volatility, 2);
+    portVariance += std::pow(iW, 2) * std::pow(iVvol, 2);
   }
   eosio::print( "portVariance : ", portVariance, "\n");
 
   // Token Event Swap (TES): premium payments in exchange for contingient payoff in the event that a price threshhold is breached
 
-  double stresscol =  std::min(3.0 * sqrt(portVariance), 1.0);
-  double ivol = sqrt(portVariance) * gstats.scale; // market determined implied volaility
+  double stresscol =  std::min(3.0 * std::sqrt(portVariance), 1.0);
+  double ivol = std::sqrt(portVariance) * gstats.scale; // market determined implied volaility
   double istresscol = std::min(3.0 * ivol, 1.0);
 
   double payoff = std::max(  0.0,
@@ -491,7 +489,7 @@ void eosusdcom::pricingmodel(name usern) {
   _globals.set(gstats, _self);
 
   _user.modify(user, _self, [&]( auto& modified_user) { 
-    modified_user.volcol = sqrt(portVariance); // volatility of the user collateral portfolio
+    modified_user.volcol = std::sqrt(portVariance); // volatility of the user collateral portfolio
     modified_user.stresscol = stresscol; // model suggested percentage loss that the user collateral portfolio would experience in a stress event.
     modified_user.istresscol = istresscol; // market determined implied percentage loss that the user collateral portfolio would experience in a stress event.
     modified_user.svalueofcol = svalueofcol; // model suggested dollar value of the user collateral portfolio in a stress event.
@@ -514,23 +512,30 @@ void eosusdcom::riskmodel()
     auto sym_code_raw = i->symbol.code().raw();
     const auto& iV = _stats.get( sym_code_raw, "symbol does not exist" );
 
-    double iW = gstats.fxrate.at(i->symbol) / std::pow(10.0, i->symbol.precision());
+    statstable stats(name("datapreproc1"),name(issuerfeed[i->symbol]).value);
+    auto itr = stats.find(one_minute);
+    double iVvol = std::sqrt(1800)*((double)itr->vol/(double)volPrecision);
+    double iW = itr->price[0] / std::pow(10.0, 6);
     iW *= i->amount / std::pow(10.0, i->symbol.precision()); 
     iW /=  gstats.valueofins;
 
     for (auto j = i + 1; j != gstats.support.end(); ++j ) {
-      double c = iV.correlation_matrix.at(j->symbol);
+      double c = (double)itr->correlation_matrix.at(j->symbol)/std::pow(10.0, 6);;
+      //double c = iV.correlation_matrix.at(j->symbol);
       
       sym_code_raw = j->symbol.code().raw();
       const auto& jV = _stats.get( sym_code_raw, "symbol does not exist" );
 
-      double jW = gstats.fxrate.at(j->symbol) / std::pow(10.0, j->symbol.precision()); 
+      statstable stats(name("datapreproc1"),name(issuerfeed[j->symbol]).value);
+      auto itr = stats.find(one_minute);
+      double jVvol = std::sqrt(1800)*((double)itr->vol/(double)volPrecision);
+      double jW = itr->price[0] / std::pow(10.0, 6);
       jW *= j->amount / std::pow(10.0, j->symbol.precision());
       jW /=  gstats.valueofins; 
 
-      portVariance += 2.0 * iW * jW * c * iV.volatility * jV.volatility;
+      portVariance += 2.0 * iW * jW * c * iVvol * jVvol;
     }
-    portVariance += std::pow(iW, 2) * std::pow(iV.volatility, 2);
+    portVariance += std::pow(iW, 2) * std::pow(iVvol, 2);
   }
   eosio::print( "portVarianceins : ", portVariance, "\n");
   
@@ -581,8 +586,10 @@ void eosusdcom::payfee(name usern) {
   for ( auto it = user.collateral.begin(); it != user.collateral.end(); ++it )
     if ( it->symbol ==  vig) {
       const auto& st = _stats.get( vig.code().raw(), "symbol doesn't exist");
+      statstable stats(name("datapreproc1"),name(issuerfeed[vig]).value);
+      auto itr = stats.find(one_minute);
       amt = ( tespay * std::pow(10.0, 4) ) / 
-            ( gstats.fxrate.at(vig) / std::pow(10.0, vig.precision()) );
+            (itr->price[0] / std::pow(10.0, 6));
       if (amt > it->amount)
         _user.modify(user, _self, [&]( auto& modified_user) { // withdraw fee
           modified_user.latepays += 1;
@@ -642,14 +649,18 @@ void eosusdcom::update(name usern)
   double valueofins = 0.0;
   double valueofcol = 0.0;
   
-  for ( auto it = user.support.begin(); it != user.support.end(); ++it )
+  for ( auto it = user.support.begin(); it != user.support.end(); ++it ) {
+    statstable stats(name("datapreproc1"),name(issuerfeed[it->symbol]).value);
+    auto itr = stats.find(one_minute);
     valueofins += (it->amount) / std::pow(10.0, it->symbol.precision()) * 
-                  ( gstats.fxrate.at(it->symbol) / std::pow(10.0, it->symbol.precision()) );
-
-  for ( auto it = user.collateral.begin(); it != user.collateral.end(); ++it )
+                  ( itr->price[0] / std::pow(10.0, 6) );
+  }
+  for ( auto it = user.collateral.begin(); it != user.collateral.end(); ++it ){
+    statstable statsj(name("datapreproc1"),name(issuerfeed[it->symbol]).value);
+    auto itr = statsj.find(one_minute);
     valueofcol += (it->amount) / std::pow(10.0, it->symbol.precision()) * 
-                  ( gstats.fxrate.at(it->symbol) / std::pow(10.0, it->symbol.precision()) );
-  
+                  ( itr->price[0] / std::pow(10.0, 6) );
+  }
   gstats.valueofins += valueofins - user.valueofins;
   gstats.valueofcol += valueofcol - user.valueofcol;
   _globals.set(gstats, _self);
