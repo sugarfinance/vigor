@@ -278,19 +278,19 @@ cleos push action dummytokens1 transfer '{"from":"testinsure12","to":"eosusdcom1
 #cleos push action dummytokens1 transfer '{"from":"testinsure12","to":"eosusdcom111","quantity":"1000.0000 PTI","memo":"support"}' -p testinsure12@active
 #cleos push action dummytokens1 transfer '{"from":"testinsure12","to":"eosusdcom111","quantity":"1000.0000 OWN","memo":"support"}' -p testinsure12@active
 
-cleos push action eosusdcom111 assetout '{"usern":"testborrow11","assetout":"80.0000 VIGOR","memo":"borrow"}' -p testborrow11@active
-cleos push action eosusdcom111 assetout '{"usern":"testborrow12","assetout":"75.0000 VIGOR","memo":"borrow"}' -p testborrow12@active
+cleos push action eosusdcom111 assetout '{"usern":"testborrow11","assetout":"75.0000 VIGOR","memo":"borrow"}' -p testborrow11@active
+cleos push action eosusdcom111 assetout '{"usern":"testborrow12","assetout":"70.0000 VIGOR","memo":"borrow"}' -p testborrow12@active
 
 cleos push action eosusdcom111 assetout '{"usern":"testborrow11","assetout":"1.0000 EOS","memo":"collateral"}' -p testborrow11@active
 cleos push action eosusdcom111 assetout '{"usern":"testborrow12","assetout":"1.0000 EOS","memo":"collateral"}' -p testborrow12@active
 cleos push action eosusdcom111 assetout '{"usern":"testinsure11","assetout":"1.0000 EOS","memo":"support"}' -p testinsure11@active
 cleos push action eosusdcom111 assetout '{"usern":"testinsure12","assetout":"1.0000 EOS","memo":"support"}' -p testinsure12@active
 
-cleos push action eosusdcom111 transfer '{"from":"testborrow11","to":"eosusdcom111","quantity":"68.0000 VIGOR","memo":"payoff debt"}' -p testborrow11@active
+cleos push action eosusdcom111 transfer '{"from":"testborrow11","to":"eosusdcom111","quantity":"10.0000 VIGOR","memo":"payoff debt"}' -p testborrow11@active
 cleos push action eosusdcom111 transfer '{"from":"testborrow12","to":"eosusdcom111","quantity":"70.0000 VIGOR","memo":"payoff debt"}' -p testborrow12@active
 
 cleos get table eosusdcom111 eosusdcom111 user
-cleos push action eosusdcom111 doupdate '' -p eosusdcom111@active
+cleos push action eosusdcom111 doupdate '{}' -p eosusdcom111@active
 sleep 5
 cleos push action eosusdcom111 doupdate '' -p eosusdcom111@active
 sleep 5

@@ -366,8 +366,8 @@ void eosusdcom::assetout(name usern, asset assetout, string memo)
           double valueofasset = assetout.amount / std::pow(10.0, it->symbol.precision());
 
           statstable stats(name("datapreproc1"),name(issuerfeed[assetout.symbol]).value);
-          auto itr = stats.find(one_minute);
-          valueofasset *= itr->price[0] / std::pow(10.0, 6);
+          auto itr = stats.find(1);
+          valueofasset *= (double)itr->price[0] / pricePrecision;
 
           double valueofcol = user.valueofcol - valueofasset;
 
@@ -402,18 +402,6 @@ void eosusdcom::assetout(name usern, asset assetout, string memo)
   update(usern);
 }
 
-/* Portfolio variance is a measurement of how the aggregate actual returns
- * of a set of securities making up a portfolio fluctuate over time. This
- * portfolio variance statistic is calculated using the standard deviations
- * of each security in the portfolio as well as the correlations of each 
- * security pair in the portfolio.
- E.g. for two assets Variance = 
-   [(weight_asset1)^2 x (stdev_asset1)^2] +  
-   [(weight_asset2)^2 x (stdev_asset2)^2] +  
-   (2 x weight_asset1 x stdev_asset1 x 
-        weight_asset2 x stdev_asset2 x 
-        correlation between the two assets) 
-*/
 void eosusdcom::pricingmodel(name usern) {
 
   const auto& user = _user.get( usern.value, "User not found" );  
@@ -427,25 +415,23 @@ void eosusdcom::pricingmodel(name usern) {
     const auto& iV = _stats.get( sym_code_raw, "symbol does not exist" );
     
     statstable stats(name("datapreproc1"),name(issuerfeed[i->symbol]).value);
-    auto itr = stats.find(one_minute);
-    eosio::print( "(double)itr->vol : ", (double)itr->vol, "\n");
-    eosio::print( "(double)itr->vol/(double)volPrecision : ", (double)itr->vol/(double)volPrecision, "\n");
-    double iVvol = std::sqrt(1800)*((double)itr->vol/(double)volPrecision);
+    auto itr = stats.find(1);
+    double iVvol = (double)itr->vol/volPrecision;
     eosio::print( "iVvol : ", iVvol, "\n");
-    double iW = itr->price[0] / std::pow(10.0, 6);
+    double iW = (double)itr->price[0] / pricePrecision;
     iW *= i->amount / std::pow(10.0, i->symbol.precision()); 
     iW /= user.valueofcol;
 
     for (auto j = i + 1; j != user.collateral.end(); ++j ) {
-      double c = (double)itr->correlation_matrix.at(j->symbol)/std::pow(10.0, 6);
+      double c = (double)itr->correlation_matrix.at(j->symbol)/corrPrecision;
       //double c = iV.correlation_matrix.at(j->symbol);
       sym_code_raw = j->symbol.code().raw();
       const auto& jV = _stats.get( sym_code_raw, "symbol does not exist" );
 
       statstable statsj(name("datapreproc1"),name(issuerfeed[j->symbol]).value);
-      auto itr = statsj.find(one_minute);
-      double jVvol = std::sqrt(1800)*((double)itr->vol/(double)volPrecision);
-      double jW = itr->price[0] / std::pow(10.0, 6);
+      auto itr = statsj.find(1);
+      double jVvol = (double)itr->vol/volPrecision;
+      double jW = (double)itr->price[0] / pricePrecision;
       jW *= j->amount / std::pow(10.0, j->symbol.precision());
       jW /= user.valueofcol; 
 
@@ -457,9 +443,9 @@ void eosusdcom::pricingmodel(name usern) {
 
   // Token Event Swap (TES): premium payments in exchange for contingient payoff in the event that a price threshhold is breached
 
-  double stresscol =  std::min(3.0 * std::sqrt(portVariance), 1.0);
+  double stresscol = -1.0*(std::exp(-1.0*stressQuantile * std::sqrt(portVariance))-1.0);
   double ivol = std::sqrt(portVariance) * gstats.scale; // market determined implied volaility
-  double istresscol = std::min(3.0 * ivol, 1.0);
+  double istresscol = -1.0*(std::exp(-1.0*stressQuantile * ivol)-1.0);
 
   double payoff = std::max(  0.0,
     1.0 * (user.debt.amount / std::pow(10.0,4)) - user.valueofcol * (1.0 - istresscol)
@@ -513,23 +499,23 @@ void eosusdcom::riskmodel()
     const auto& iV = _stats.get( sym_code_raw, "symbol does not exist" );
 
     statstable stats(name("datapreproc1"),name(issuerfeed[i->symbol]).value);
-    auto itr = stats.find(one_minute);
-    double iVvol = std::sqrt(1800)*((double)itr->vol/(double)volPrecision);
-    double iW = itr->price[0] / std::pow(10.0, 6);
+    auto itr = stats.find(1);
+    double iVvol = (double)itr->vol/volPrecision;
+    double iW = (double)itr->price[0] / pricePrecision;
     iW *= i->amount / std::pow(10.0, i->symbol.precision()); 
     iW /=  gstats.valueofins;
 
     for (auto j = i + 1; j != gstats.support.end(); ++j ) {
-      double c = (double)itr->correlation_matrix.at(j->symbol)/std::pow(10.0, 6);;
+      double c = (double)itr->correlation_matrix.at(j->symbol)/corrPrecision;
       //double c = iV.correlation_matrix.at(j->symbol);
       
       sym_code_raw = j->symbol.code().raw();
       const auto& jV = _stats.get( sym_code_raw, "symbol does not exist" );
 
       statstable stats(name("datapreproc1"),name(issuerfeed[j->symbol]).value);
-      auto itr = stats.find(one_minute);
-      double jVvol = std::sqrt(1800)*((double)itr->vol/(double)volPrecision);
-      double jW = itr->price[0] / std::pow(10.0, 6);
+      auto itr = stats.find(1);
+      double jVvol = (double)itr->vol/volPrecision;
+      double jW = (double)itr->price[0] / pricePrecision;
       jW *= j->amount / std::pow(10.0, j->symbol.precision());
       jW /=  gstats.valueofins; 
 
@@ -540,7 +526,7 @@ void eosusdcom::riskmodel()
   eosio::print( "portVarianceins : ", portVariance, "\n");
   
   double impliedvol = std::sqrt(portVariance);
-  double stressins = std::min(3.0 * impliedvol, 1.0); // model suggested percentage loss that the total insurance asset portfolio would experience in a stress event.
+  double stressins = -1.0*(std::exp(-1.0*stressQuantile * impliedvol)-1.0); // model suggested percentage loss that the total insurance asset portfolio would experience in a stress event.
   gstats.stressins = stressins;
   gstats.svalueofins = (1.0 - stressins) * gstats.valueofins; // model suggested dollar value of the total insurance asset portfolio in a stress event.
 
@@ -580,16 +566,15 @@ void eosusdcom::payfee(name usern) {
   uint64_t amt = 0;
   symbol vig = symbol("VIG", 4);
   uint32_t dsec = now() - user.lastupdate + 1; //+1 to protect against 0
-  uint32_t T = 360 * 24 * 60 * (60 / dsec);
+  uint32_t T = (uint32_t)(360.0 * 24.0 * 60.0 * (60.0 / (double)dsec));
   double tespay = (user.debt.amount / std::pow(10.0, 4)) * (std::pow((1 + user.tesprice), (1.0 / T)) - 1);
-  
   for ( auto it = user.collateral.begin(); it != user.collateral.end(); ++it )
     if ( it->symbol ==  vig) {
       const auto& st = _stats.get( vig.code().raw(), "symbol doesn't exist");
       statstable stats(name("datapreproc1"),name(issuerfeed[vig]).value);
-      auto itr = stats.find(one_minute);
-      amt = ( tespay * std::pow(10.0, 4) ) / 
-            (itr->price[0] / std::pow(10.0, 6));
+      auto itr = stats.find(1);
+      amt = uint64_t(( tespay * std::pow(10.0, 4) ) / 
+            ((double)itr->price[0] / pricePrecision));
       if (amt > it->amount)
         _user.modify(user, _self, [&]( auto& modified_user) { // withdraw fee
           modified_user.latepays += 1;
@@ -598,6 +583,7 @@ void eosusdcom::payfee(name usern) {
         _user.modify(user, _self, [&]( auto& modified_user) { // withdraw fee
           modified_user.feespaid += amt / std::pow(10.0, 4);
           modified_user.collateral[it - user.collateral.begin()].amount -= amt;
+          eosio::print( "number of VIG paid : ", amt / std::pow(10.0, 4), "\n");
         });
         for ( auto itr = gstats.collateral.begin(); itr != gstats.collateral.end(); ++itr )
           if ( itr->symbol == vig ) {
@@ -651,15 +637,15 @@ void eosusdcom::update(name usern)
   
   for ( auto it = user.support.begin(); it != user.support.end(); ++it ) {
     statstable stats(name("datapreproc1"),name(issuerfeed[it->symbol]).value);
-    auto itr = stats.find(one_minute);
+    auto itr = stats.find(1);
     valueofins += (it->amount) / std::pow(10.0, it->symbol.precision()) * 
-                  ( itr->price[0] / std::pow(10.0, 6) );
+                  ( (double)itr->price[0] / pricePrecision );
   }
   for ( auto it = user.collateral.begin(); it != user.collateral.end(); ++it ){
     statstable statsj(name("datapreproc1"),name(issuerfeed[it->symbol]).value);
-    auto itr = statsj.find(one_minute);
+    auto itr = statsj.find(1);
     valueofcol += (it->amount) / std::pow(10.0, it->symbol.precision()) * 
-                  ( itr->price[0] / std::pow(10.0, 6) );
+                  ( (double)itr->price[0] / pricePrecision );
   }
   gstats.valueofins += valueofins - user.valueofins;
   gstats.valueofcol += valueofcol - user.valueofcol;

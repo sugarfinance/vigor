@@ -35,7 +35,6 @@ CONTRACT eosusdcom : public eosio::contract {
          double istresscol = 0.0; // market determined implied percentage loss that the user collateral portfolio would experience in a stress event.
          double svalueofcol = 0.0; // model suggested dollar value of the user collateral portfolio in a stress event.
          double svalueofcole = 0.0; // model suggested dollar amount of insufficient collateral of a user loan in a stressed market.   min((1 - svalueofcol ) * valueofcol - debt,0) 
-
          double feespaid = 0.0;
       /* measured by how much VIG was paid in the past
        * relative to number of late payments and collections
@@ -79,7 +78,7 @@ CONTRACT eosusdcom : public eosio::contract {
          double valueofcol = 0.0; // dollar value of total collateral portfolio
          double valueofins = 0.0; // dollar value of total support portfolio
 
-         double scale = 1.0;
+         double scale = 1; // TES pricing model parameters are scaled to drive risk (solvency) to a target set by custodians.
          double tesvalue = 0.0; // dollar value for borrowers to insure their collateral
          double svalueofcole = 0.0; // model suggested dollar value of the sum of all insufficient collateral in a stressed market SUM_i [ min((1 - svalueofcoli ) * valueofcoli - debti,0) ]
          double svalueofins = 0.0; // model suggested dollar value of the total insurance asset portfolio in a stress event. [ (1 - stressins ) * INS ]
@@ -135,7 +134,10 @@ CONTRACT eosusdcom : public eosio::contract {
       const uint64_t one_hour = 1000000.0 * 60.0 * 60.0;
       const uint64_t four_hour = 1000000.0 * 60.0 * 60.0 * 4.0; 
       const uint64_t one_day = 1000000.0 * 60.0 * 60.0 * 24.0;
-      const uint64_t volPrecision = 1000000.0;
+      const double volPrecision = 1000000;
+      const double corrPrecision = 1000000;
+      const double pricePrecision = 1000000;
+      double stressQuantile = 1.65;
 
       TABLE account {
          asset    balance;
