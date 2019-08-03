@@ -3,18 +3,28 @@
 void eosusdcom::doupdate()
 {
    //require_auth(_self);
+
   for ( auto it = _user.begin(); it != _user.end(); it++ ) {
     update(it->usern);
-    _user.modify(it, _self, [&]( auto& modified_user) {
-      modified_user.lastupdate = now();
-    });
   }
-  //  transaction txn{};
-  //  txn.actions.emplace_back(  permission_level { _self, "active"_n },
-  //                             _self, "doupdate"_n, make_tuple()
-  //                          ); txn.delay_sec = 60;
-  //  uint128_t txid = (uint128_t(_self.value) << 64) | now();
-  //  txn.send(txid, _self); 
+
+  for ( auto it = _user.begin(); it != _user.end(); it++ ) {
+    stresscol(it->usern);
+  }
+
+  stressins();
+
+  risk();
+
+  for ( auto it = _user.begin(); it != _user.end(); it++ ) {
+    pricing(it->usern);
+  }
+
+  //double rm = RM();
+  //for ( auto it = _user.begin(); it != _user.end(); it++ ) {
+  //  pcts(it->usern,rm);
+ // }
+
 }
 
 void eosusdcom::create( name   issuer,
@@ -150,7 +160,7 @@ void eosusdcom::transfer(name    from,
         name("retire"), std::make_tuple(quantity, memo)
       ).send();
       
-      update(from);
+      doupdate();
     }
 }
 
@@ -289,7 +299,7 @@ void eosusdcom::assetin( name   from,
       gstats.collateral[(it-1) - gstats.collateral.begin()] += assetin;
   } 
   _globals.set(gstats, _self);
-  update(from);
+  doupdate();
 }
 
 void eosusdcom::assetout(name usern, asset assetout, string memo) 
@@ -353,7 +363,6 @@ void eosusdcom::assetout(name usern, asset assetout, string memo)
       for ( auto it = gstats.support.begin(); it != gstats.support.end(); ++it )
         if ( it->symbol == assetout.symbol ) {
           gstats.support[it - gstats.support.begin()] -= assetout;
-          found = true;
           break;
         }
     }
@@ -399,11 +408,40 @@ void eosusdcom::assetout(name usern, asset assetout, string memo)
           )).send(); 
   } 
   _globals.set(gstats, _self);
-  update(usern);
+  doupdate();
 }
 
-void eosusdcom::pricingmodel(name usern) {
+void eosusdcom::stresscol(name usern) {
 
+  const auto& user = _user.get( usern.value, "User not found" );  
+  
+  eosio_assert(_globals.exists(), "globals not found");
+  globalstats gstats = _globals.get();
+
+  double portVariance = portVarianceCol(usern);
+  double stresscol = -1.0*(std::exp(-1.0*stressQuantile * std::sqrt(portVariance))-1.0);
+  double istresscol = -1.0*(std::exp(-1.0*stressQuantile * std::sqrt(portVariance) * gstats.scale)-1.0);
+  double svalueofcol = ((1.0 - stresscol) * user.valueofcol);
+  double svalueofcole = std::max( 0.0,
+    user.debt.amount / std::pow(10.0, 4) - ((1.0 - stresscol) * user.valueofcol)
+  );
+
+  gstats.svalueofcole += svalueofcole - user.svalueofcole; // model suggested dollar value of the sum of all insufficient collateral in a stressed market
+  
+  _globals.set(gstats, _self);
+
+  _user.modify(user, _self, [&]( auto& modified_user) { 
+    modified_user.volcol = std::sqrt(portVariance); // volatility of the user collateral portfolio
+    modified_user.stresscol = stresscol; // model suggested percentage loss that the user collateral portfolio would experience in a stress event.
+    modified_user.istresscol = istresscol; // market determined implied percentage loss that the user collateral portfolio would experience in a stress event.
+    modified_user.svalueofcol = svalueofcol; // model suggested dollar value of the user collateral portfolio in a stress event.
+    modified_user.svalueofcole = svalueofcole; // model suggested dollar amount of insufficient collateral of a user loan in a stressed market.
+  });
+
+  }
+
+  double eosusdcom::portVarianceCol(name usern) {
+  
   const auto& user = _user.get( usern.value, "User not found" );  
   
   eosio_assert(_globals.exists(), "globals not found");
@@ -417,7 +455,7 @@ void eosusdcom::pricingmodel(name usern) {
     statstable stats(name("datapreproc1"),name(issuerfeed[i->symbol]).value);
     auto itr = stats.find(1);
     double iVvol = (double)itr->vol/volPrecision;
-    eosio::print( "iVvol : ", iVvol, "\n");
+    //eosio::print( "iVvol : ", iVvol, "\n");
     double iW = (double)itr->price[0] / pricePrecision;
     iW *= i->amount / std::pow(10.0, i->symbol.precision()); 
     iW /= user.valueofcol;
@@ -433,66 +471,23 @@ void eosusdcom::pricingmodel(name usern) {
       double jVvol = (double)itr->vol/volPrecision;
       double jW = (double)itr->price[0] / pricePrecision;
       jW *= j->amount / std::pow(10.0, j->symbol.precision());
-      jW /= user.valueofcol; 
+      jW /= user.valueofcol;
 
       portVariance += 2.0 * iW * jW * c * iVvol * jVvol;
     }
     portVariance += std::pow(iW, 2) * std::pow(iVvol, 2);
   }
-  eosio::print( "portVariance : ", portVariance, "\n");
 
-  // Token Event Swap (TES): premium payments in exchange for contingient payoff in the event that a price threshhold is breached
-
-  double stresscol = -1.0*(std::exp(-1.0*stressQuantile * std::sqrt(portVariance))-1.0);
-  double ivol = std::sqrt(portVariance) * gstats.scale; // market determined implied volaility
-  double istresscol = -1.0*(std::exp(-1.0*stressQuantile * ivol)-1.0);
-
-  double payoff = std::max(  0.0,
-    1.0 * (user.debt.amount / std::pow(10.0,4)) - user.valueofcol * (1.0 - istresscol)
-  );
-  double T = 1.0;
-  double d = ((std::log(user.valueofcol / (user.debt.amount/std::pow(10.0,4)))) + (-std::pow(ivol,2)/2) * T)/ (ivol * std::sqrt(T));
-
-  double tesprice = std::max( 0.005 * gstats.scale,
-    (payoff * std::erfc(-d / std::sqrt(2)) / 2) / (user.debt.amount / std::pow(10.0, 4))
-  );
-
-  double tesvalue = std::max( 0.005 * gstats.scale,
-    (payoff * std::erfc(-d / std::sqrt(2)) / 2)
-  );
-
-  tesprice /= 1.6 * (user.creditscore / 800.0); // credit score of 500 means no discount or penalty.
-  tesvalue /= 1.6 * (user.creditscore / 800.0); 
-
-  double svalueofcol = ((1.0 - stresscol) * user.valueofcol);
-  double svalueofcole = std::max( 0.0,
-    user.debt.amount / std::pow(10.0, 4) - ((1.0 - stresscol) * user.valueofcol)
-  );
-
-  gstats.svalueofcole += svalueofcole - user.svalueofcole; // model suggested dollar value of the sum of all insufficient collateral in a stressed market
-  gstats.tesvalue += tesvalue - user.tesvalue; // total dollar value for all borrowers to insure their collateral
-  
-  _globals.set(gstats, _self);
-
-  _user.modify(user, _self, [&]( auto& modified_user) { 
-    modified_user.volcol = std::sqrt(portVariance); // volatility of the user collateral portfolio
-    modified_user.stresscol = stresscol; // model suggested percentage loss that the user collateral portfolio would experience in a stress event.
-    modified_user.istresscol = istresscol; // market determined implied percentage loss that the user collateral portfolio would experience in a stress event.
-    modified_user.svalueofcol = svalueofcol; // model suggested dollar value of the user collateral portfolio in a stress event.
-    modified_user.svalueofcole = svalueofcole; // model suggested dollar amount of insufficient collateral of a user loan in a stressed market.
-    modified_user.tesprice = tesprice; // annualized rate borrowers pay in periodic premiums to insure their collateral
-    modified_user.tesvalue = tesvalue; // dollar value for borrowers to insure their collateral
-  });
+  //eosio::print( "portVariance : ", portVariance, "\n");
+  return portVariance;
 }
 
-void eosusdcom::riskmodel() 
+void eosusdcom::stressins()
 {
   eosio_assert( _globals.exists(), "No support yet" );
   globalstats gstats = _globals.get();
 
   double portVariance = 0.0;
-  double totdebt = gstats.totaldebt.amount / std::pow(10.0, 4);
-  eosio::print( "totdebt : ",  totdebt, "\n");
 
   for ( auto i = gstats.support.begin(); i != gstats.support.end(); ++i ) {
     auto sym_code_raw = i->symbol.code().raw();
@@ -502,7 +497,7 @@ void eosusdcom::riskmodel()
     auto itr = stats.find(1);
     double iVvol = (double)itr->vol/volPrecision;
     double iW = (double)itr->price[0] / pricePrecision;
-    iW *= i->amount / std::pow(10.0, i->symbol.precision()); 
+    iW *= i->amount / std::pow(10.0, i->symbol.precision());
     iW /=  gstats.valueofins;
 
     for (auto j = i + 1; j != gstats.support.end(); ++j ) {
@@ -523,12 +518,19 @@ void eosusdcom::riskmodel()
     }
     portVariance += std::pow(iW, 2) * std::pow(iVvol, 2);
   }
-  eosio::print( "portVarianceins : ", portVariance, "\n");
+  //eosio::print( "portVarianceins : ", portVariance, "\n");
   
-  double impliedvol = std::sqrt(portVariance);
-  double stressins = -1.0*(std::exp(-1.0*stressQuantile * impliedvol)-1.0); // model suggested percentage loss that the total insurance asset portfolio would experience in a stress event.
+  double stressins = -1.0*(std::exp(-1.0*stressQuantile * std::sqrt(portVariance))-1.0); // model suggested percentage loss that the total insurance asset portfolio would experience in a stress event.
   gstats.stressins = stressins;
   gstats.svalueofins = (1.0 - stressins) * gstats.valueofins; // model suggested dollar value of the total insurance asset portfolio in a stress event.
+
+  _globals.set(gstats, _self);
+}
+
+void eosusdcom::risk()
+{
+  eosio_assert( _globals.exists(), "No support yet" );
+  globalstats gstats = _globals.get();
 
   // market value of assets and liabilities from the perspective of insurers
 
@@ -545,18 +547,179 @@ void eosusdcom::riskmodel()
   
   double scr = own_n - own_s;
 
-  eosio::print( "own_n : ", own_n, "\n");
-  eosio::print( "own_s : ", own_s, "\n");
-  eosio::print( "scr : ", scr, "\n");
+  //eosio::print( "own_n : ", own_n, "\n");
+  //eosio::print( "own_s : ", own_s, "\n");
+  //eosio::print( "scr : ", scr, "\n");
   
-  gstats.solvency = own_n / scr;
-  eosio::print( "solvency : ", gstats.solvency, "\n");
+  double solvency = own_n / scr;
+
+  gstats.solvency = solvency;
+  eosio::print( "solvency : ", solvency, "\n");
+
+  gstats.scale = std::min(std::max(solvencyTarget/solvency,0.5),2.0);
+  eosio::print( "scale : ", gstats.scale, "\n");
+
   _globals.set(gstats, _self);
 }
 
+void eosusdcom::pricing(name usern) {
 /* premium payments in exchange for contingient payoff in 
  * the event that a price threshhold is breached
 */
+  const auto& user = _user.get( usern.value, "User not found" );  
+  
+  eosio_assert(_globals.exists(), "globals not found");
+  globalstats gstats = _globals.get();
+
+  double ivol = user.volcol * gstats.scale; // market determined implied volaility
+
+  double payoff = std::max(  0.0,
+    1.0 * (user.debt.amount / std::pow(10.0,4)) - user.valueofcol * (1.0 - user.istresscol)
+  );
+  double T = 1.0;
+  double d = ((std::log(user.valueofcol / (user.debt.amount/std::pow(10.0,4)))) + (-std::pow(ivol,2)/2) * T)/ (ivol * std::sqrt(T));
+
+  double tesprice = std::max( 0.005 * gstats.scale,
+    (payoff * std::erfc(-d / std::sqrt(2)) / 2) / (user.debt.amount / std::pow(10.0, 4))
+  );
+
+  tesprice /= 1.6 * (user.creditscore / 800.0); // credit score of 500 means no discount or penalty.
+
+  _globals.set(gstats, _self);
+
+  _user.modify(user, _self, [&]( auto& modified_user) { 
+    modified_user.tesprice = tesprice; // annualized rate borrowers pay in periodic premiums to insure their collateral
+    modified_user.lastupdate = now();
+  });
+}
+
+double eosusdcom::stressinsx(name usern) {
+
+  const auto& user = _user.get( usern.value, "User not found" );  
+
+  eosio_assert( _globals.exists(), "No support yet" );
+  globalstats gstats = _globals.get();
+
+  double portVariancex = 0.0;
+
+  for ( auto i = gstats.support.begin(); i != gstats.support.end(); ++i ) {
+    auto sym_code_raw = i->symbol.code().raw();
+    const auto& iV = _stats.get( sym_code_raw, "symbol does not exist" );
+
+    statstable stats(name("datapreproc1"),name(issuerfeed[i->symbol]).value);
+    auto itr = stats.find(1);
+    double iVvol = (double)itr->vol/volPrecision;
+    double iW = (double)itr->price[0] / pricePrecision;
+    double uW = (double)itr->price[0] / pricePrecision;
+    iW *= i->amount / std::pow(10.0, i->symbol.precision());
+    for ( auto u = user.support.begin(); u != user.support.end(); ++u ) {
+      if (u->symbol==i->symbol){
+        uW *= u->amount / std::pow(10.0, i->symbol.precision());
+        iW -= uW;
+        break;
+      }
+    }
+      iW /=  (gstats.valueofins - user.valueofins);
+
+    for (auto j = i + 1; j != gstats.support.end(); ++j ) {
+      double c = (double)itr->correlation_matrix.at(j->symbol)/corrPrecision;
+      //double c = iV.correlation_matrix.at(j->symbol);
+      
+      sym_code_raw = j->symbol.code().raw();
+      const auto& jV = _stats.get( sym_code_raw, "symbol does not exist" );
+
+      statstable stats(name("datapreproc1"),name(issuerfeed[j->symbol]).value);
+      auto itr = stats.find(1);
+      double jVvol = (double)itr->vol/volPrecision;
+      double jW = (double)itr->price[0] / pricePrecision;
+      double uW = (double)itr->price[0] / pricePrecision;
+      jW *= j->amount / std::pow(10.0, j->symbol.precision());
+      for ( auto u = user.support.begin(); u != user.support.end(); ++u ) {
+        if (u->symbol==j->symbol) {
+          uW *= u->amount / std::pow(10.0, j->symbol.precision());
+          jW -= uW;
+          break;
+        }
+      }
+        jW /=  (gstats.valueofins - user.valueofins);
+
+      portVariancex += 2.0 * iW * jW * c * iVvol * jVvol;
+    }
+    portVariancex += std::pow(iW, 2) * std::pow(iVvol, 2);
+  }
+  //eosio::print( "portVarianceinsx : ", portVariancex, "\n");
+  
+  double stressinsx = -1.0*(std::exp(-1.0*stressQuantile * std::sqrt(portVariancex))-1.0); // model suggested percentage loss that the total insurance asset portfolio would experience in a stress event.
+  double svalueofinsx = (1.0 - stressinsx) * (gstats.valueofins  - user.valueofins); // model suggested dollar value of the total insurance asset portfolio in a stress event.
+  
+  return svalueofinsx;
+}
+
+double eosusdcom::riskx(name usern)
+{
+  eosio_assert( _globals.exists(), "No support yet" );
+  globalstats gstats = _globals.get();
+
+  // market value of assets and liabilities from the perspective of insurers
+
+  // normal markets
+  double mva_n = gstats.valueofins; //market value of insurance assets in normal markets, collateral is not an asset of the insurers
+  double mvl_n = 0; // no upfront is paid for tes, and insurers can walk away at any time, debt is not a liability of the insurers
+  
+  //stressed markets
+  double mva_s = stressinsx(usern);
+  double mvl_s = gstats.svalueofcole;
+
+  double own_n = mva_n - mvl_n;
+  double own_s = mva_s - mvl_s;
+  
+  double scr = own_n - own_s;
+
+  //eosio::print( "own_nx : ", own_n, "\n");
+  //eosio::print( "own_sx : ", own_s, "\n");
+  //eosio::print( "scrx : ", scr, "\n");
+  
+  double solvencyx = own_n / scr;
+  eosio::print( "solvencyx : ", solvencyx, "\n");
+
+  return solvencyx;
+}
+
+
+
+double eosusdcom::RM() { // sum of weighted marginal contribution to risk (solvency)
+
+  eosio_assert( _globals.exists(), "No support yet" );
+  globalstats gstats = _globals.get();
+
+  double smctr = 0;
+  for ( auto it = _user.begin(); it != _user.end(); it++ ) {
+    double solvencyx = riskx(it->usern);
+    double dRMdw =  (gstats.solvency - solvencyx);
+    double w =  it->valueofins / gstats.valueofins;
+    smctr +=  w * dRMdw;
+  }
+  return smctr;
+}
+
+double eosusdcom::pcts(name usern, double RM) { // percent contribution to risk (solvency)
+
+  const auto& user = _user.get( usern.value, "User not found" );
+  eosio_assert( _globals.exists(), "No support yet" );
+  globalstats gstats = _globals.get();
+
+  double solvencyx = riskx(usern);
+  double w =  user.valueofins / gstats.valueofins;
+  double dRMdw =  (gstats.solvency - solvencyx);
+  double pcts =  w * dRMdw / RM; // weighted marginal contribution to risk (solvency) rescaled by sum of that, aka percent contribution to risk (where our risk measure is solvency)
+  //eosio::print( "user : ", usern, "\n");
+  //eosio::print( "gstats.solvency: ", gstats.solvency, "\n");
+  //eosio::print( "dRMdw: ", dRMdw, "\n");
+  //eosio::print( "x : ", w, "\n");
+  //eosio::print( "percent contribution to risk : ", pcts, "\n");
+  return pcts;
+}
+
 void eosusdcom::payfee(name usern) {
   auto &user = _user.get( usern.value, "User not found" );
   eosio_assert(_globals.exists(), "No support yet");
@@ -602,7 +765,9 @@ void eosusdcom::payfee(name usern) {
     amt *= 0.75; 
     for ( auto itr = _user.begin(); itr != _user.end(); ++itr )
       if ( itr->valueofins > 0 ) {
-        double weight = itr->valueofins / gstats.valueofins;
+        //double weight = itr->valueofins / gstats.valueofins;
+        double weight = pcts(itr->usern,RM());
+        eosio::print( "percent contribution to risk : ", weight, "\n");
         asset viga = asset(amt * weight, vig);
         bool found = false;
         for ( auto it = itr->support.begin(); it != itr->support.end(); ++it )
@@ -654,11 +819,11 @@ void eosusdcom::update(name usern)
   _user.modify( user, _self, [&]( auto& modified_user ) { // Update value of collateral
     modified_user.valueofins = valueofins;
     modified_user.valueofcol = valueofcol;
-  }); 
+  });
+  
   if ( user.valueofcol > 0.0 && user.debt.amount > 0 ) { // Update tesprice    
-    pricingmodel(usern);
     payfee(usern);
-    riskmodel();
+    
 
     if (user.latepays > 4) {
       _user.modify(user, _self, [&]( auto& modified_user) {

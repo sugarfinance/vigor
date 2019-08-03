@@ -78,7 +78,7 @@ CONTRACT eosusdcom : public eosio::contract {
          double valueofcol = 0.0; // dollar value of total collateral portfolio
          double valueofins = 0.0; // dollar value of total support portfolio
 
-         double scale = 1; // TES pricing model parameters are scaled to drive risk (solvency) to a target set by custodians.
+         double scale = 1.0; // TES pricing model parameters are scaled to drive risk (solvency) to a target set by custodians.
          double tesvalue = 0.0; // dollar value for borrowers to insure their collateral
          double svalueofcole = 0.0; // model suggested dollar value of the sum of all insufficient collateral in a stressed market SUM_i [ min((1 - svalueofcoli ) * valueofcoli - debti,0) ]
          double svalueofins = 0.0; // model suggested dollar value of the total insurance asset portfolio in a stress event. [ (1 - stressins ) * INS ]
@@ -104,11 +104,18 @@ CONTRACT eosusdcom : public eosio::contract {
       }; typedef eosio::multi_index<name("globals"), globalstats> globalsm; 
          typedef eosio::singleton<name("globals"), globalstats> globals;
                                                             globals _globals;
-      void riskmodel();
-      void update(name usern); 
+      void risk();
+      double riskx(name usern);
+      void stresscol(name usern);
+      void stressins();
+      double stressinsx(name usern);
+      double portVarianceCol(name usern);
+      void update(name usern);
       void payfee(name usern);
-      void bailout(name usern);    
-      void pricingmodel(name usern);
+      void bailout(name usern);
+      void pricing(name usern);
+      double pcts(name usern, double RM);
+      double RM();
 
       map <symbol, name> issueracct {
          {symbol("EOS",4),	    name("eosio.token")},
@@ -138,6 +145,8 @@ CONTRACT eosusdcom : public eosio::contract {
       const double corrPrecision = 1000000;
       const double pricePrecision = 1000000;
       double stressQuantile = 1.65;
+      double solvencyTarget = 1.0;
+
 
       TABLE account {
          asset    balance;
