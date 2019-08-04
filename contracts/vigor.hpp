@@ -15,7 +15,7 @@ namespace eosiosystem {
    class system_contract;
 }
 
-CONTRACT eosusdcom : public eosio::contract {
+CONTRACT vigor : public eosio::contract {
 
    private:
       TABLE user_s {
@@ -23,33 +23,27 @@ CONTRACT eosusdcom : public eosio::contract {
          asset debt;
 
          vector<asset> collateral;
-         vector<asset> support;
+         vector<asset> insurance;
 
-         double valueofcol = 0.0; // dollar value of user collateral portfolio
-         double valueofins = 0.0; // dollar value of user support portfolio
+         double valueofcol = 0.0; // dollar value of user portfolio of collateral crypto assets
+         double valueofins = 0.0; // dollar value of user portfolio of insurance crypto assets
 
          double tesprice = 0.0; // annualized rate borrowers pay in periodic premiums to insure their collateral
-         double tesvalue = 0.0;  // dollar value for borrowers to insure their collateral
+         double pcts = 0.0; // percent contribution to solvency (weighted marginal contribution to risk (solvency) rescaled by sum of that
          double volcol = 1.0; // volatility of the user collateral portfolio
          double stresscol = 0.0; // model suggested percentage loss that the user collateral portfolio would experience in a stress event.
          double istresscol = 0.0; // market determined implied percentage loss that the user collateral portfolio would experience in a stress event.
          double svalueofcol = 0.0; // model suggested dollar value of the user collateral portfolio in a stress event.
          double svalueofcole = 0.0; // model suggested dollar amount of insufficient collateral of a user loan in a stressed market.   min((1 - svalueofcol ) * valueofcol - debt,0) 
-         double feespaid = 0.0;
-      /* measured by how much VIG was paid in the past
-       * relative to number of late payments and collections
-      */ uint64_t creditscore = 500; //out of 800
+         asset feespaid = asset( 0, symbol("VIG", 4) ); // VIG
+         uint64_t creditscore = 500; //out of 800
          uint32_t lastupdate = 0;
          uint32_t latepays = 0;
          uint32_t recaps = 0;
          
-         /* Own Funds = amount of crypto collateral 
-         * pledged by supporters minus our best estimate
-         * normal market value of the TES contracts.
-         */
          auto primary_key() const { return usern.value; }
 
-         EOSLIB_SERIALIZE(user_s, (usern)(debt)(collateral)(support)(valueofcol)(valueofins)(tesvalue)(tesprice)(volcol)(stresscol)(istresscol)(svalueofcol)(svalueofcole)(feespaid)(creditscore)(lastupdate)(latepays)(recaps))
+         EOSLIB_SERIALIZE(user_s, (usern)(debt)(collateral)(insurance)(valueofcol)(valueofins)(tesprice)(pcts)(volcol)(stresscol)(istresscol)(svalueofcol)(svalueofcole)(feespaid)(creditscore)(lastupdate)(latepays)(recaps))
       }; typedef eosio::multi_index<name("user"), user_s> user_t;
                                                           user_t _user;
 
@@ -74,33 +68,22 @@ CONTRACT eosusdcom : public eosio::contract {
                                                                                                         datapointstable _datapointstable;
 
       TABLE globalstats {
-         double solvency = 1.0;
-         double valueofcol = 0.0; // dollar value of total collateral portfolio
-         double valueofins = 0.0; // dollar value of total support portfolio
-
+         double solvency = 1.0; // solvency, represents capital adequacy to back the stablecoin
+         double valueofcol = 0.0; // dollar value of total portfolio of borrowers crypto collateral assets
+         double valueofins = 0.0; // dollar value of total portfolio of insurance crypto assets
          double scale = 1.0; // TES pricing model parameters are scaled to drive risk (solvency) to a target set by custodians.
-         double tesvalue = 0.0; // dollar value for borrowers to insure their collateral
          double svalueofcole = 0.0; // model suggested dollar value of the sum of all insufficient collateral in a stressed market SUM_i [ min((1 - svalueofcoli ) * valueofcoli - debti,0) ]
          double svalueofins = 0.0; // model suggested dollar value of the total insurance asset portfolio in a stress event. [ (1 - stressins ) * INS ]
          double stressins = 0.0; // model suggested percentage loss that the total insurance asset portfolio would experience in a stress event.
 
-  /*        map <symbol, uint64_t> fxrate = { 
-            { symbol("EOS", 4), 61000 },
-            { symbol("VIG", 4), 200 },
-            { symbol("IQ", 3), 42 },
-            { symbol("PEOS", 4), 661 },
-            { symbol("DICE", 4), 12 },
-            { symbol("TPT", 4), 30 }
-         };
-         */
-         uint64_t inreserve = 0; // vig
+         asset inreserve = asset( 0, symbol("VIG", 4) ); // VIG
          asset totaldebt = asset( 0, symbol("VIGOR", 4) ); // VIGOR
          
-         vector<asset> support;
+         vector<asset> insurance;
          vector<asset> collateral;
 
    
-         EOSLIB_SERIALIZE(globalstats, (solvency)(valueofcol)(valueofins)(scale)(tesvalue)(svalueofcole)(svalueofins)(stressins)(inreserve)(totaldebt)(support)(collateral))
+         EOSLIB_SERIALIZE(globalstats, (solvency)(valueofcol)(valueofins)(scale)(svalueofcole)(svalueofins)(stressins)(inreserve)(totaldebt)(insurance)(collateral))
       }; typedef eosio::multi_index<name("globals"), globalstats> globalsm; 
          typedef eosio::singleton<name("globals"), globalstats> globals;
                                                             globals _globals;
@@ -110,11 +93,12 @@ CONTRACT eosusdcom : public eosio::contract {
       void stressins();
       double stressinsx(name usern);
       double portVarianceCol(name usern);
+      double portVarianceIns();
       void update(name usern);
       void payfee(name usern);
       void bailout(name usern);
       void pricing(name usern);
-      double pcts(name usern, double RM);
+      void pcts(name usern, double RM);
       double RM();
 
       map <symbol, name> issueracct {
@@ -146,7 +130,11 @@ CONTRACT eosusdcom : public eosio::contract {
       const double pricePrecision = 1000000;
       double stressQuantile = 1.65;
       double solvencyTarget = 1.0;
-
+      double maxtesprice = 0.25;
+      double mintesprice = 0.005;
+      double calibrate = 1.0;
+      double maxtesscale = 2.0;
+      double mintesscale = 0.1;
 
       TABLE account {
          asset    balance;
@@ -157,23 +145,10 @@ CONTRACT eosusdcom : public eosio::contract {
          asset    supply;
          asset    max_supply;
          name     issuer;
-         /*
-         * Coefficients of correlation between this asset and all other
-         * assets tracked by the contract
-         */
-         map <symbol, double> correlation_matrix {
-            {symbol("EOS",4),0.42},
-            {symbol("VIG",4), 0.42},
-            {symbol("IQ",3), 0.42},
-            {symbol("PEOS",4), 0.42},
-            {symbol("DICE",4), 0.42},
-            {symbol("TPT",4), 0.42},
-        };
-         double volatility = 0.1; // stdev, scale factor for price discovery
 
          uint64_t primary_key()const { return supply.symbol.code().raw(); }
 
-         EOSLIB_SERIALIZE(currency_stats, (supply)(max_supply)(issuer)(correlation_matrix)(volatility))
+         EOSLIB_SERIALIZE(currency_stats, (supply)(max_supply)(issuer))
       }; typedef eosio::multi_index< name("stat"), currency_stats > stats;
                                                                 stats _stats;
 
@@ -198,12 +173,11 @@ CONTRACT eosusdcom : public eosio::contract {
 
    public:
       using contract::contract;
-      eosusdcom(name receiver, name code, datastream<const char*> ds):contract(receiver, code, ds), 
+      vigor(name receiver, name code, datastream<const char*> ds):contract(receiver, code, ds), 
       _user(receiver, receiver.value), _datapointstable(receiver, receiver.value),
       _stats(receiver, receiver.value), _globals(receiver, receiver.value),
       _statstable(receiver, receiver.value)  {}
      
-      //ACTION deleteuser(name user);
       ACTION assetin( name   from,
                      name   to,
                      asset  assetin,

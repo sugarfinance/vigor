@@ -1,6 +1,6 @@
-#include "eosusdcom.hpp"
+#include "vigor.hpp"
 
-void eosusdcom::doupdate()
+void vigor::doupdate()
 {
    //require_auth(_self);
 
@@ -20,14 +20,14 @@ void eosusdcom::doupdate()
     pricing(it->usern);
   }
 
-  //double rm = RM();
-  //for ( auto it = _user.begin(); it != _user.end(); it++ ) {
-  //  pcts(it->usern,rm);
- // }
+  double rm = RM();
+  for ( auto it = _user.begin(); it != _user.end(); it++ ) {
+    pcts(it->usern,rm);
+  }
 
 }
 
-void eosusdcom::create( name   issuer,
+void vigor::create( name   issuer,
                         asset  maximum_supply )
 {
     require_auth( _self );
@@ -44,12 +44,10 @@ void eosusdcom::create( name   issuer,
        s.supply.symbol = maximum_supply.symbol;
        s.max_supply    = maximum_supply;
        s.issuer        = issuer;
-       //s.volatility    = 0.42;
-       //s.correlation_matrix = correlation_matrix;
     });
 }
 
-void eosusdcom::setsupply( name issuer, asset maximum_supply )
+void vigor::setsupply( name issuer, asset maximum_supply )
 {
     auto sym = maximum_supply.symbol;
     eosio_assert( sym.is_valid(), "invalid symbol name" );
@@ -70,7 +68,7 @@ void eosusdcom::setsupply( name issuer, asset maximum_supply )
     });
 }
 
-void eosusdcom::issue( name to, asset quantity, string memo )
+void vigor::issue( name to, asset quantity, string memo )
 {
     auto sym = quantity.symbol;
     eosio_assert( sym.is_valid(), "invalid symbol name" );
@@ -100,7 +98,7 @@ void eosusdcom::issue( name to, asset quantity, string memo )
     }
 }
 
-void eosusdcom::retire( asset quantity, string memo )
+void vigor::retire( asset quantity, string memo )
 {
     auto sym = quantity.symbol;
     eosio_assert( sym.is_valid(), "invalid symbol name" );
@@ -122,7 +120,7 @@ void eosusdcom::retire( asset quantity, string memo )
     sub_balance( st.issuer, quantity );
 }
 
-void eosusdcom::transfer(name    from,
+void vigor::transfer(name    from,
                       name    to,
                       asset   quantity,
                       string  memo )
@@ -151,7 +149,6 @@ void eosusdcom::transfer(name    from,
       gstats.totaldebt -= quantity;
       
       double totdebt = gstats.totaldebt.amount / std::pow(10.0, 4);
-      eosio::print( "totdebt : ",  totdebt, "\n");
 
       _globals.set(gstats, _self);
 
@@ -164,7 +161,7 @@ void eosusdcom::transfer(name    from,
     }
 }
 
-void eosusdcom::sub_balance( name owner, asset value ) {
+void vigor::sub_balance( name owner, asset value ) {
    accounts from_acnts( _self, owner.value );
 
    const auto& from = from_acnts.get( value.symbol.code().raw(), "no balance object found" );
@@ -175,7 +172,7 @@ void eosusdcom::sub_balance( name owner, asset value ) {
    });
 }
 
-void eosusdcom::add_balance( name owner, asset value, name ram_payer )
+void vigor::add_balance( name owner, asset value, name ram_payer )
 {
    accounts to_acnts( _self, owner.value );
    auto to = to_acnts.find( value.symbol.code().raw() );
@@ -189,7 +186,7 @@ void eosusdcom::add_balance( name owner, asset value, name ram_payer )
     });
 }
 
-void eosusdcom::open( name owner, const symbol& symbol, name ram_payer )
+void vigor::open( name owner, const symbol& symbol, name ram_payer )
 {
    require_auth( ram_payer );
 
@@ -207,7 +204,7 @@ void eosusdcom::open( name owner, const symbol& symbol, name ram_payer )
    }
 }
 
-void eosusdcom::close( name owner, const symbol& symbol )
+void vigor::close( name owner, const symbol& symbol )
 {
    require_auth( owner );
    accounts acnts( _self, owner.value );
@@ -217,7 +214,7 @@ void eosusdcom::close( name owner, const symbol& symbol )
    acnts.erase( it );
 }
 
-void eosusdcom::assetin( name   from,
+void vigor::assetin( name   from,
                          name   to,
                          asset  assetin,
                          string memo ) {
@@ -227,9 +224,9 @@ void eosusdcom::assetin( name   from,
   require_auth( from );
   eosio_assert(assetin.symbol.is_valid(), "Symbol must be valid.");
   eosio_assert(assetin.amount > 0, "Amount must be > 0.");
-  eosio_assert( memo.c_str() == string("support") ||
+  eosio_assert( memo.c_str() == string("insurance") ||
                 memo.c_str() == string("collateral"),  
-                "memo must be composed of either word: support or collateral"
+                "memo must be composed of either word: insurance or collateral"
               );
   auto itr = _user.find(from.value);
   if ( itr == _user.end() ) {
@@ -262,25 +259,25 @@ void eosusdcom::assetin( name   from,
       s.issuer = get_code(); //TODO: verify against issuer map
     });
 
-  if (memo.c_str() == string("support")) {
-    auto it = user.support.begin();
-    while ( !found && it++ != user.support.end() )
+  if (memo.c_str() == string("insurance")) {
+    auto it = user.insurance.begin();
+    while ( !found && it++ != user.insurance.end() )
       found = (it-1)->symbol == assetin.symbol;//User collateral type found
     _user.modify(user, _self, [&]( auto& modified_user) {
       if (!found)
-        modified_user.support.push_back(assetin);
+        modified_user.insurance.push_back(assetin);
       else
-        modified_user.support[(it-1) - user.support.begin()] += assetin;
+        modified_user.insurance[(it-1) - user.insurance.begin()] += assetin;
     }); found = false;
-    it = gstats.support.begin();
-    while ( !found && it++ != gstats.support.end() )
+    it = gstats.insurance.begin();
+    while ( !found && it++ != gstats.insurance.end() )
       found = (it-1)->symbol == assetin.symbol;
     if ( !found )
-      gstats.support.push_back(assetin);
+      gstats.insurance.push_back(assetin);
     else
-      gstats.support[(it-1) - gstats.support.begin()] += assetin;
+      gstats.insurance[(it-1) - gstats.insurance.begin()] += assetin;
   }
-  else {
+  else if (memo.c_str() == string("collateral")) {
     auto it = user.collateral.begin();
     while ( !found && it++ != user.collateral.end() )
       found = (it-1)->symbol == assetin.symbol; //User collateral type found
@@ -302,7 +299,7 @@ void eosusdcom::assetin( name   from,
   doupdate();
 }
 
-void eosusdcom::assetout(name usern, asset assetout, string memo) 
+void vigor::assetout(name usern, asset assetout, string memo) 
 {
   require_auth(usern);
 
@@ -310,9 +307,9 @@ void eosusdcom::assetout(name usern, asset assetout, string memo)
   eosio_assert( assetout.symbol.is_valid(), "Symbol must be valid." );
   eosio_assert( assetout.amount > 0, "Amount must be > 0." );
   eosio_assert( memo.c_str() == string("collateral") || 
-                memo.c_str() == string("support") || 
+                memo.c_str() == string("insurance") || 
                 memo.c_str() == string("borrow"), 
-                "memo must be composed of either word: support | collateral | borrow"
+                "memo must be composed of either word: insurance | collateral | borrow"
               );
   eosio_assert(_globals.exists(), "globals don't exist");
   globalstats gstats = _globals.get();
@@ -336,7 +333,6 @@ void eosusdcom::assetout(name usern, asset assetout, string memo)
     gstats.totaldebt += assetout;
 
     double totdebt = gstats.totaldebt.amount / std::pow(10.0, 4);
-    eosio::print( "totdebt : ",  totdebt, "\n");
 
     action( permission_level{_self, name("active")},
       _self, name("issue"), std::make_tuple(
@@ -344,25 +340,25 @@ void eosusdcom::assetout(name usern, asset assetout, string memo)
       )).send();
   }
   else {
-    if ( memo.c_str() == string("support") ) {
-      for ( auto it = user.support.begin(); it < user.support.end(); ++it )
-        if (it->symbol == assetout.symbol) { // User support type found
+    if ( memo.c_str() == string("insurance") ) {
+      for ( auto it = user.insurance.begin(); it < user.insurance.end(); ++it )
+        if (it->symbol == assetout.symbol) { // User insurance type found
           eosio_assert( it->amount >= assetout.amount,
-          "Insufficient support assets available." );
+          "Insufficient insurance assets available." );
           if ( it->amount - assetout.amount == 0 )
             _user.modify(user, _self, [&]( auto& modified_user) {
-              modified_user.support.erase(it);
+              modified_user.insurance.erase(it);
             });
           else 
             _user.modify(user, _self, [&]( auto& modified_user) {
-              modified_user.support[it - user.support.begin()] -= assetout;
+              modified_user.insurance[it - user.insurance.begin()] -= assetout;
             });
           found = true;
           break;
         }
-      for ( auto it = gstats.support.begin(); it != gstats.support.end(); ++it )
+      for ( auto it = gstats.insurance.begin(); it != gstats.insurance.end(); ++it )
         if ( it->symbol == assetout.symbol ) {
-          gstats.support[it - gstats.support.begin()] -= assetout;
+          gstats.insurance[it - gstats.insurance.begin()] -= assetout;
           break;
         }
     }
@@ -411,7 +407,7 @@ void eosusdcom::assetout(name usern, asset assetout, string memo)
   doupdate();
 }
 
-void eosusdcom::stresscol(name usern) {
+void vigor::stresscol(name usern) {
 
   const auto& user = _user.get( usern.value, "User not found" );  
   
@@ -420,7 +416,6 @@ void eosusdcom::stresscol(name usern) {
 
   double portVariance = portVarianceCol(usern);
   double stresscol = -1.0*(std::exp(-1.0*stressQuantile * std::sqrt(portVariance))-1.0);
-  double istresscol = -1.0*(std::exp(-1.0*stressQuantile * std::sqrt(portVariance) * gstats.scale)-1.0);
   double svalueofcol = ((1.0 - stresscol) * user.valueofcol);
   double svalueofcole = std::max( 0.0,
     user.debt.amount / std::pow(10.0, 4) - ((1.0 - stresscol) * user.valueofcol)
@@ -433,14 +428,13 @@ void eosusdcom::stresscol(name usern) {
   _user.modify(user, _self, [&]( auto& modified_user) { 
     modified_user.volcol = std::sqrt(portVariance); // volatility of the user collateral portfolio
     modified_user.stresscol = stresscol; // model suggested percentage loss that the user collateral portfolio would experience in a stress event.
-    modified_user.istresscol = istresscol; // market determined implied percentage loss that the user collateral portfolio would experience in a stress event.
     modified_user.svalueofcol = svalueofcol; // model suggested dollar value of the user collateral portfolio in a stress event.
     modified_user.svalueofcole = svalueofcole; // model suggested dollar amount of insufficient collateral of a user loan in a stressed market.
   });
 
   }
 
-  double eosusdcom::portVarianceCol(name usern) {
+  double vigor::portVarianceCol(name usern) {
   
   const auto& user = _user.get( usern.value, "User not found" );  
   
@@ -455,14 +449,12 @@ void eosusdcom::stresscol(name usern) {
     statstable stats(name("datapreproc1"),name(issuerfeed[i->symbol]).value);
     auto itr = stats.find(1);
     double iVvol = (double)itr->vol/volPrecision;
-    //eosio::print( "iVvol : ", iVvol, "\n");
     double iW = (double)itr->price[0] / pricePrecision;
     iW *= i->amount / std::pow(10.0, i->symbol.precision()); 
     iW /= user.valueofcol;
 
     for (auto j = i + 1; j != user.collateral.end(); ++j ) {
       double c = (double)itr->correlation_matrix.at(j->symbol)/corrPrecision;
-      //double c = iV.correlation_matrix.at(j->symbol);
       sym_code_raw = j->symbol.code().raw();
       const auto& jV = _stats.get( sym_code_raw, "symbol does not exist" );
 
@@ -477,19 +469,17 @@ void eosusdcom::stresscol(name usern) {
     }
     portVariance += std::pow(iW, 2) * std::pow(iVvol, 2);
   }
-
-  //eosio::print( "portVariance : ", portVariance, "\n");
   return portVariance;
 }
 
-void eosusdcom::stressins()
+double vigor::portVarianceIns()
 {
-  eosio_assert( _globals.exists(), "No support yet" );
+  eosio_assert( _globals.exists(), "no global table exists yet" );
   globalstats gstats = _globals.get();
 
   double portVariance = 0.0;
 
-  for ( auto i = gstats.support.begin(); i != gstats.support.end(); ++i ) {
+  for ( auto i = gstats.insurance.begin(); i != gstats.insurance.end(); ++i ) {
     auto sym_code_raw = i->symbol.code().raw();
     const auto& iV = _stats.get( sym_code_raw, "symbol does not exist" );
 
@@ -500,7 +490,7 @@ void eosusdcom::stressins()
     iW *= i->amount / std::pow(10.0, i->symbol.precision());
     iW /=  gstats.valueofins;
 
-    for (auto j = i + 1; j != gstats.support.end(); ++j ) {
+    for (auto j = i + 1; j != gstats.insurance.end(); ++j ) {
       double c = (double)itr->correlation_matrix.at(j->symbol)/corrPrecision;
       //double c = iV.correlation_matrix.at(j->symbol);
       
@@ -518,8 +508,16 @@ void eosusdcom::stressins()
     }
     portVariance += std::pow(iW, 2) * std::pow(iVvol, 2);
   }
-  //eosio::print( "portVarianceins : ", portVariance, "\n");
-  
+  return portVariance;
+}
+
+void vigor::stressins()
+{
+  eosio_assert( _globals.exists(), "no global table exists yet" );
+  globalstats gstats = _globals.get();
+
+  double portVariance = portVarianceIns();
+
   double stressins = -1.0*(std::exp(-1.0*stressQuantile * std::sqrt(portVariance))-1.0); // model suggested percentage loss that the total insurance asset portfolio would experience in a stress event.
   gstats.stressins = stressins;
   gstats.svalueofins = (1.0 - stressins) * gstats.valueofins; // model suggested dollar value of the total insurance asset portfolio in a stress event.
@@ -527,9 +525,9 @@ void eosusdcom::stressins()
   _globals.set(gstats, _self);
 }
 
-void eosusdcom::risk()
+void vigor::risk()
 {
-  eosio_assert( _globals.exists(), "No support yet" );
+  eosio_assert( _globals.exists(), "no global table exists yet" );
   globalstats gstats = _globals.get();
 
   // market value of assets and liabilities from the perspective of insurers
@@ -542,27 +540,21 @@ void eosusdcom::risk()
   double mva_s = gstats.svalueofins;
   double mvl_s = gstats.svalueofcole;
 
-  double own_n = mva_n - mvl_n;
-  double own_s = mva_s - mvl_s;
+  double own_n = mva_n - mvl_n; // own funds normal markets
+  double own_s = mva_s - mvl_s; // own funds stressed markets
   
-  double scr = own_n - own_s;
-
-  //eosio::print( "own_n : ", own_n, "\n");
-  //eosio::print( "own_s : ", own_s, "\n");
-  //eosio::print( "scr : ", scr, "\n");
+  double scr = own_n - own_s; // solvency capial requirement
   
-  double solvency = own_n / scr;
+  double solvency = own_n / scr; // solvency, represents capital adequacy to back the stablecoin
 
   gstats.solvency = solvency;
-  eosio::print( "solvency : ", solvency, "\n");
 
-  gstats.scale = std::min(std::max(solvencyTarget/solvency,0.5),2.0);
-  eosio::print( "scale : ", gstats.scale, "\n");
+  gstats.scale = std::max(std::min(solvencyTarget/solvency,maxtesscale),mintesscale);
 
   _globals.set(gstats, _self);
 }
 
-void eosusdcom::pricing(name usern) {
+void vigor::pricing(name usern) {
 /* premium payments in exchange for contingient payoff in 
  * the event that a price threshhold is breached
 */
@@ -572,37 +564,36 @@ void eosusdcom::pricing(name usern) {
   globalstats gstats = _globals.get();
 
   double ivol = user.volcol * gstats.scale; // market determined implied volaility
+  double istresscol = -1.0*(std::exp((std::log((user.stresscol/-1.0)+1.0)) * gstats.scale)-1.0);
 
   double payoff = std::max(  0.0,
-    1.0 * (user.debt.amount / std::pow(10.0,4)) - user.valueofcol * (1.0 - user.istresscol)
+    1.0 * (user.debt.amount / std::pow(10.0,4)) - user.valueofcol * (1.0 - istresscol)
   );
   double T = 1.0;
-  double d = ((std::log(user.valueofcol / (user.debt.amount/std::pow(10.0,4)))) + (-std::pow(ivol,2)/2) * T)/ (ivol * std::sqrt(T));
+  double d = ((std::log(user.valueofcol / (user.debt.amount/std::pow(10.0,4)))) + (-std::pow(ivol,2)/2.0) * T)/ (ivol * std::sqrt(T));
 
-  double tesprice = std::max( 0.005 * gstats.scale,
-    (payoff * std::erfc(-d / std::sqrt(2)) / 2) / (user.debt.amount / std::pow(10.0, 4))
-  );
+  double tesprice = std::min(std::max( mintesprice * gstats.scale,
+    ((payoff * std::erfc(d / std::sqrt(2.0)) / 2.0) / (user.debt.amount / std::pow(10.0, 4))))*calibrate,maxtesprice);
 
   tesprice /= 1.6 * (user.creditscore / 800.0); // credit score of 500 means no discount or penalty.
 
-  _globals.set(gstats, _self);
-
   _user.modify(user, _self, [&]( auto& modified_user) { 
     modified_user.tesprice = tesprice; // annualized rate borrowers pay in periodic premiums to insure their collateral
+    modified_user.istresscol = istresscol; // market determined implied percentage loss that the user collateral portfolio would experience in a stress event.
     modified_user.lastupdate = now();
   });
 }
 
-double eosusdcom::stressinsx(name usern) {
+double vigor::stressinsx(name usern) { // same as stressins, but remove remove the specified user
 
   const auto& user = _user.get( usern.value, "User not found" );  
 
-  eosio_assert( _globals.exists(), "No support yet" );
+  eosio_assert( _globals.exists(), "no global table exists yet" );
   globalstats gstats = _globals.get();
 
   double portVariancex = 0.0;
 
-  for ( auto i = gstats.support.begin(); i != gstats.support.end(); ++i ) {
+  for ( auto i = gstats.insurance.begin(); i != gstats.insurance.end(); ++i ) {
     auto sym_code_raw = i->symbol.code().raw();
     const auto& iV = _stats.get( sym_code_raw, "symbol does not exist" );
 
@@ -612,7 +603,7 @@ double eosusdcom::stressinsx(name usern) {
     double iW = (double)itr->price[0] / pricePrecision;
     double uW = (double)itr->price[0] / pricePrecision;
     iW *= i->amount / std::pow(10.0, i->symbol.precision());
-    for ( auto u = user.support.begin(); u != user.support.end(); ++u ) {
+    for ( auto u = user.insurance.begin(); u != user.insurance.end(); ++u ) {
       if (u->symbol==i->symbol){
         uW *= u->amount / std::pow(10.0, i->symbol.precision());
         iW -= uW;
@@ -621,9 +612,8 @@ double eosusdcom::stressinsx(name usern) {
     }
       iW /=  (gstats.valueofins - user.valueofins);
 
-    for (auto j = i + 1; j != gstats.support.end(); ++j ) {
+    for (auto j = i + 1; j != gstats.insurance.end(); ++j ) {
       double c = (double)itr->correlation_matrix.at(j->symbol)/corrPrecision;
-      //double c = iV.correlation_matrix.at(j->symbol);
       
       sym_code_raw = j->symbol.code().raw();
       const auto& jV = _stats.get( sym_code_raw, "symbol does not exist" );
@@ -634,7 +624,7 @@ double eosusdcom::stressinsx(name usern) {
       double jW = (double)itr->price[0] / pricePrecision;
       double uW = (double)itr->price[0] / pricePrecision;
       jW *= j->amount / std::pow(10.0, j->symbol.precision());
-      for ( auto u = user.support.begin(); u != user.support.end(); ++u ) {
+      for ( auto u = user.insurance.begin(); u != user.insurance.end(); ++u ) {
         if (u->symbol==j->symbol) {
           uW *= u->amount / std::pow(10.0, j->symbol.precision());
           jW -= uW;
@@ -647,17 +637,16 @@ double eosusdcom::stressinsx(name usern) {
     }
     portVariancex += std::pow(iW, 2) * std::pow(iVvol, 2);
   }
-  //eosio::print( "portVarianceinsx : ", portVariancex, "\n");
   
-  double stressinsx = -1.0*(std::exp(-1.0*stressQuantile * std::sqrt(portVariancex))-1.0); // model suggested percentage loss that the total insurance asset portfolio would experience in a stress event.
-  double svalueofinsx = (1.0 - stressinsx) * (gstats.valueofins  - user.valueofins); // model suggested dollar value of the total insurance asset portfolio in a stress event.
+  double stressinsx = -1.0*(std::exp(-1.0*stressQuantile * std::sqrt(portVariancex))-1.0); // model suggested percentage loss that the total insurance asset portfolio (ex the specified user) would experience in a stress event.
+  double svalueofinsx = (1.0 - stressinsx) * (gstats.valueofins  - user.valueofins); // model suggested dollar value of the total insurance asset portfolio (ex the specified user) in a stress event.
   
   return svalueofinsx;
 }
 
-double eosusdcom::riskx(name usern)
-{
-  eosio_assert( _globals.exists(), "No support yet" );
+double vigor::riskx(name usern)
+{ // same as risk, but remove remove the specified user
+  eosio_assert( _globals.exists(), "no global table exists yet" );
   globalstats gstats = _globals.get();
 
   // market value of assets and liabilities from the perspective of insurers
@@ -672,24 +661,18 @@ double eosusdcom::riskx(name usern)
 
   double own_n = mva_n - mvl_n;
   double own_s = mva_s - mvl_s;
-  
+ 
   double scr = own_n - own_s;
-
-  //eosio::print( "own_nx : ", own_n, "\n");
-  //eosio::print( "own_sx : ", own_s, "\n");
-  //eosio::print( "scrx : ", scr, "\n");
   
   double solvencyx = own_n / scr;
-  eosio::print( "solvencyx : ", solvencyx, "\n");
 
-  return solvencyx;
+  return solvencyx; // solvency without the specified insurer
 }
 
 
+double vigor::RM() { // sum of weighted marginal contribution to risk (solvency), used for rescaling
 
-double eosusdcom::RM() { // sum of weighted marginal contribution to risk (solvency)
-
-  eosio_assert( _globals.exists(), "No support yet" );
+  eosio_assert( _globals.exists(), "no global table exists yet" );
   globalstats gstats = _globals.get();
 
   double smctr = 0;
@@ -702,27 +685,26 @@ double eosusdcom::RM() { // sum of weighted marginal contribution to risk (solve
   return smctr;
 }
 
-double eosusdcom::pcts(name usern, double RM) { // percent contribution to risk (solvency)
+void vigor::pcts(name usern, double RM) { // percent contribution to solvency
 
   const auto& user = _user.get( usern.value, "User not found" );
-  eosio_assert( _globals.exists(), "No support yet" );
+  eosio_assert( _globals.exists(), "no global table exists yet" );
   globalstats gstats = _globals.get();
 
   double solvencyx = riskx(usern);
   double w =  user.valueofins / gstats.valueofins;
   double dRMdw =  (gstats.solvency - solvencyx);
-  double pcts =  w * dRMdw / RM; // weighted marginal contribution to risk (solvency) rescaled by sum of that, aka percent contribution to risk (where our risk measure is solvency)
-  //eosio::print( "user : ", usern, "\n");
-  //eosio::print( "gstats.solvency: ", gstats.solvency, "\n");
-  //eosio::print( "dRMdw: ", dRMdw, "\n");
-  //eosio::print( "x : ", w, "\n");
-  //eosio::print( "percent contribution to risk : ", pcts, "\n");
-  return pcts;
+  double pcts =  w * dRMdw / RM; 
+
+  _user.modify(user, _self, [&]( auto& modified_user) { 
+    modified_user.pcts = pcts; // percent contribution to solvency (weighted marginal contribution to risk (solvency) rescaled by sum of that
+    });
+    
 }
 
-void eosusdcom::payfee(name usern) {
+void vigor::payfee(name usern) {
   auto &user = _user.get( usern.value, "User not found" );
-  eosio_assert(_globals.exists(), "No support yet");
+  eosio_assert(_globals.exists(), "no global table exists yet");
   globalstats gstats = _globals.get();
 
   bool late = true;
@@ -744,13 +726,13 @@ void eosusdcom::payfee(name usern) {
         });
       else if (amt > 0) {
         _user.modify(user, _self, [&]( auto& modified_user) { // withdraw fee
-          modified_user.feespaid += amt / std::pow(10.0, 4);
+          modified_user.feespaid.amount += amt;
           modified_user.collateral[it - user.collateral.begin()].amount -= amt;
-          eosio::print( "number of VIG paid : ", amt / std::pow(10.0, 4), "\n");
+          //eosio::print( "number of VIG paid : ", amt / std::pow(10.0, 4), "\n");
         });
         for ( auto itr = gstats.collateral.begin(); itr != gstats.collateral.end(); ++itr )
           if ( itr->symbol == vig ) {
-            gstats.support[itr - gstats.support.begin()].amount -= amt;
+            gstats.insurance[itr - gstats.insurance.begin()].amount -= amt;
             break;
           }
         late = false;
@@ -759,39 +741,38 @@ void eosusdcom::payfee(name usern) {
     }
   if (!late) {
     uint64_t res = amt * 0.25;
-    gstats.inreserve += res;
+    gstats.inreserve.amount += res;
     _globals.set(gstats, _self);
     
     amt *= 0.75; 
     for ( auto itr = _user.begin(); itr != _user.end(); ++itr )
       if ( itr->valueofins > 0 ) {
-        //double weight = itr->valueofins / gstats.valueofins;
-        double weight = pcts(itr->usern,RM());
-        eosio::print( "percent contribution to risk : ", weight, "\n");
+        double weight = itr->pcts;
+        //eosio::print( "percent contribution to risk : ", weight, "\n");
         asset viga = asset(amt * weight, vig);
         bool found = false;
-        for ( auto it = itr->support.begin(); it != itr->support.end(); ++it )
+        for ( auto it = itr->insurance.begin(); it != itr->insurance.end(); ++it )
           if ( it->symbol == vig ) {
             _user.modify( itr, _self, [&]( auto& modified_user ) { // weighted fee deposit
-              modified_user.support[it - itr->support.begin()] += viga;
+              modified_user.insurance[it - itr->insurance.begin()] += viga;
             });
             found = true;
             break;
           } 
         if (!found)
           _user.modify(itr, _self, [&]( auto& modified_user) {
-            modified_user.support.push_back(viga);
+            modified_user.insurance.push_back(viga);
           });
       }
-    for ( auto it = gstats.support.begin(); it != gstats.support.end(); ++it )
+    for ( auto it = gstats.insurance.begin(); it != gstats.insurance.end(); ++it )
       if ( it->symbol == vig ) {
-        gstats.support[it - gstats.support.begin()].amount += amt;
+        gstats.insurance[it - gstats.insurance.begin()].amount += amt;
         break;
       }
   }
 }
 
-void eosusdcom::update(name usern) 
+void vigor::update(name usern) 
 {
   eosio_assert(_globals.exists(), "globals not found");
   auto &user = _user.get(usern.value, "User not found");
@@ -800,7 +781,7 @@ void eosusdcom::update(name usern)
   double valueofins = 0.0;
   double valueofcol = 0.0;
   
-  for ( auto it = user.support.begin(); it != user.support.end(); ++it ) {
+  for ( auto it = user.insurance.begin(); it != user.insurance.end(); ++it ) {
     statstable stats(name("datapreproc1"),name(issuerfeed[it->symbol]).value);
     auto itr = stats.find(1);
     valueofins += (it->amount) / std::pow(10.0, it->symbol.precision()) * 
@@ -812,6 +793,7 @@ void eosusdcom::update(name usern)
     valueofcol += (it->amount) / std::pow(10.0, it->symbol.precision()) * 
                   ( (double)itr->price[0] / pricePrecision );
   }
+
   gstats.valueofins += valueofins - user.valueofins;
   gstats.valueofcol += valueofcol - user.valueofcol;
   _globals.set(gstats, _self);
@@ -844,11 +826,11 @@ void eosusdcom::update(name usern)
 /* illiquidity risk is offloaded to insurers who are compensated
  * to take this risk. insurers may start of with zero debt but in
  * a bailout they acquire it, along with a failed loan's remaining 
- * collateral. some of their support assets will be assigned to 
+ * collateral. some of their insurance assets will be assigned to 
  * their collateral bucket so that it overcollateralizes their debt
  * at some default setting like 1.5
 */
-void eosusdcom::bailout(name usern) 
+void vigor::bailout(name usern) 
 {
   eosio_assert(_globals.exists(), "globals not found");
   auto &user = _user.get(usern.value, "User not found");
@@ -882,11 +864,11 @@ void eosusdcom::bailout(name usern)
       _user.modify(itr, _self, [&]( auto& modified_user) { // weighted fee deposit
         modified_user.debt += debt;
       });
-      for ( auto i = itr->support.begin(); i != itr->support.end(); ++i ) {
+      for ( auto i = itr->insurance.begin(); i != itr->insurance.end(); ++i ) {
         asset amt = *i;
-        amt.amount *= 0.25; //convert some support into collateral
+        amt.amount *= 0.25; //convert some insurance into collateral
         _user.modify(itr, _self, [&]( auto& modified_user) { // weighted fee withdrawl
-            modified_user.support[i - itr->support.begin()] -= amt;
+            modified_user.insurance[i - itr->insurance.begin()] -= amt;
         });
         for ( auto it = itr->collateral.begin(); it != itr->collateral.end(); ++it )
           if ( it->symbol == i->symbol ) {
@@ -910,11 +892,11 @@ extern "C" {
     if((code==name("eosio.token").value ||
         code==name("vig111111111").value ||
         code==name("dummytokens1").value) && action==name("transfer").value) {
-      eosio::execute_action(name(receiver),name(code), &eosusdcom::assetin);
+      eosio::execute_action(name(receiver),name(code), &vigor::assetin);
     }
     if (code == receiver) {
       switch (action) { 
-          EOSIO_DISPATCH_HELPER(eosusdcom, (create)(assetout)(issue)(transfer)(open)(close)(retire)(setsupply)(doupdate)) 
+          EOSIO_DISPATCH_HELPER(vigor, (create)(assetout)(issue)(transfer)(open)(close)(retire)(setsupply)(doupdate)) 
       }    
     }
     eosio_exit(0);
