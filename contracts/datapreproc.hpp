@@ -62,14 +62,15 @@ CONTRACT datapreproc : public eosio::contract {
     uint64_t timestamp;
 
     uint64_t primary_key() const {return id;}
-    uint64_t by_timestamp() const {return timestamp;}
-    uint64_t by_value() const {return value;}
+    //uint64_t by_timestamp() const {return timestamp;}
+    //uint64_t by_value() const {return value;}
 
   };
 
-    typedef eosio::multi_index<name("datapoints"), datapoints,
+    /*typedef eosio::multi_index<name("datapoints"), datapoints,
       indexed_by<name("value"), const_mem_fun<datapoints, uint64_t, &datapoints::by_value>>, 
-      indexed_by<name("timestamp"), const_mem_fun<datapoints, uint64_t, &datapoints::by_timestamp>>> datapointstable;
+      indexed_by<name("timestamp"), const_mem_fun<datapoints, uint64_t, &datapoints::by_timestamp>>> datapointstable;*/
+    typedef eosio::multi_index<"datapoints"_n, datapoints> datapointstable;
 
   //Holds the list of pairs available in the oracle
   TABLE pairs {
@@ -170,7 +171,7 @@ int64_t corrCalc(std::deque<int64_t> X, std::deque<int64_t> Y, uint64_t n);
 double volCalc(std::deque<int64_t> returns, uint64_t n);
 
   
-   //store last price from the oracle, append to time series
+//store last price from the oracle, append to time series
 void store_last_price(const name pair, const uint64_t freq, const uint64_t lastprice);
 
 };
