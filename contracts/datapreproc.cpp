@@ -1,145 +1,7 @@
-#include <eosiolib/asset.hpp>
-#include <eosiolib/symbol.hpp>
-#include <eosiolib/chain.h>
-#include <eosiolib/time.hpp>
-#include <eosiolib/eosio.hpp>
-#include <cmath>
-
-using namespace eosio;
-
-const uint64_t one_minute = 1000000.0 * 60.0; 
-const uint64_t five_minute = 1000000.0 * 60.0 * 5.0;
-const uint64_t fifteen_minute = 1000000.0 * 60.0 * 15.0;
-const uint64_t one_hour = 1000000.0 * 60.0 * 60.0;
-const uint64_t four_hour = 1000000.0 * 60.0 * 60.0 * 4.0; 
-const uint64_t one_day = 1000000.0 * 60.0 * 60.0 * 24.0; 
-const uint64_t cronlag = 5000000; //give extra time for cron jobs
-const uint64_t dequesize = 30;
-const double returnsPrecision = 1000000.0;
-const double pricePrecision = 1000000.0;
-const uint64_t defaultVol = 600000;
-int64_t defaultCorr = 1000000;
-const double one_minute_scale = sqrt(252.0*24.0*(60.0/1.0));
-const double five_minute_scale = sqrt(252.0*24.0*(60.0/5.0));
-const double fifteen_minute_scale = sqrt(252.0*24.0*(60.0/15.0));
-const double one_hour_scale = sqrt(252.0*24.0*(60.0/60.0));
-const double four_hour_scale = sqrt(252.0*24.0*(60.0/(60.0*4.0)));
-const double one_day_scale = sqrt(252.0*24.0*(60.0/(60.0*24.0)));
-
-const  std::map <uint64_t, double> volScale {
-         {one_minute,	    one_minute_scale},
-         {five_minute,	  five_minute_scale},
-         {fifteen_minute,	fifteen_minute_scale},
-         {one_hour,	      one_hour_scale},
-         {four_hour,	    four_hour_scale},
-         {one_day,	      one_day_scale},
-};
-
-CONTRACT datapreproc : public eosio::contract {
- public:
-  datapreproc(name receiver, name code, datastream<const char*> ds) : eosio::contract(receiver, code, ds) {}
-
-//Types
-  enum asset_type: uint16_t {
-      fiat=1,
-      cryptocurrency=2, 
-      erc20_token=3, 
-      eosio_token=4, 
-      equity=5, 
-      derivative=6, 
-      other=7
-  };
-
- //Holds the latest datapoints from qualified oracles
-  TABLE datapoints {
-    uint64_t id;
-    name owner;
-    uint64_t value;
-    uint64_t median;
-    uint64_t timestamp;
-
-    uint64_t primary_key() const {return id;}
-    uint64_t by_timestamp() const {return timestamp;}
-    uint64_t by_value() const {return value;}
-
-  };
-
-    typedef eosio::multi_index<name("datapoints"), datapoints,
-      indexed_by<name("value"), const_mem_fun<datapoints, uint64_t, &datapoints::by_value>>, 
-      indexed_by<name("timestamp"), const_mem_fun<datapoints, uint64_t, &datapoints::by_timestamp>>> datapointstable;
-
-  //Holds the list of pairs available in the oracle
-  TABLE pairs {
-    
-    bool active = false;
-    bool bounty_awarded = false;
-    bool bounty_edited_by_custodians = false;
-
-    name proposer;
-    name aname;
-
-    asset bounty_amount = asset(0, symbol("EOS",4));
-
-    std::vector<name> approving_custodians;
-    std::vector<name> approving_oracles;
-
-    symbol base_symbol;
-    uint64_t base_type;
-    name base_contract;
-
-    symbol quote_symbol;
-    uint64_t quote_type;
-    name quote_contract;
-    
-    uint64_t quoted_precision;
-
-    uint64_t primary_key() const {return aname.value;}
-
-  };
-
-    typedef eosio::multi_index<name("pairs"), pairs> pairstable;
-
-  //Holds the list of pairs to process
-  TABLE pairtoproc {
-    uint64_t id;
-    name aname;
-
-    symbol base_symbol;
-    uint64_t base_type;
-    name base_contract;
-
-    symbol quote_symbol;
-    uint64_t quote_type;
-    name quote_contract;
-    
-    uint64_t quoted_precision;
-
-    uint64_t primary_key() const {return id;}
-    uint64_t by_name() const {return aname.value;}
-
-  };
-
-    typedef eosio::multi_index<name("pairtoproc"), pairtoproc, 
-      indexed_by<name("aname"), const_mem_fun<pairtoproc, uint64_t, &pairtoproc::by_name>>> pairtoproctb;
-
-
-  //Holds the time series of prices, returns, volatility and correlation
-  TABLE statspre {
-    uint64_t freq;
-    uint64_t timestamp;
-    std::deque<uint64_t> price;
-    std::deque<int64_t> returns;
-    std::map <symbol, int64_t> correlation_matrix;
-    std::uint64_t vol = defaultVol;
-
-    uint64_t primary_key() const {return freq;}
-
-  };
-
-  typedef eosio::multi_index<name("stats"), statspre> statstable;
+#include <datapreproc.hpp>
 
 //add to the list of pairs to process
-ACTION addpair(name newpair) {
+ACTION datapreproc::addpair(name newpair) {
     
     //require_auth(_self);
 
@@ -147,9 +9,11 @@ ACTION addpair(name newpair) {
     auto itr = pairsname.find(newpair.value);
     if ( itr != pairsname.end() ) { //pair must exist in the oracle
         pairtoproctb pairtoproc(_self,_self.value);
-        auto pairtoprocn = pairtoproc.get_index<name("aname")>();
-        auto it = pairtoprocn.find(newpair.value);
-        if ( it == pairtoprocn.end() ) { //add pair if hasn't already been added
+        //auto pairtoprocn = pairtoproc.get_index<name("aname")>();
+        //auto it = pairtoprocn.find(newpair.value);
+        auto it = pairtoproc.find(newpair.value);
+        //if ( it == pairtoprocn.end() ) { //add pair if hasn't already been added
+        if ( it == pairtoproc.end() ) { // add pair if hasn't already been added
             pairtoproc.emplace(_self, [&](auto& o) {
             o.id = pairtoproc.available_primary_key();
             o.aname = newpair;
@@ -165,8 +29,8 @@ ACTION addpair(name newpair) {
    };
 }
 
-  //Clear the list of pairs to process
-  ACTION clear() {  
+//Clear the list of pairs to process
+ACTION datapreproc::clear() {  
   
     //require_auth(_self);
    
@@ -191,7 +55,7 @@ ACTION addpair(name newpair) {
 
   }
 
-  uint64_t get_last_price(name pair, uint64_t quoted_precision){
+uint64_t datapreproc::get_last_price(name pair, uint64_t quoted_precision){
 
     uint64_t eosusd = 1;
     uint64_t eos_precision = 1;
@@ -199,8 +63,9 @@ ACTION addpair(name newpair) {
     auto newesteos = dstoreos.begin();
     if (newesteos != dstoreos.end()){
       pairtoproctb pairtoproc(_self,_self.value);
-      auto pairtoprocn = pairtoproc.get_index<name("aname")>();
-      auto eospair = pairtoprocn.get(name("eosusd").value);
+      //auto pairtoprocn = pairtoproc.get_index<name("aname")>();
+      //auto eospair = pairtoprocn.get(name("eosusd").value);
+      auto eospair = pairtoproc.get("eosusd"_n.value);
       eos_precision = eospair.quoted_precision;
       eosusd = newesteos->median;
     }
@@ -216,13 +81,13 @@ ACTION addpair(name newpair) {
   }
 
 //  get median price and store in vector as a historical time series
-  ACTION update(){
+ACTION datapreproc::update(){
     
     getprices();
   }
 
 //  get median price and store in deque as a historical time series
-  void getprices(){
+void datapreproc::getprices(){
 
     pairtoproctb pairtoproc(_self,_self.value);
     
@@ -266,7 +131,7 @@ ACTION addpair(name newpair) {
   }
 
 
-  void averageVol(name aname){
+void datapreproc::averageVol(name aname){
 
     statstable store(_self, aname.value);
     auto itr = store.find(one_minute);
@@ -306,7 +171,6 @@ ACTION addpair(name newpair) {
       auto itr = store.get(one_minute);
       uint64_t vol1 = itr.vol;
     }
-
     itr = store.find(five_minute);
     uint64_t vol2 = defaultVol;
     if (itr != store.end()){
@@ -314,7 +178,6 @@ ACTION addpair(name newpair) {
       if (itr.vol != defaultVol)
         vol2 = itr.vol;
     }
-
     itr = store.find(fifteen_minute);
     uint64_t vol3 = defaultVol;
     if (itr != store.end()){
@@ -322,7 +185,6 @@ ACTION addpair(name newpair) {
       if (itr.vol != defaultVol)
         vol3 = itr.vol;
     }
-
     itr = store.find(one_hour);
     uint64_t vol4 = defaultVol;
     if (itr != store.end()){
@@ -330,7 +192,6 @@ ACTION addpair(name newpair) {
       if (itr.vol != defaultVol)
         vol4 = itr.vol;
     }
-
     itr = store.find(four_hour);
     uint64_t vol5 = defaultVol;
     if (itr != store.end()){
@@ -338,7 +199,6 @@ ACTION addpair(name newpair) {
       if (itr.vol != defaultVol)
         vol5 = itr.vol;
     }
-
     itr = store.find(one_day);
     uint64_t vol6 = defaultVol;
     if (itr != store.end()){
@@ -349,7 +209,7 @@ ACTION addpair(name newpair) {
     */
   }
 
-void averageCor(name aname){
+void datapreproc::averageCor(name aname){
 
     statstable store(_self, aname.value);
     const auto obj = store.get(one_minute);
@@ -388,84 +248,9 @@ void averageCor(name aname){
           };
     }
   }
-  /* 
-void averageCor(name aname){
 
-    statstable store(_self, aname.value);
-    int64_t c1 = defaultCorr;
-    int64_t c2 = defaultCorr;
-    int64_t c3 = defaultCorr;
-    int64_t c4 = defaultCorr;
-    int64_t c5 = defaultCorr;
-    int64_t c6 = defaultCorr;
-    auto itr = store.find(one_minute);
-    if (itr != store.end()){
-      const auto itr = store.get(one_minute);
-      std::map <symbol, int64_t> m1 = itr.correlation_matrix;
-    bool domodify = false;
-    for (std::pair<symbol, int64_t> it : m1){
-      domodify = true;
-      c1 = it.second;
-      auto itr = store.find(five_minute);
-        if (itr != store.end()){
-          auto itr = store.get(five_minute);
-          std::map <symbol, int64_t> m2 = itr.correlation_matrix;
-          if (!m2.empty())
-            c2 = m2[it.first];
-        }
-      itr = store.find(fifteen_minute);
-        if (itr != store.end()){
-          auto itr = store.get(fifteen_minute);
-          std::map <symbol, int64_t> m3 = itr.correlation_matrix;
-          if (!m3.empty())
-            c3 = m3[it.first];
-        }
-      itr = store.find(one_hour);
-        if (itr != store.end()){
-          auto itr = store.get(one_hour);
-          std::map <symbol, int64_t> m4 = itr.correlation_matrix;
-          if (!m4.empty())
-            c4 = m4[it.first];
-        }
-      itr = store.find(four_hour);
-        if (itr != store.end()){
-          auto itr = store.get(four_hour);
-          std::map <symbol, int64_t> m5 = itr.correlation_matrix;
-          if (!m5.empty())
-            c5 = m5[it.first];
-        }
-      itr = store.find(one_day);
-        if (itr != store.end()){
-          auto itr = store.get(one_day);
-          std::map <symbol, int64_t> m6 = itr.correlation_matrix;
-          if (!m6.empty())
-            c6 = m6[it.first];
-        }
-      
-      if (domodify){
-          int64_t c = (int64_t)(corPrecision*(0.1*(double)c1/corPrecision+0.1*(double)c2/corPrecision+0.1*(double)c3/corPrecision+0.1*(double)c4/corPrecision+0.1*(double)c5/corPrecision+0.5*(double)c6/corPrecision));
-          uint64_t ctime = current_time();
-          auto itr = store.find(1);
-          if (itr != store.end()){
-            store.modify( itr, _self, [&]( auto& s ) {
-            s.correlation_matrix[it.first] = c;
-            s.timestamp = ctime;
-            });
-          } else {
-            store.emplace(_self, [&](auto& s) {
-              s.freq=1;
-              s.correlation_matrix[it.first] = c;
-              s.timestamp = ctime;
-            });
-          };
-      }
-    }   
-    }  
-    
-  }
-*/
-    //  calculate vol and correlation matrix
-  void calcstats(const name pair, const uint64_t freq){
+//  calculate vol and correlation matrix
+void datapreproc::calcstats(const name pair, const uint64_t freq){
     
           statstable store(_self, pair.value);
           auto itr = store.find(freq);
@@ -503,7 +288,7 @@ void averageCor(name aname){
   }
 
 // correlation coefficient
-int64_t corrCalc(std::deque<int64_t> X, std::deque<int64_t> Y, uint64_t n) { 
+int64_t datapreproc::corrCalc(std::deque<int64_t> X, std::deque<int64_t> Y, uint64_t n) { 
   
     double sum_X = 0.0, sum_Y = 0.0, sum_XY = 0.0, x = 0.0, y = 0.0;
     double squareSum_X = 0.0, squareSum_Y = 0.0; 
@@ -524,7 +309,7 @@ int64_t corrCalc(std::deque<int64_t> X, std::deque<int64_t> Y, uint64_t n) {
     return corr; 
 } 
 
-double volCalc(std::deque<int64_t> returns, uint64_t n) {
+double datapreproc::volCalc(std::deque<int64_t> returns, uint64_t n) {
 
      double variance = 0.0;
      double t = returns[0]/returnsPrecision;
@@ -541,7 +326,7 @@ double volCalc(std::deque<int64_t> returns, uint64_t n) {
 
   
    //store last price from the oracle, append to time series
-void store_last_price(const name pair, const uint64_t freq, const uint64_t lastprice){
+void datapreproc::store_last_price(const name pair, const uint64_t freq, const uint64_t lastprice){
 
     statstable store(_self, pair.value);
 
@@ -587,20 +372,3 @@ void store_last_price(const name pair, const uint64_t freq, const uint64_t lastp
     }
 
   }
-
-};
-
-extern "C" {
-    void apply(uint64_t receiver, uint64_t code, uint64_t action) {
-        if(code==receiver)
-        {
-            switch(action)
-            {
-                EOSIO_DISPATCH_HELPER(datapreproc, (update)(addpair)(clear))
-            }
-        }
-       // else if(code=="eosio.token"_n.value && action=="transfer"_n.value) {
-       //     execute_action( name(receiver), name(code), &datapreproc::transfer);
-      //  }
-    }
-}
