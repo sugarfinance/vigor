@@ -9,9 +9,11 @@ ACTION datapreproc::addpair(name newpair) {
     auto itr = pairsname.find(newpair.value);
     if ( itr != pairsname.end() ) { //pair must exist in the oracle
         pairtoproctb pairtoproc(_self,_self.value);
-        auto pairtoprocn = pairtoproc.get_index<name("aname")>();
-        auto it = pairtoprocn.find(newpair.value);
-        if ( it == pairtoprocn.end() ) { //add pair if hasn't already been added
+        //auto pairtoprocn = pairtoproc.get_index<name("aname")>();
+        //auto it = pairtoprocn.find(newpair.value);
+        auto it = pairtoproc.find(newpair.value);
+        //if ( it == pairtoprocn.end() ) { //add pair if hasn't already been added
+        if ( it == pairtoproc.end() ) { // add pair if hasn't already been added
             pairtoproc.emplace(_self, [&](auto& o) {
             o.id = pairtoproc.available_primary_key();
             o.aname = newpair;
@@ -61,8 +63,9 @@ uint64_t datapreproc::get_last_price(name pair, uint64_t quoted_precision){
     auto newesteos = dstoreos.begin();
     if (newesteos != dstoreos.end()){
       pairtoproctb pairtoproc(_self,_self.value);
-      auto pairtoprocn = pairtoproc.get_index<name("aname")>();
-      auto eospair = pairtoprocn.get(name("eosusd").value);
+      //auto pairtoprocn = pairtoproc.get_index<name("aname")>();
+      //auto eospair = pairtoprocn.get(name("eosusd").value);
+      auto eospair = pairtoproc.get("eosusd"_n.value);
       eos_precision = eospair.quoted_precision;
       eosusd = newesteos->median;
     }

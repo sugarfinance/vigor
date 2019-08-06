@@ -118,12 +118,13 @@ CONTRACT datapreproc : public eosio::contract {
     uint64_t quoted_precision;
 
     uint64_t primary_key() const {return id;}
-    uint64_t by_name() const {return aname.value;}
+    //uint64_t by_name() const {return aname.value;}
 
   };
 
-    typedef eosio::multi_index<name("pairtoproc"), pairtoproc, 
-      indexed_by<name("aname"), const_mem_fun<pairtoproc, uint64_t, &pairtoproc::by_name>>> pairtoproctb;
+    /*typedef eosio::multi_index<name("pairtoproc"), pairtoproc, 
+      indexed_by<name("aname"), const_mem_fun<pairtoproc, uint64_t, &pairtoproc::by_name>>> pairtoproctb;*/
+    typedef eosio::multi_index<"pairtoproc"_n, pairtoproc> pairtoproctb;
 
 
   //Holds the time series of prices, returns, volatility and correlation
