@@ -5,6 +5,17 @@
 #include <eosiolib/eosio.hpp>
 #include <cmath>
 
+/*#include "../dist/contracts/eos/dappservices/multi_index.hpp"
+
+#define DAPPSERVICES_ACTIONS() \
+    XSIGNAL_DAPPSERVICE_ACTION \
+    IPFS_DAPPSERVICE_ACTIONS
+
+#define DAPPSERVICE_ACTIONS_COMMANDS() \
+    IPFS_SVC_COMMANDS()
+  
+#define CONTRACT_NAME() datapreproc*/
+
 using namespace eosio;
 
 
@@ -40,6 +51,9 @@ const  std::map <uint64_t, double> volScale {
 
 CONTRACT datapreproc : public eosio::contract {
  public:
+ 
+ //DAPPSERVICES_ACTIONS()
+ 
   datapreproc(name receiver, name code, datastream<const char*> ds) : eosio::contract(receiver, code, ds) {}
 
 //Types
@@ -71,6 +85,8 @@ CONTRACT datapreproc : public eosio::contract {
       indexed_by<name("value"), const_mem_fun<datapoints, uint64_t, &datapoints::by_value>>, 
       indexed_by<name("timestamp"), const_mem_fun<datapoints, uint64_t, &datapoints::by_timestamp>>> datapointstable;*/
     typedef eosio::multi_index<"datapoints"_n, datapoints> datapointstable;
+    //typedef dapp::multi_index<"datapoints"_n, datapoints> datapointstable;
+    //typedef eosio::multi_index<".datapoints"_n, datapoints> datapointstable_t_v_abi;
 
   //Holds the list of pairs available in the oracle
   TABLE pairs {
@@ -101,7 +117,8 @@ CONTRACT datapreproc : public eosio::contract {
 
   };
 
-    typedef eosio::multi_index<name("pairs"), pairs> pairstable;
+  typedef eosio::multi_index<name("pairs"), pairs> pairstable;
+  //typedef dapp::eosio::multi_index<"pairs"_n, pairs> pairstable;
 
   //Holds the list of pairs to process
   TABLE pairtoproc {
@@ -176,7 +193,7 @@ void store_last_price(const name pair, const uint64_t freq, const uint64_t lastp
 
 };
 
-extern "C" {
+/*extern "C" {
     void apply(uint64_t receiver, uint64_t code, uint64_t action) {
         if(code==receiver)
         {
@@ -189,4 +206,4 @@ extern "C" {
        //     execute_action( name(receiver), name(code), &datapreproc::transfer);
       //  }
     }
-}
+}*/
