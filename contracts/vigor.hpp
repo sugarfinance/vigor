@@ -1,5 +1,3 @@
-#pragma once
-
 #include <eosiolib/transaction.hpp>
 #include <eosiolib/singleton.hpp>
 #include <eosiolib/asset.hpp>
@@ -48,24 +46,27 @@ CONTRACT vigor : public eosio::contract {
                                                           user_t _user;
 
   //Holds the last datapoints_count datapoints from qualified oracles
-      struct [[eosio::table]] datapoints {
-         uint64_t id;
-         name owner; 
-         uint64_t value;
-         uint64_t median;
-         uint64_t timestamp;
-   
-         uint64_t primary_key() const {return id;}
-         uint64_t by_timestamp() const {return timestamp;}
-         uint64_t by_value() const {return value;}
+  //struct [[eosio::table]] datapoints {
+  TABLE datapoints {
+     uint64_t id;
+     name owner; 
+     uint64_t value;
+     uint64_t median;
+     uint64_t timestamp;
 
-         EOSLIB_SERIALIZE( datapoints, (id)(owner)(value)(median)(timestamp))
-      };
+     uint64_t primary_key() const {return id;}
+     //uint64_t by_timestamp() const {return timestamp;}
+     //uint64_t by_value() const {return value;}
 
-      typedef eosio::multi_index<name("datapoints"), datapoints,
-         indexed_by<name("value"), const_mem_fun<datapoints, uint64_t, &datapoints::by_value>>, 
-         indexed_by<name("timestamp"), const_mem_fun<datapoints, uint64_t, &datapoints::by_timestamp>>> datapointstable;
-                                                                                                        datapointstable _datapointstable;
+     EOSLIB_SERIALIZE( datapoints, (id)(owner)(value)(median)(timestamp))
+  };
+
+  /*typedef eosio::multi_index<name("datapoints"), datapoints,
+     indexed_by<name("value"), const_mem_fun<datapoints, uint64_t, &datapoints::by_value>>, 
+     indexed_by<name("timestamp"), const_mem_fun<datapoints, uint64_t, &datapoints::by_timestamp>>> datapointstable;*/
+    typedef eosio::multi_index<"datapoints"_n, datapoints> datapointstable;
+    
+    datapointstable _datapointstable;
 
       TABLE globalstats {
          double solvency = 1.0; // solvency, represents capital adequacy to back the stablecoin
@@ -84,7 +85,7 @@ CONTRACT vigor : public eosio::contract {
 
    
          EOSLIB_SERIALIZE(globalstats, (solvency)(valueofcol)(valueofins)(scale)(svalueofcole)(svalueofins)(stressins)(inreserve)(totaldebt)(insurance)(collateral))
-      }; typedef eosio::multi_index<name("globals"), globalstats> globalsm; 
+      }; //typedef eosio::multi_index<name("globals"), globalstats> globalsm; 
          typedef eosio::singleton<name("globals"), globalstats> globals;
                                                             globals _globals;
       void risk();
