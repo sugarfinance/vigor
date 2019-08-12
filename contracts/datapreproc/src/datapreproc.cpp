@@ -1,5 +1,7 @@
 #include <datapreproc.hpp>
 
+datapreproc::datapreproc(name receiver, name code, datastream<const char*> ds) : eosio::contract(receiver, code, ds), _dptable(receiver, receiver.value), _prstable(receiver, receiver.value), _ptptable(receiver, receiver.value), _ststable(receiver, receiver.value){}
+
 //add to the list of pairs to process
 ACTION datapreproc::addpair(name newpair) {
     
@@ -372,3 +374,20 @@ void datapreproc::store_last_price(const name pair, const uint64_t freq, const u
     }
 
   }
+
+extern "C" {
+  void apply(uint64_t receiver, uint64_t code, uint64_t action) {
+      if(code==receiver)
+      {
+          switch(action)
+          {
+              EOSIO_DISPATCH_HELPER(datapreproc, (update)(addpair)(clear))
+          }
+      }
+     // else if(code=="eosio.token"_n.value && action=="transfer"_n.value) {
+     //     execute_action( name(receiver), name(code), &datapreproc::transfer);
+    //  }
+  }
+}
+
+
