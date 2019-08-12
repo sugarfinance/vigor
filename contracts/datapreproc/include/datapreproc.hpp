@@ -54,7 +54,7 @@ CONTRACT datapreproc : public eosio::contract {
  
  //DAPPSERVICES_ACTIONS()
  
-  datapreproc(name receiver, name code, datastream<const char*> ds) : eosio::contract(receiver, code, ds) {}
+  datapreproc(name receiver, name code, datastream<const char*> ds);
 
 //Types
   enum asset_type: uint16_t {
@@ -76,8 +76,8 @@ CONTRACT datapreproc : public eosio::contract {
     uint64_t timestamp;
 
     uint64_t primary_key() const {return id;}
-    //uint64_t by_timestamp() const {return timestamp;}
-    //uint64_t by_value() const {return value;}
+    uint64_t by_timestamp() const {return timestamp;}
+    uint64_t by_value() const {return value;}
 
   };
 
@@ -85,6 +85,7 @@ CONTRACT datapreproc : public eosio::contract {
       indexed_by<name("value"), const_mem_fun<datapoints, uint64_t, &datapoints::by_value>>, 
       indexed_by<name("timestamp"), const_mem_fun<datapoints, uint64_t, &datapoints::by_timestamp>>> datapointstable;*/
     typedef eosio::multi_index<"datapoints"_n, datapoints> datapointstable;
+    datapointstable _dptable;
     //typedef dapp::multi_index<"datapoints"_n, datapoints> datapointstable;
     //typedef eosio::multi_index<".datapoints"_n, datapoints> datapointstable_t_v_abi;
 
@@ -118,6 +119,7 @@ CONTRACT datapreproc : public eosio::contract {
   };
 
   typedef eosio::multi_index<name("pairs"), pairs> pairstable;
+  pairstable _prstable;
   //typedef dapp::eosio::multi_index<"pairs"_n, pairs> pairstable;
 
   //Holds the list of pairs to process
@@ -143,6 +145,7 @@ CONTRACT datapreproc : public eosio::contract {
     /*typedef eosio::multi_index<name("pairtoproc"), pairtoproc, 
       indexed_by<name("aname"), const_mem_fun<pairtoproc, uint64_t, &pairtoproc::by_name>>> pairtoproctb;*/
     typedef eosio::multi_index<"pairtoproc"_n, pairtoproc> pairtoproctb;
+    pairtoproctb _ptptable;
 
 
   //Holds the time series of prices, returns, volatility and correlation
@@ -159,6 +162,9 @@ CONTRACT datapreproc : public eosio::contract {
   };
 
   typedef eosio::multi_index<name("stats"), statspre> statstable;
+  statstable _ststable;
+  
+  
 
 //add to the list of pairs to process
 ACTION addpair(name newpair);
@@ -193,17 +199,3 @@ void store_last_price(const name pair, const uint64_t freq, const uint64_t lastp
 
 };
 
-/*extern "C" {
-    void apply(uint64_t receiver, uint64_t code, uint64_t action) {
-        if(code==receiver)
-        {
-            switch(action)
-            {
-                EOSIO_DISPATCH_HELPER(datapreproc, (update)(addpair)(clear))
-            }
-        }
-       // else if(code=="eosio.token"_n.value && action=="transfer"_n.value) {
-       //     execute_action( name(receiver), name(code), &datapreproc::transfer);
-      //  }
-    }
-}*/
