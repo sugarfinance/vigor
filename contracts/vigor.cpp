@@ -215,7 +215,6 @@ void vigor::close( name owner, const symbol& symbol )
 }
 
 void vigor::assetin( name   from,
-                         name   to,
                          asset  assetin,
                          string memo ) {
   if ( from == _self )
@@ -434,42 +433,42 @@ void vigor::stresscol(name usern) {
 
   }
 
-  double vigor::portVarianceCol(name usern) {
-  
-  const auto& user = _user.get( usern.value, "User not found" );  
-  
-  eosio_assert(_globals.exists(), "globals not found");
-  globalstats gstats = _globals.get();
-  
-  double portVariance = 0.0;
-  for ( auto i = user.collateral.begin(); i != user.collateral.end(); ++i ) {
-    auto sym_code_raw = i->symbol.code().raw();
-    const auto& iV = _coinstats.get( sym_code_raw, "symbol does not exist" );
-    
-    statstable stats(name("datapreproc1"),name(issuerfeed[i->symbol]).value);
-    auto itr = stats.find(1);
-    double iVvol = (double)itr->vol/volPrecision;
-    double iW = (double)itr->price[0] / pricePrecision;
-    iW *= i->amount / std::pow(10.0, i->symbol.precision()); 
-    iW /= user.valueofcol;
+double vigor::portVarianceCol(name usern) {
 
-    for (auto j = i + 1; j != user.collateral.end(); ++j ) {
-      double c = (double)itr->correlation_matrix.at(j->symbol)/corrPrecision;
-      sym_code_raw = j->symbol.code().raw();
-      const auto& jV = _coinstats.get( sym_code_raw, "symbol does not exist" );
+const auto& user = _user.get( usern.value, "User not found" );  
 
-      statstable statsj(name("datapreproc1"),name(issuerfeed[j->symbol]).value);
-      auto itr = statsj.find(1);
-      double jVvol = (double)itr->vol/volPrecision;
-      double jW = (double)itr->price[0] / pricePrecision;
-      jW *= j->amount / std::pow(10.0, j->symbol.precision());
-      jW /= user.valueofcol;
+eosio_assert(_globals.exists(), "globals not found");
+globalstats gstats = _globals.get();
 
-      portVariance += 2.0 * iW * jW * c * iVvol * jVvol;
-    }
-    portVariance += std::pow(iW, 2) * std::pow(iVvol, 2);
+double portVariance = 0.0;
+for ( auto i = user.collateral.begin(); i != user.collateral.end(); ++i ) {
+  auto sym_code_raw = i->symbol.code().raw();
+  const auto& iV = _coinstats.get( sym_code_raw, "symbol does not exist" );
+  
+  statstable stats(name("datapreproc1"),name(issuerfeed[i->symbol]).value);
+  auto itr = stats.find(1);
+  double iVvol = (double)itr->vol/volPrecision;
+  double iW = (double)itr->price[0] / pricePrecision;
+  iW *= i->amount / std::pow(10.0, i->symbol.precision()); 
+  iW /= user.valueofcol;
+
+  for (auto j = i + 1; j != user.collateral.end(); ++j ) {
+    double c = (double)itr->correlation_matrix.at(j->symbol)/corrPrecision;
+    sym_code_raw = j->symbol.code().raw();
+    const auto& jV = _coinstats.get( sym_code_raw, "symbol does not exist" );
+
+    statstable statsj(name("datapreproc1"),name(issuerfeed[j->symbol]).value);
+    auto itr = statsj.find(1);
+    double jVvol = (double)itr->vol/volPrecision;
+    double jW = (double)itr->price[0] / pricePrecision;
+    jW *= j->amount / std::pow(10.0, j->symbol.precision());
+    jW /= user.valueofcol;
+
+    portVariance += 2.0 * iW * jW * c * iVvol * jVvol;
   }
-  return portVariance;
+  portVariance += std::pow(iW, 2) * std::pow(iVvol, 2);
+}
+return portVariance;
 }
 
 double vigor::portVarianceIns()
@@ -670,8 +669,8 @@ double vigor::riskx(name usern)
 }
 
 
-double vigor::RM() { // sum of weighted marginal contribution to risk (solvency), used for rescaling
-
+double vigor::RM() { 
+// sum of weighted marginal contribution to risk (solvency), used for rescaling
   eosio_assert( _globals.exists(), "no global table exists yet" );
   globalstats gstats = _globals.get();
 
@@ -887,7 +886,12 @@ void vigor::bailout(name usern)
   }
 }
 
-extern "C" {
+void vigor::printname(name person)
+{
+  print("Welcome to vigor stablecoin", name{person});
+}
+
+/*extern "C" {
   [[noreturn]] void apply(uint64_t receiver, uint64_t code, uint64_t action) {
     if((code==name("eosio.token").value ||
         code==name("vig111111111").value ||
@@ -901,4 +905,4 @@ extern "C" {
     }
     eosio_exit(0);
   }
-}
+}*/

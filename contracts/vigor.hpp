@@ -2,6 +2,7 @@
 #include <eosiolib/singleton.hpp>
 #include <eosiolib/asset.hpp>
 #include <eosiolib/eosio.hpp>
+#include <eosiolib/print.hpp>
 
 #include <string>
 #include <cmath>
@@ -180,7 +181,6 @@ CONTRACT vigor : public eosio::contract {
       _statstable(receiver, receiver.value)  {}
      
       ACTION assetin( name   from,
-                     name   to,
                      asset  assetin,
                      string memo);
       ACTION assetout(name usern, asset assetout, string memo);
@@ -204,6 +204,8 @@ CONTRACT vigor : public eosio::contract {
       ACTION close( name owner, const symbol& symbol );
 
       ACTION setsupply( name issuer, asset maximum_supply );
+      
+      ACTION printname(name person);
       
       static asset get_supply( name token_contract_account, symbol_code sym_code )
       {
