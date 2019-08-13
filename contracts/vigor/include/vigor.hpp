@@ -89,6 +89,8 @@ CONTRACT vigor : public eosio::contract {
       }; //typedef eosio::multi_index<name("globals"), globalstats> globalsm; 
          typedef eosio::singleton<name("globals"), globalstats> globals;
                                                             globals _globals;
+                                                            
+      void doupdate();                                                      
       void risk();
       double riskx(name usern);
       void stresscol(name usern);
@@ -184,8 +186,6 @@ CONTRACT vigor : public eosio::contract {
                      asset  assetin,
                      string memo);
       ACTION assetout(name usern, asset assetout, string memo);
-
-      ACTION doupdate();
 
       ACTION create( name   issuer,
                      asset  maximum_supply);
