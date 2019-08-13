@@ -6,7 +6,7 @@
 Input parameters:
 
 * `usern`     (name of the actor)
-* `assetout`  (the asset type to be borrowed or transferered as insurance or collateral )
+* `assetout`  (the asset type to be borrowed or transfered as insurance or collateral )
 * `memo`      (memo must be composed of either word: insurance | collateral | borrow)
 
 
