@@ -22,6 +22,10 @@
                     "type": "name"
                 },
                 {
+                    "name": "to",
+                    "type": "name"
+                },
+                {
                     "name": "assetin",
                     "type": "asset"
                 },
@@ -94,37 +98,6 @@
                     "type": "name"
                 }
             ]
-        },
-        {
-            "name": "datapoints",
-            "base": "",
-            "fields": [
-                {
-                    "name": "id",
-                    "type": "uint64"
-                },
-                {
-                    "name": "owner",
-                    "type": "name"
-                },
-                {
-                    "name": "value",
-                    "type": "uint64"
-                },
-                {
-                    "name": "median",
-                    "type": "uint64"
-                },
-                {
-                    "name": "timestamp",
-                    "type": "uint64"
-                }
-            ]
-        },
-        {
-            "name": "doupdate",
-            "base": "",
-            "fields": []
         },
         {
             "name": "globalstats",
@@ -407,11 +380,6 @@
             "ricardian_contract": ""
         },
         {
-            "name": "doupdate",
-            "type": "doupdate",
-            "ricardian_contract": ""
-        },
-        {
             "name": "issue",
             "type": "issue",
             "ricardian_contract": ""
@@ -453,14 +421,7 @@
             "key_types": []
         },
         {
-            "name": "datapoints",
-            "type": "datapoints",
-            "index_type": "i64",
-            "key_names": [],
-            "key_types": []
-        },
-        {
-            "name": "globalstats",
+            "name": "globals",
             "type": "globalstats",
             "index_type": "i64",
             "key_names": [],

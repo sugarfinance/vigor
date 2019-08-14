@@ -1,7 +1,5 @@
 #include <datapreproc.hpp>
 
-datapreproc::datapreproc(name receiver, name code, datastream<const char*> ds) : eosio::contract(receiver, code, ds), _dptable(receiver, receiver.value), _prstable(receiver, receiver.value), _ptptable(receiver, receiver.value), _ststable(receiver, receiver.value){}
-
 //add to the list of pairs to process
 ACTION datapreproc::addpair(name newpair) {
     
@@ -17,7 +15,7 @@ ACTION datapreproc::addpair(name newpair) {
         //if ( it == pairtoprocn.end() ) { //add pair if hasn't already been added
         if ( it == pairtoproc.end() ) { // add pair if hasn't already been added
             pairtoproc.emplace(_self, [&](auto& o) {
-            o.id = pairtoproc.available_primary_key();
+            //o.id = pairtoproc.available_primary_key();
             o.aname = newpair;
             o.base_symbol = itr->base_symbol;
             o.base_type = itr->base_type;

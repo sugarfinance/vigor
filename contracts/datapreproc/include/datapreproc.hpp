@@ -50,11 +50,11 @@ const  std::map <uint64_t, double> volScale {
 
 
 CONTRACT datapreproc : public eosio::contract {
- public:
+ private:
  
  //DAPPSERVICES_ACTIONS()
  
-  datapreproc(name receiver, name code, datastream<const char*> ds);
+  //datapreproc(name receiver, name code, datastream<const char*> ds);
 
 //Types
   enum asset_type: uint16_t {
@@ -81,10 +81,12 @@ CONTRACT datapreproc : public eosio::contract {
 
   };
 
-    /*typedef eosio::multi_index<name("datapoints"), datapoints,
+
+    typedef eosio::multi_index<name("datapoints"), datapoints,
       indexed_by<name("value"), const_mem_fun<datapoints, uint64_t, &datapoints::by_value>>, 
-      indexed_by<name("timestamp"), const_mem_fun<datapoints, uint64_t, &datapoints::by_timestamp>>> datapointstable;*/
-    typedef eosio::multi_index<"datapoints"_n, datapoints> datapointstable;
+      indexed_by<name("timestamp"), const_mem_fun<datapoints, uint64_t, &datapoints::by_timestamp>>> datapointstable;
+
+   // typedef eosio::multi_index<"datapoints"_n, datapoints> datapointstable;
     datapointstable _dptable;
     //typedef dapp::multi_index<"datapoints"_n, datapoints> datapointstable;
     //typedef eosio::multi_index<".datapoints"_n, datapoints> datapointstable_t_v_abi;
@@ -124,7 +126,7 @@ CONTRACT datapreproc : public eosio::contract {
 
   //Holds the list of pairs to process
   TABLE pairtoproc {
-    uint64_t id;
+   // uint64_t id;
     name aname;
 
     symbol base_symbol;
@@ -137,7 +139,8 @@ CONTRACT datapreproc : public eosio::contract {
     
     uint64_t quoted_precision;
 
-    uint64_t primary_key() const {return id;}
+    uint64_t primary_key() const {return aname.value;}
+    //uint64_t primary_key() const {return id;}
     //uint64_t by_name() const {return aname.value;}
 
   };
@@ -165,6 +168,15 @@ CONTRACT datapreproc : public eosio::contract {
   statstable _ststable;
   
   
+public:
+
+using contract::contract;
+
+datapreproc(name receiver, name code, datastream<const char*> ds) : eosio::contract(receiver, code, ds), 
+   _dptable(receiver, receiver.value), 
+   _prstable(receiver, receiver.value), 
+   _ptptable(receiver, receiver.value), 
+   _ststable(receiver, receiver.value){}
 
 //add to the list of pairs to process
 ACTION addpair(name newpair);

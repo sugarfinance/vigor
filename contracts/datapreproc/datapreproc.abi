@@ -129,10 +129,6 @@
             "base": "",
             "fields": [
                 {
-                    "name": "id",
-                    "type": "uint64"
-                },
-                {
                     "name": "aname",
                     "type": "name"
                 },

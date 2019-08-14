@@ -214,7 +214,8 @@ void vigor::close( name owner, const symbol& symbol )
    acnts.erase( it );
 }
 
-void vigor::assetin( name   from,
+void vigor::assetin( name   from, 
+                         name   to,
                          asset  assetin,
                          string memo ) {
   if ( from == _self )
@@ -838,7 +839,8 @@ void vigor::bailout(name usern)
 
   for ( auto itr = _user.begin(); itr != _user.end(); ++itr ) {
     if (itr->valueofins > 0) {
-      double weight = itr->valueofins / gstats.valueofins;
+      double weight = itr->pcts;
+      //double weight = itr->valueofins / gstats.valueofins;
       asset debt = user.debt;
       debt.amount *= weight;
 
@@ -887,9 +889,7 @@ void vigor::bailout(name usern)
   }
 }
 
-
-
-/*extern "C" {
+extern "C" {
   [[noreturn]] void apply(uint64_t receiver, uint64_t code, uint64_t action) {
     if((code==name("eosio.token").value ||
         code==name("vig111111111").value ||
@@ -898,9 +898,9 @@ void vigor::bailout(name usern)
     }
     if (code == receiver) {
       switch (action) { 
-          EOSIO_DISPATCH_HELPER(vigor, (create)(assetout)(issue)(transfer)(open)(close)(retire)(setsupply)(doupdate)) 
+          EOSIO_DISPATCH_HELPER(vigor, (create)(assetout)(issue)(transfer)(open)(close)(retire)(setsupply) )
       }    
     }
     eosio_exit(0);
   }
-}*/
+}

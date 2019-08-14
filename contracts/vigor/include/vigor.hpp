@@ -46,29 +46,6 @@ CONTRACT vigor : public eosio::contract {
       }; typedef eosio::multi_index<name("user"), user_s> user_t;
                                                           user_t _user;
 
-  //Holds the last datapoints_count datapoints from qualified oracles
-  //struct [[eosio::table]] datapoints {
-  TABLE datapoints {
-     uint64_t id;
-     name owner; 
-     uint64_t value;
-     uint64_t median;
-     uint64_t timestamp;
-
-     uint64_t primary_key() const {return id;}
-     //uint64_t by_timestamp() const {return timestamp;}
-     //uint64_t by_value() const {return value;}
-
-     EOSLIB_SERIALIZE( datapoints, (id)(owner)(value)(median)(timestamp))
-  };
-
-  /*typedef eosio::multi_index<name("datapoints"), datapoints,
-     indexed_by<name("value"), const_mem_fun<datapoints, uint64_t, &datapoints::by_value>>, 
-     indexed_by<name("timestamp"), const_mem_fun<datapoints, uint64_t, &datapoints::by_timestamp>>> datapointstable;*/
-    typedef eosio::multi_index<"datapoints"_n, datapoints> datapointstable;
-    
-    datapointstable _datapointstable;
-
       TABLE globalstats {
          double solvency = 1.0; // solvency, represents capital adequacy to back the stablecoin
          double valueofcol = 0.0; // dollar value of total portfolio of borrowers crypto collateral assets
@@ -86,7 +63,7 @@ CONTRACT vigor : public eosio::contract {
 
    
          EOSLIB_SERIALIZE(globalstats, (solvency)(valueofcol)(valueofins)(scale)(svalueofcole)(svalueofins)(stressins)(inreserve)(totaldebt)(insurance)(collateral))
-      }; //typedef eosio::multi_index<name("globals"), globalstats> globalsm; 
+      }; typedef eosio::multi_index<name("globals"), globalstats> globalsm;
          typedef eosio::singleton<name("globals"), globalstats> globals;
                                                             globals _globals;
                                                             
@@ -178,11 +155,12 @@ CONTRACT vigor : public eosio::contract {
    public:
       using contract::contract;
       vigor(name receiver, name code, datastream<const char*> ds):contract(receiver, code, ds), 
-      _user(receiver, receiver.value), _datapointstable(receiver, receiver.value),
+      _user(receiver, receiver.value),
       _coinstats(receiver, receiver.value), _globals(receiver, receiver.value),
       _statstable(receiver, receiver.value)  {}
      
       ACTION assetin( name   from,
+                     name   to,
                      asset  assetin,
                      string memo);
       ACTION assetout(name usern, asset assetout, string memo);
