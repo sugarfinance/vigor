@@ -100,37 +100,6 @@
             ]
         },
         {
-            "name": "datapoints",
-            "base": "",
-            "fields": [
-                {
-                    "name": "id",
-                    "type": "uint64"
-                },
-                {
-                    "name": "owner",
-                    "type": "name"
-                },
-                {
-                    "name": "value",
-                    "type": "uint64"
-                },
-                {
-                    "name": "median",
-                    "type": "uint64"
-                },
-                {
-                    "name": "timestamp",
-                    "type": "uint64"
-                }
-            ]
-        },
-        {
-            "name": "doupdate",
-            "base": "",
-            "fields": []
-        },
-        {
             "name": "globalstats",
             "base": "",
             "fields": [
@@ -411,11 +380,6 @@
             "ricardian_contract": ""
         },
         {
-            "name": "doupdate",
-            "type": "doupdate",
-            "ricardian_contract": ""
-        },
-        {
             "name": "issue",
             "type": "issue",
             "ricardian_contract": ""
@@ -450,8 +414,8 @@
             "key_types": []
         },
         {
-            "name": "datapoints",
-            "type": "datapoints",
+            "name": "coinstat",
+            "type": "currency_stats",
             "index_type": "i64",
             "key_names": [],
             "key_types": []
@@ -459,13 +423,6 @@
         {
             "name": "globals",
             "type": "globalstats",
-            "index_type": "i64",
-            "key_names": [],
-            "key_types": []
-        },
-        {
-            "name": "stat",
-            "type": "currency_stats",
             "index_type": "i64",
             "key_names": [],
             "key_types": []

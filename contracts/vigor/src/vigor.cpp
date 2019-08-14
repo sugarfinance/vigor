@@ -1,4 +1,4 @@
-#include "vigor.hpp"
+#include <vigor.hpp>
 
 void vigor::doupdate()
 {
@@ -37,10 +37,10 @@ void vigor::create( name   issuer,
     eosio_assert( maximum_supply.is_valid(), "invalid supply");
     eosio_assert( maximum_supply.amount > 0, "max-supply must be positive");
 
-    auto existing = _stats.find( sym.code().raw() );
-    eosio_assert( existing == _stats.end(), "token with symbol already exists" );
+    auto existing = _coinstats.find( sym.code().raw() );
+    eosio_assert( existing == _coinstats.end(), "token with symbol already exists" );
 
-    _stats.emplace( _self, [&]( auto& s ) {
+    _coinstats.emplace( _self, [&]( auto& s ) {
        s.supply.symbol = maximum_supply.symbol;
        s.max_supply    = maximum_supply;
        s.issuer        = issuer;
@@ -52,8 +52,8 @@ void vigor::setsupply( name issuer, asset maximum_supply )
     auto sym = maximum_supply.symbol;
     eosio_assert( sym.is_valid(), "invalid symbol name" );
 
-    auto existing = _stats.find( sym.code().raw() );
-    eosio_assert( existing != _stats.end(), "token with symbol does not exist, create token before setting supply" );
+    auto existing = _coinstats.find( sym.code().raw() );
+    eosio_assert( existing != _coinstats.end(), "token with symbol does not exist, create token before setting supply" );
     const auto& st = *existing;
 
     require_auth( st.issuer );
@@ -63,7 +63,7 @@ void vigor::setsupply( name issuer, asset maximum_supply )
     eosio_assert( maximum_supply.symbol == st.supply.symbol, "symbol precision mismatch" );
     eosio_assert( maximum_supply.amount >= st.supply.amount, "cannot set max_supply to less than available supply");
 
-    _stats.modify( st, same_payer, [&]( auto& s ) {
+    _coinstats.modify( st, same_payer, [&]( auto& s ) {
        s.max_supply = maximum_supply;
     });
 }
@@ -74,8 +74,8 @@ void vigor::issue( name to, asset quantity, string memo )
     eosio_assert( sym.is_valid(), "invalid symbol name" );
     eosio_assert( memo.size() <= 256, "memo has more than 256 bytes" );
 
-    auto existing = _stats.find( sym.code().raw() );
-    eosio_assert( existing != _stats.end(), "token with symbol does not exist, create token before issue" );
+    auto existing = _coinstats.find( sym.code().raw() );
+    eosio_assert( existing != _coinstats.end(), "token with symbol does not exist, create token before issue" );
     const auto& st = *existing;
 
     require_auth( st.issuer );
@@ -85,7 +85,7 @@ void vigor::issue( name to, asset quantity, string memo )
     eosio_assert( quantity.symbol == st.supply.symbol, "symbol precision mismatch" );
     eosio_assert( quantity.amount <= st.max_supply.amount - st.supply.amount, "quantity exceeds available supply");
 
-    _stats.modify( st, same_payer, [&]( auto& s ) {
+    _coinstats.modify( st, same_payer, [&]( auto& s ) {
        s.supply += quantity;
     });
 
@@ -104,8 +104,8 @@ void vigor::retire( asset quantity, string memo )
     eosio_assert( sym.is_valid(), "invalid symbol name" );
     eosio_assert( memo.size() <= 256, "memo has more than 256 bytes" );
 
-    auto existing = _stats.find( sym.code().raw() );
-    eosio_assert( existing != _stats.end(), "token with symbol does not exist 6" );
+    auto existing = _coinstats.find( sym.code().raw() );
+    eosio_assert( existing != _coinstats.end(), "token with symbol does not exist 6" );
     const auto& st = *existing;
 
     require_auth( st.issuer );
@@ -114,7 +114,7 @@ void vigor::retire( asset quantity, string memo )
 
     eosio_assert( quantity.symbol == st.supply.symbol, "symbol precision mismatch" );
 
-    _stats.modify( st, same_payer, [&]( auto& s ) {
+    _coinstats.modify( st, same_payer, [&]( auto& s ) {
        s.supply -= quantity;
     });
     sub_balance( st.issuer, quantity );
@@ -191,7 +191,7 @@ void vigor::open( name owner, const symbol& symbol, name ram_payer )
    require_auth( ram_payer );
 
    auto sym_code_raw = symbol.code().raw();
-   const auto& st = _stats.get( sym_code_raw, "symbol does not exist 7" );
+   const auto& st = _coinstats.get( sym_code_raw, "symbol does not exist 7" );
 
    eosio_assert( st.supply.symbol == symbol, "symbol precision mismatch" );
 
@@ -214,7 +214,7 @@ void vigor::close( name owner, const symbol& symbol )
    acnts.erase( it );
 }
 
-void vigor::assetin( name   from,
+void vigor::assetin( name   from, 
                          name   to,
                          asset  assetin,
                          string memo ) {
@@ -250,10 +250,10 @@ void vigor::assetin( name   from,
     gstats = _globals.get();
 
   symbol sym = assetin.symbol;
-  auto st = _stats.find( sym.code().raw());
+  auto st = _coinstats.find( sym.code().raw());
 
-  if ( st == _stats.end() )        
-    _stats.emplace( _self, [&]( auto& s ) {
+  if ( st == _coinstats.end() )        
+    _coinstats.emplace( _self, [&]( auto& s ) {
       s.supply.symbol = sym;
       s.max_supply.symbol = sym;
       s.issuer = get_code(); //TODO: verify against issuer map
@@ -432,19 +432,20 @@ void vigor::stresscol(name usern) {
     modified_user.svalueofcole = svalueofcole; // model suggested dollar amount of insufficient collateral of a user loan in a stressed market.
   });
 
-  }
+}
 
-  double vigor::portVarianceCol(name usern) {
-  
+double vigor::portVarianceCol(name usern)
+{
+
   const auto& user = _user.get( usern.value, "User not found" );  
-  
+
   eosio_assert(_globals.exists(), "globals not found");
   globalstats gstats = _globals.get();
-  
+
   double portVariance = 0.0;
   for ( auto i = user.collateral.begin(); i != user.collateral.end(); ++i ) {
     auto sym_code_raw = i->symbol.code().raw();
-    const auto& iV = _stats.get( sym_code_raw, "symbol does not exist" );
+    const auto& iV = _coinstats.get( sym_code_raw, "symbol does not exist" );
     
     statstable stats(name("datapreproc1"),name(issuerfeed[i->symbol]).value);
     auto itr = stats.find(1);
@@ -453,23 +454,23 @@ void vigor::stresscol(name usern) {
     iW *= i->amount / std::pow(10.0, i->symbol.precision()); 
     iW /= user.valueofcol;
 
-    for (auto j = i + 1; j != user.collateral.end(); ++j ) {
-      double c = (double)itr->correlation_matrix.at(j->symbol)/corrPrecision;
-      sym_code_raw = j->symbol.code().raw();
-      const auto& jV = _stats.get( sym_code_raw, "symbol does not exist" );
+  for (auto j = i + 1; j != user.collateral.end(); ++j ) {
+    double c = (double)itr->correlation_matrix.at(j->symbol)/corrPrecision;
+    sym_code_raw = j->symbol.code().raw();
+    const auto& jV = _coinstats.get( sym_code_raw, "symbol does not exist" );
 
-      statstable statsj(name("datapreproc1"),name(issuerfeed[j->symbol]).value);
-      auto itr = statsj.find(1);
-      double jVvol = (double)itr->vol/volPrecision;
-      double jW = (double)itr->price[0] / pricePrecision;
-      jW *= j->amount / std::pow(10.0, j->symbol.precision());
-      jW /= user.valueofcol;
+    statstable statsj(name("datapreproc1"),name(issuerfeed[j->symbol]).value);
+    auto itr = statsj.find(1);
+    double jVvol = (double)itr->vol/volPrecision;
+    double jW = (double)itr->price[0] / pricePrecision;
+    jW *= j->amount / std::pow(10.0, j->symbol.precision());
+    jW /= user.valueofcol;
 
-      portVariance += 2.0 * iW * jW * c * iVvol * jVvol;
-    }
-    portVariance += std::pow(iW, 2) * std::pow(iVvol, 2);
+    portVariance += 2.0 * iW * jW * c * iVvol * jVvol;
   }
-  return portVariance;
+  portVariance += std::pow(iW, 2) * std::pow(iVvol, 2);
+}
+return portVariance;
 }
 
 double vigor::portVarianceIns()
@@ -481,7 +482,7 @@ double vigor::portVarianceIns()
 
   for ( auto i = gstats.insurance.begin(); i != gstats.insurance.end(); ++i ) {
     auto sym_code_raw = i->symbol.code().raw();
-    const auto& iV = _stats.get( sym_code_raw, "symbol does not exist" );
+    const auto& iV = _coinstats.get( sym_code_raw, "symbol does not exist" );
 
     statstable stats(name("datapreproc1"),name(issuerfeed[i->symbol]).value);
     auto itr = stats.find(1);
@@ -495,7 +496,7 @@ double vigor::portVarianceIns()
       //double c = iV.correlation_matrix.at(j->symbol);
       
       sym_code_raw = j->symbol.code().raw();
-      const auto& jV = _stats.get( sym_code_raw, "symbol does not exist" );
+      const auto& jV = _coinstats.get( sym_code_raw, "symbol does not exist" );
 
       statstable stats(name("datapreproc1"),name(issuerfeed[j->symbol]).value);
       auto itr = stats.find(1);
@@ -595,7 +596,7 @@ double vigor::stressinsx(name usern) { // same as stressins, but remove remove t
 
   for ( auto i = gstats.insurance.begin(); i != gstats.insurance.end(); ++i ) {
     auto sym_code_raw = i->symbol.code().raw();
-    const auto& iV = _stats.get( sym_code_raw, "symbol does not exist" );
+    const auto& iV = _coinstats.get( sym_code_raw, "symbol does not exist" );
 
     statstable stats(name("datapreproc1"),name(issuerfeed[i->symbol]).value);
     auto itr = stats.find(1);
@@ -616,7 +617,7 @@ double vigor::stressinsx(name usern) { // same as stressins, but remove remove t
       double c = (double)itr->correlation_matrix.at(j->symbol)/corrPrecision;
       
       sym_code_raw = j->symbol.code().raw();
-      const auto& jV = _stats.get( sym_code_raw, "symbol does not exist" );
+      const auto& jV = _coinstats.get( sym_code_raw, "symbol does not exist" );
 
       statstable stats(name("datapreproc1"),name(issuerfeed[j->symbol]).value);
       auto itr = stats.find(1);
@@ -670,8 +671,8 @@ double vigor::riskx(name usern)
 }
 
 
-double vigor::RM() { // sum of weighted marginal contribution to risk (solvency), used for rescaling
-
+double vigor::RM() { 
+// sum of weighted marginal contribution to risk (solvency), used for rescaling
   eosio_assert( _globals.exists(), "no global table exists yet" );
   globalstats gstats = _globals.get();
 
@@ -715,7 +716,7 @@ void vigor::payfee(name usern) {
   double tespay = (user.debt.amount / std::pow(10.0, 4)) * (std::pow((1 + user.tesprice), (1.0 / T)) - 1);
   for ( auto it = user.collateral.begin(); it != user.collateral.end(); ++it )
     if ( it->symbol ==  vig) {
-      const auto& st = _stats.get( vig.code().raw(), "symbol doesn't exist");
+      const auto& st = _coinstats.get( vig.code().raw(), "symbol doesn't exist");
       statstable stats(name("datapreproc1"),name(issuerfeed[vig]).value);
       auto itr = stats.find(1);
       amt = uint64_t(( tespay * std::pow(10.0, 4) ) / 
@@ -838,7 +839,8 @@ void vigor::bailout(name usern)
 
   for ( auto itr = _user.begin(); itr != _user.end(); ++itr ) {
     if (itr->valueofins > 0) {
-      double weight = itr->valueofins / gstats.valueofins;
+      double weight = itr->pcts;
+      //double weight = itr->valueofins / gstats.valueofins;
       asset debt = user.debt;
       debt.amount *= weight;
 
@@ -896,7 +898,7 @@ extern "C" {
     }
     if (code == receiver) {
       switch (action) { 
-          EOSIO_DISPATCH_HELPER(vigor, (create)(assetout)(issue)(transfer)(open)(close)(retire)(setsupply)(doupdate)) 
+          EOSIO_DISPATCH_HELPER(vigor, (create)(assetout)(issue)(transfer)(open)(close)(retire)(setsupply) )
       }    
     }
     eosio_exit(0);
