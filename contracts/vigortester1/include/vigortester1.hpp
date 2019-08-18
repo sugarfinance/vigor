@@ -160,6 +160,7 @@ CONTRACT vigortester1 : public eosio::contract {
       _statstable(receiver, receiver.value)  {}
      
       ACTION assetin( name   from,
+                      name to,
                      asset  assetin,
                      string memo);
                      

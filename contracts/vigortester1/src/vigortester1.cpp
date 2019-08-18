@@ -214,7 +214,8 @@ void vigortester1::close( name owner, const symbol& symbol )
    acnts.erase( it );
 }
 
-void vigortester1::assetin( name   from, 
+void vigortester1::assetin( name   from,
+                         name to,
                          asset  assetin,
                          string memo ) {
   if ( from == _self )
@@ -222,6 +223,9 @@ void vigortester1::assetin( name   from,
 
   require_auth( from );
   eosio_assert(assetin.symbol.is_valid(), "Symbol must be valid.");
+  //auto sym = assetin.symbol;
+  //eosio_assert(sym.is_valid(), "symbol must be valid.");
+  //eosio_assert(assetin.is_valid(), "Symbol must be valid.");
   eosio_assert(assetin.amount > 0, "Amount must be > 0.");
   eosio_assert( memo.c_str() == string("insurance") ||
                 memo.c_str() == string("collateral"),  

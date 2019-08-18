@@ -22,6 +22,10 @@
                     "type": "name"
                 },
                 {
+                    "name": "to",
+                    "type": "name"
+                },
+                {
                     "name": "assetin",
                     "type": "asset"
                 },
