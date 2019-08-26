@@ -421,7 +421,7 @@
             "key_types": []
         },
         {
-            "name": "stats",
+            "name": "stat",
             "type": "currency_stats",
             "index_type": "i64",
             "key_names": [],

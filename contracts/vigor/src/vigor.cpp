@@ -370,7 +370,7 @@ void vigor::assetout(name usern, asset assetout, string memo)
           
           double valueofasset = assetout.amount / std::pow(10.0, it->symbol.precision());
 
-          tseries stats(name("datapreproc1"),name(issuerfeed[assetout.symbol]).value);
+          t_series stats(name("datapreproc1"),name(issuerfeed[assetout.symbol]).value);
           auto itr = stats.find(1);
           valueofasset *= (double)itr->price[0] / pricePrecision;
 
@@ -447,7 +447,7 @@ double vigor::portVarianceCol(name usern)
     auto sym_code_raw = i->symbol.code().raw();
     const auto& iV = _coinstats.get( sym_code_raw, "symbol does not exist" );
     
-    tseries stats(name("datapreproc1"),name(issuerfeed[i->symbol]).value);
+    t_series stats(name("datapreproc1"),name(issuerfeed[i->symbol]).value);
     auto itr = stats.find(1);
     double iVvol = (double)itr->vol/volPrecision;
     double iW = (double)itr->price[0] / pricePrecision;
@@ -459,7 +459,7 @@ double vigor::portVarianceCol(name usern)
     sym_code_raw = j->symbol.code().raw();
     const auto& jV = _coinstats.get( sym_code_raw, "symbol does not exist" );
 
-    tseries statsj(name("datapreproc1"),name(issuerfeed[j->symbol]).value);
+    t_series statsj(name("datapreproc1"),name(issuerfeed[j->symbol]).value);
     auto itr = statsj.find(1);
     double jVvol = (double)itr->vol/volPrecision;
     double jW = (double)itr->price[0] / pricePrecision;
@@ -484,7 +484,7 @@ double vigor::portVarianceIns()
     auto sym_code_raw = i->symbol.code().raw();
     const auto& iV = _coinstats.get( sym_code_raw, "symbol does not exist" );
 
-    tseries stats(name("datapreproc1"),name(issuerfeed[i->symbol]).value);
+    t_series stats(name("datapreproc1"),name(issuerfeed[i->symbol]).value);
     auto itr = stats.find(1);
     double iVvol = (double)itr->vol/volPrecision;
     double iW = (double)itr->price[0] / pricePrecision;
@@ -498,7 +498,7 @@ double vigor::portVarianceIns()
       sym_code_raw = j->symbol.code().raw();
       const auto& jV = _coinstats.get( sym_code_raw, "symbol does not exist" );
 
-      tseries stats(name("datapreproc1"),name(issuerfeed[j->symbol]).value);
+      t_series stats(name("datapreproc1"),name(issuerfeed[j->symbol]).value);
       auto itr = stats.find(1);
       double jVvol = (double)itr->vol/volPrecision;
       double jW = (double)itr->price[0] / pricePrecision;
@@ -598,7 +598,7 @@ double vigor::stressinsx(name usern) { // same as stressins, but remove remove t
     auto sym_code_raw = i->symbol.code().raw();
     const auto& iV = _coinstats.get( sym_code_raw, "symbol does not exist" );
 
-    tseries stats(name("datapreproc1"),name(issuerfeed[i->symbol]).value);
+    t_series stats(name("datapreproc1"),name(issuerfeed[i->symbol]).value);
     auto itr = stats.find(1);
     double iVvol = (double)itr->vol/volPrecision;
     double iW = (double)itr->price[0] / pricePrecision;
@@ -619,7 +619,7 @@ double vigor::stressinsx(name usern) { // same as stressins, but remove remove t
       sym_code_raw = j->symbol.code().raw();
       const auto& jV = _coinstats.get( sym_code_raw, "symbol does not exist" );
 
-      tseries stats(name("datapreproc1"),name(issuerfeed[j->symbol]).value);
+      t_series stats(name("datapreproc1"),name(issuerfeed[j->symbol]).value);
       auto itr = stats.find(1);
       double jVvol = (double)itr->vol/volPrecision;
       double jW = (double)itr->price[0] / pricePrecision;
@@ -717,7 +717,7 @@ void vigor::payfee(name usern) {
   for ( auto it = user.collateral.begin(); it != user.collateral.end(); ++it )
     if ( it->symbol ==  vig) {
       const auto& st = _coinstats.get( vig.code().raw(), "symbol doesn't exist");
-      tseries stats(name("datapreproc1"),name(issuerfeed[vig]).value);
+      t_series stats(name("datapreproc1"),name(issuerfeed[vig]).value);
       auto itr = stats.find(1);
       amt = uint64_t(( tespay * std::pow(10.0, 4) ) / 
             ((double)itr->price[0] / pricePrecision));
@@ -783,13 +783,13 @@ void vigor::update(name usern)
   double valueofcol = 0.0;
   
   for ( auto it = user.insurance.begin(); it != user.insurance.end(); ++it ) {
-    tseries stats(name("datapreproc1"),name(issuerfeed[it->symbol]).value);
+    t_series stats(name("datapreproc1"),name(issuerfeed[it->symbol]).value);
     auto itr = stats.find(1);
     valueofins += (it->amount) / std::pow(10.0, it->symbol.precision()) * 
                   ( (double)itr->price[0] / pricePrecision );
   }
   for ( auto it = user.collateral.begin(); it != user.collateral.end(); ++it ){
-    tseries statsj(name("datapreproc1"),name(issuerfeed[it->symbol]).value);
+    t_series statsj(name("datapreproc1"),name(issuerfeed[it->symbol]).value);
     auto itr = statsj.find(1);
     valueofcol += (it->amount) / std::pow(10.0, it->symbol.precision()) * 
                   ( (double)itr->price[0] / pricePrecision );
