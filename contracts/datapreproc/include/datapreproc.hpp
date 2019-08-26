@@ -6,11 +6,9 @@
 #include <cmath>
 
 /*#include "../dist/contracts/eos/dappservices/multi_index.hpp"
-
 #define DAPPSERVICES_ACTIONS() \
     XSIGNAL_DAPPSERVICE_ACTION \
     IPFS_DAPPSERVICE_ACTIONS
-
 #define DAPPSERVICE_ACTIONS_COMMANDS() \
     IPFS_SVC_COMMANDS()
   
@@ -164,7 +162,7 @@ CONTRACT datapreproc : public eosio::contract {
 
   };
 
-  typedef eosio::multi_index<name("stats"), statspre> statstable;
+  typedef eosio::multi_index<name("tseries"), statspre> statstable;
   statstable _ststable;
   
   
@@ -210,4 +208,3 @@ double volCalc(std::deque<int64_t> returns, uint64_t n);
 void store_last_price(const name pair, const uint64_t freq, const uint64_t lastprice);
 
 };
-

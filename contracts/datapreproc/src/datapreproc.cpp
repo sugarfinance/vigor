@@ -5,7 +5,7 @@ ACTION datapreproc::addpair(name newpair) {
     
     //require_auth(_self);
 
-    pairstable pairsname(name("oracle111111"), name("oracle111111").value);
+    pairstable pairsname(name("oracleoracle"), name("oracleoracle").value);
     auto itr = pairsname.find(newpair.value);
     if ( itr != pairsname.end() ) { //pair must exist in the oracle
         pairtoproctb pairtoproc(_self,_self.value);
@@ -42,7 +42,7 @@ ACTION datapreproc::clear() {
         pairtoproc.erase(itr);
     }
 
-    pairstable pairsname(name("oracle111111"), name("oracle111111").value);
+    pairstable pairsname(name("oracleoracle"), name("oracleoracle").value);
     for ( auto it = pairsname.begin(); it != pairsname.end(); it++ ) {
       statstable store(_self, it->aname.value);
 
@@ -59,7 +59,7 @@ uint64_t datapreproc::get_last_price(name pair, uint64_t quoted_precision){
 
     uint64_t eosusd = 1;
     uint64_t eos_precision = 1;
-    datapointstable dstoreos(name("oracle111111"), name("eosusd").value);
+    datapointstable dstoreos(name("oracleoracle"), name("eosusd").value);
     auto newesteos = dstoreos.begin();
     if (newesteos != dstoreos.end()){
       pairtoproctb pairtoproc(_self,_self.value);
@@ -69,7 +69,7 @@ uint64_t datapreproc::get_last_price(name pair, uint64_t quoted_precision){
       eos_precision = eospair.quoted_precision;
       eosusd = newesteos->median;
     }
-    datapointstable dstore(name("oracle111111"), pair.value);
+    datapointstable dstore(name("oracleoracle"), pair.value);
     auto newest = dstore.begin();
     if (newest != dstore.end()) {
         if (pair==name("eosusd"))
@@ -91,7 +91,7 @@ void datapreproc::getprices(){
 
     pairtoproctb pairtoproc(_self,_self.value);
     
-    pairstable pairsname(name("oracle111111"), name("oracle111111").value);
+    pairstable pairsname(name("oracleoracle"), name("oracleoracle").value);
     
     for ( auto it = pairtoproc.begin(); it != pairtoproc.end(); it++ ) {
         auto itr = pairsname.find(it->aname.value);
@@ -264,7 +264,7 @@ void datapreproc::calcstats(const name pair, const uint64_t freq){
                   s.vol = vol;
                 });
                 
-            pairstable pairsname(name("oracle111111"), name("oracle111111").value);    
+            pairstable pairsname(name("oracleoracle"), name("oracleoracle").value);    
             pairtoproctb pairtoproc(_self,_self.value);    
             for ( auto jt = pairtoproc.begin(); jt != pairtoproc.end(); jt++ ) {
                 auto jto = pairsname.find(jt->aname.value);
@@ -387,5 +387,3 @@ extern "C" {
     //  }
   }
 }
-
-

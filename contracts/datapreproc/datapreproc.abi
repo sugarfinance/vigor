@@ -238,7 +238,7 @@
             "key_types": []
         },
         {
-            "name": "stats",
+            "name": "tseries",
             "type": "statspre",
             "index_type": "i64",
             "key_names": [],
