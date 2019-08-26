@@ -414,13 +414,6 @@
             "key_types": []
         },
         {
-            "name": "coinstat",
-            "type": "currency_stats",
-            "index_type": "i64",
-            "key_names": [],
-            "key_types": []
-        },
-        {
             "name": "globals",
             "type": "globalstats",
             "index_type": "i64",
@@ -429,6 +422,13 @@
         },
         {
             "name": "stats",
+            "type": "currency_stats",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
+        {
+            "name": "tseries",
             "type": "statspre",
             "index_type": "i64",
             "key_names": [],
