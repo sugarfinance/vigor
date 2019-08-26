@@ -130,8 +130,8 @@ CONTRACT vigor : public eosio::contract {
          uint64_t primary_key()const { return supply.symbol.code().raw(); }
 
          EOSLIB_SERIALIZE(currency_stats, (supply)(max_supply)(issuer))
-      }; typedef eosio::multi_index< name("coinstat"), currency_stats > coinstats;
-                                                                coinstats _coinstats;
+      }; typedef eosio::multi_index< name("stats"), currency_stats > stats;
+                                                                stats _coinstats;
 
       //From datepreproc, holds the time series of prices, returns, volatility and correlation
       TABLE statspre {
@@ -146,8 +146,9 @@ CONTRACT vigor : public eosio::contract {
 
       };
 
-      typedef eosio::multi_index<name("stats"), statspre> statstable;
-                                                         statstable _statstable;
+      typedef eosio::multi_index<name("tseries"), statspre> tseries;
+                                                         //statstable _statstable;
+                                                         tseries _statstable;
 
       void sub_balance( name owner, asset value );
       void add_balance( name owner, asset value, name ram_payer );
@@ -185,7 +186,7 @@ CONTRACT vigor : public eosio::contract {
       
       static asset get_supply( name token_contract_account, symbol_code sym_code )
       {
-         coinstats cstatstable( token_contract_account, sym_code.raw() );
+         stats cstatstable( token_contract_account, sym_code.raw() );
          const auto& st = cstatstable.get( sym_code.raw() );
          return st.supply;
       }
