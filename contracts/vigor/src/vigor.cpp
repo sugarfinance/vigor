@@ -713,63 +713,89 @@ void vigor::payfee(name usern) {
   symbol vig = symbol("VIG", 4);
   uint32_t dsec = now() - user.lastupdate + 1; //+1 to protect against 0
   uint32_t T = (uint32_t)(360.0 * 24.0 * 60.0 * (60.0 / (double)dsec));
-  double tespay = (user.debt.amount / std::pow(10.0, 4)) * (std::pow((1 + user.tesprice), (1.0 / T)) - 1);
-  for ( auto it = user.collateral.begin(); it != user.collateral.end(); ++it )
-    if ( it->symbol ==  vig) {
-      const auto& st = _coinstats.get( vig.code().raw(), "symbol doesn't exist");
-      t_series stats(name("datapreproc1"),name(issuerfeed[vig]).value);
-      auto itr = stats.find(1);
-      amt = uint64_t(( tespay * std::pow(10.0, 4) ) / 
-            ((double)itr->price[0] / pricePrecision));
-      if (amt > it->amount)
-        _user.modify(user, _self, [&]( auto& modified_user) { // withdraw fee
-          modified_user.latepays += 1;
-        });
-      else if (amt > 0) {
-        _user.modify(user, _self, [&]( auto& modified_user) { // withdraw fee
-          modified_user.feespaid.amount += amt;
-          modified_user.collateral[it - user.collateral.begin()].amount -= amt;
-          //eosio::print( "number of VIG paid : ", amt / std::pow(10.0, 4), "\n");
-        });
-        for ( auto itr = gstats.collateral.begin(); itr != gstats.collateral.end(); ++itr )
-          if ( itr->symbol == vig ) {
-            gstats.insurance[itr - gstats.insurance.begin()].amount -= amt;
-            break;
-          }
-        late = false;
-      }
-      break;
-    }
+  double tespay = (user.debt.amount / std::pow(10.0, 4)) * (std::pow((1 + user.tesprice), (1.0 / T)) - 1); // $ amount user must pay over time T
+  
+    auto it = user.collateral.begin();
+    bool found = false;
+    while ( !found && it++ != user.collateral.end() )
+      found = (it-1)->symbol == vig; //User collateral type found
+    const auto& st = _coinstats.get( vig.code().raw(), "symbol doesn't exist");
+    t_series stats(name("datapreprocx"),name(issuerfeed[vig]).value);
+    auto itr = stats.find(1);
+    amt = uint64_t(( tespay * std::pow(10.0, 4) ) / // number of VIG*10e4 user must pay over time T
+          ((double)itr->price[0] / pricePrecision));
+      if (!found)
+          _user.modify(user, _self, [&]( auto& modified_user) { // withdraw fee
+            modified_user.latepays += 1;
+          });
+      else
+        if (amt > it->amount)
+          _user.modify(user, _self, [&]( auto& modified_user) { // withdraw fee
+            modified_user.latepays += 1;
+          });
+        else if (amt > 0) {
+          _user.modify(user, _self, [&]( auto& modified_user) { // withdraw fee
+            modified_user.feespaid.amount += amt;
+            if (amt == it->amount)
+              modified_user.collateral.erase(it-1);
+            else
+              modified_user.collateral[it - user.collateral.begin()].amount -= amt;
+          });
+          for ( auto itr = gstats.collateral.begin(); itr != gstats.collateral.end(); ++itr )
+            if ( itr->symbol == vig ) {
+              if (gstats.collateral[itr - gstats.collateral.begin()].amount - amt > 0) {
+                gstats.collateral[itr - gstats.collateral.begin()].amount -= amt;
+                gstats.valueofcol -= tespay;
+              }
+              else {
+                gstats.collateral.erase(itr-1);
+                gstats.valueofcol = 0.0;
+              }
+              break;
+            }
+          late = false;
+        }
+  
   if (!late) {
     uint64_t res = amt * 0.25;
     gstats.inreserve.amount += res;
-    _globals.set(gstats, _self);
     
-    amt *= 0.75; 
-    for ( auto itr = _user.begin(); itr != _user.end(); ++itr )
-      if ( itr->valueofins > 0 ) {
-        double weight = itr->pcts;
-        //eosio::print( "percent contribution to risk : ", weight, "\n");
+    amt *= 0.75;
+    for ( auto itr = _user.begin(); itr != _user.end(); ++itr ) {
+    double weight = itr->pcts; //eosio::print( "percent contribution to risk : ", weight, "\n");
+      if ( weight > 0.0 ) {
         asset viga = asset(amt * weight, vig);
-        bool found = false;
-        for ( auto it = itr->insurance.begin(); it != itr->insurance.end(); ++it )
-          if ( it->symbol == vig ) {
-            _user.modify( itr, _self, [&]( auto& modified_user ) { // weighted fee deposit
+
+        found = false;
+        auto it = user.insurance.begin();
+        while ( !found && it++ != user.insurance.end() )
+          found = (it-1)->symbol == vig;
+        if (!found && amt > 0)
+            _user.modify(itr, _self, [&]( auto& modified_user) { // deposit fee
+              modified_user.insurance.push_back(viga);
+              });
+        else
+            if (amt > 0) {
+              _user.modify( itr, _self, [&]( auto& modified_user ) { // deposit fee
               modified_user.insurance[it - itr->insurance.begin()] += viga;
-            });
-            found = true;
-            break;
-          } 
-        if (!found)
-          _user.modify(itr, _self, [&]( auto& modified_user) {
-            modified_user.insurance.push_back(viga);
-          });
+              });
+            }
+
+        found = false;
+        auto itg = gstats.insurance.begin();   
+        while ( !found && itg++ != gstats.insurance.end() )
+          found = (itg-1)->symbol == vig;  
+        if (!found && amt > 0) {
+          gstats.insurance.push_back(viga);
+          gstats.valueofcol += tespay;
+        }
+        else if (amt > 0){
+          gstats.insurance[itg - gstats.insurance.begin()] += viga;
+          gstats.valueofcol += tespay;
+        }       
       }
-    for ( auto it = gstats.insurance.begin(); it != gstats.insurance.end(); ++it )
-      if ( it->symbol == vig ) {
-        gstats.insurance[it - gstats.insurance.begin()].amount += amt;
-        break;
-      }
+    }
+  _globals.set(gstats, _self);
   }
 }
 
