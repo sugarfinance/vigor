@@ -86,10 +86,10 @@ cleos push action eosio setpriv '["eosio.wrap", 1]' -p eosio@active
 cleos set contract eosio.wrap $EOSIO_CONTRACTS_ROOT/eosio.wrap/
 
 #=================================================================================#
-# create the vigor1111114 account, set the contract, create VIGOR stablecoins
+# create the vigor1111111 account, set the contract, create VIGOR stablecoins
 
-cleos system newaccount eosio vigor1111114 $OWNER_KEY --stake-cpu "50 EOS" --stake-net "10 EOS" --buy-ram-kbytes 50000 --transfer
-cleos set account permission vigor1111114 active '{"threshold":1,"keys":[{"key":"EOS6TnW2MQbZwXHWDHAYQazmdc3Sc1KGv4M9TSgsKZJSo43Uxs2Bx","weight":1}],"accounts":[{"permission":{"actor":"vigor1111114","permission":"eosio.code"},"weight":1}],"waits":[]}' -p vigor1111114@active
+cleos system newaccount eosio vigor1111111 $OWNER_KEY --stake-cpu "50 EOS" --stake-net "10 EOS" --buy-ram-kbytes 50000 --transfer
+cleos set account permission vigor1111111 active '{"threshold":1,"keys":[{"key":"EOS6TnW2MQbZwXHWDHAYQazmdc3Sc1KGv4M9TSgsKZJSo43Uxs2Bx","weight":1}],"accounts":[{"permission":{"actor":"vigor1111111","permission":"eosio.code"},"weight":1}],"waits":[]}' -p vigor1111111@active
 CONTRACT_ROOT=/home/gg/contracts/vigor/contracts/vigor/src
 CONTRACT_OUT=/home/gg/contracts/vigor/contracts/vigor
 CONTRACT_INCLUDE=/home/gg/contracts/vigor/contracts/vigor/include
@@ -98,25 +98,25 @@ CONTRACT_WASM="$CONTRACT.wasm"
 CONTRACT_ABI="$CONTRACT.abi"
 CONTRACT_CPP="$CONTRACT.cpp"
 eosio-cpp -contract=$CONTRACT -o="$CONTRACT_OUT/$CONTRACT_WASM" -I="$CONTRACT_INCLUDE" -abigen "$CONTRACT_ROOT/$CONTRACT_CPP"
-cleos set contract vigor1111114 $CONTRACT_OUT $CONTRACT_WASM $CONTRACT_ABI -p vigor1111114@active
-cleos push action vigor1111114 create '[ "vigor1111114", "1000000000.0000 VIGOR"]' -p vigor1111114@active
-cleos push action vigor1111114 setsupply '[ "vigor1111114", "1000000000.0000 VIGOR"]' -p vigor1111114@active
+cleos set contract vigor1111111 $CONTRACT_OUT $CONTRACT_WASM $CONTRACT_ABI -p vigor1111111@active
+cleos push action vigor1111111 create '[ "vigor1111111", "1000000000.0000 VIGOR"]' -p vigor1111111@active
+cleos push action vigor1111111 setsupply '[ "vigor1111111", "1000000000.0000 VIGOR"]' -p vigor1111111@active
 
 #cd ~/contracts/eosio.cdt/examples/hello/src
 #eosio-cpp -contract=hello -o=hello.wasm -I=../include -abigen hello.cpp
-#cleos set contract vigor1111114 . hello.wasm hello.abi -p vigor1111114@active
-#cleos push action vigor1111114 hi '["name","asdf"]' -p vigor1111114@active
+#cleos set contract vigor1111111 . hello.wasm hello.abi -p vigor1111111@active
+#cleos push action vigor1111111 hi '["name","asdf"]' -p vigor1111111@active
 #=================================================================================#
 
-cleos system newaccount eosio testborrow31 $OWNER_KEY --stake-cpu "50 EOS" --stake-net "10 EOS" --buy-ram-kbytes 50000 --transfer
-cleos system newaccount eosio testborrow32 $OWNER_KEY --stake-cpu "50 EOS" --stake-net "10 EOS" --buy-ram-kbytes 50000 --transfer
-cleos system newaccount eosio testinsure31 $OWNER_KEY --stake-cpu "50 EOS" --stake-net "10 EOS" --buy-ram-kbytes 50000 --transfer
-cleos system newaccount eosio testinsure32 $OWNER_KEY --stake-cpu "50 EOS" --stake-net "10 EOS" --buy-ram-kbytes 50000 --transfer
+cleos system newaccount eosio testbrw11111 $OWNER_KEY --stake-cpu "50 EOS" --stake-net "10 EOS" --buy-ram-kbytes 50000 --transfer
+cleos system newaccount eosio testbrw11112 $OWNER_KEY --stake-cpu "50 EOS" --stake-net "10 EOS" --buy-ram-kbytes 50000 --transfer
+cleos system newaccount eosio testins11111 $OWNER_KEY --stake-cpu "50 EOS" --stake-net "10 EOS" --buy-ram-kbytes 50000 --transfer
+cleos system newaccount eosio testins11112 $OWNER_KEY --stake-cpu "50 EOS" --stake-net "10 EOS" --buy-ram-kbytes 50000 --transfer
 
-cleos push action eosio.token transfer '[ "eosio", "testborrow31", "1000000.0000 EOS", "m" ]' -p eosio
-cleos push action eosio.token transfer '[ "eosio", "testborrow32", "1000000.0000 EOS", "m" ]' -p eosio
-cleos push action eosio.token transfer '[ "eosio", "testinsure31", "1000000.0000 EOS", "m" ]' -p eosio
-cleos push action eosio.token transfer '[ "eosio", "testinsure32", "1000000.0000 EOS", "m" ]' -p eosio
+cleos push action eosio.token transfer '[ "eosio", "testbrw11111", "1000000.0000 EOS", "m" ]' -p eosio
+cleos push action eosio.token transfer '[ "eosio", "testbrw11112", "1000000.0000 EOS", "m" ]' -p eosio
+cleos push action eosio.token transfer '[ "eosio", "testins11111", "1000000.0000 EOS", "m" ]' -p eosio
+cleos push action eosio.token transfer '[ "eosio", "testins11112", "1000000.0000 EOS", "m" ]' -p eosio
 
 #=================================================================================#
 # create the VIG token
@@ -125,54 +125,54 @@ cleos system newaccount eosio vig111111111 $OWNER_KEY --stake-cpu "50 EOS" --sta
 cleos set contract vig111111111 $EOSIO_CONTRACTS_ROOT/eosio.token/ -p vig111111111@active
 cleos push action vig111111111 create '[ "vig111111111", "100000000000.0000 VIG"]' -p vig111111111@active
 cleos push action vig111111111 issue '[ "vig111111111", "10000000000.0000 VIG", "m"]' -p vig111111111@active
-cleos push action vig111111111 transfer '[ "vig111111111", "testborrow31", "1000000.0000 VIG", "m" ]' -p vig111111111@active
-cleos push action vig111111111 transfer '[ "vig111111111", "testborrow32", "1000000.0000 VIG", "m" ]' -p vig111111111@active
-cleos push action vig111111111 transfer '[ "vig111111111", "testinsure31", "1000000.0000 VIG", "m" ]' -p vig111111111@active
-cleos push action vig111111111 transfer '[ "vig111111111", "testinsure32", "1000000.0000 VIG", "m" ]' -p vig111111111@active
+cleos push action vig111111111 transfer '[ "vig111111111", "testbrw11111", "1000000.0000 VIG", "m" ]' -p vig111111111@active
+cleos push action vig111111111 transfer '[ "vig111111111", "testbrw11112", "1000000.0000 VIG", "m" ]' -p vig111111111@active
+cleos push action vig111111111 transfer '[ "vig111111111", "testins11111", "1000000.0000 VIG", "m" ]' -p vig111111111@active
+cleos push action vig111111111 transfer '[ "vig111111111", "testins11112", "1000000.0000 VIG", "m" ]' -p vig111111111@active
 
 #=================================================================================#
 # create dummy tokens
-cleos system newaccount eosio dummytokens1 $OWNER_KEY --stake-cpu "50 EOS" --stake-net "10 EOS" --buy-ram-kbytes 50000 --transfer
-cleos set contract dummytokens1 $EOSIO_CONTRACTS_ROOT/eosio.token/ -p dummytokens1@active
+cleos system newaccount eosio dummytokensx $OWNER_KEY --stake-cpu "50 EOS" --stake-net "10 EOS" --buy-ram-kbytes 50000 --transfer
+cleos set contract dummytokensx $EOSIO_CONTRACTS_ROOT/eosio.token/ -p dummytokensx@active
 
-cleos push action dummytokens1 create '[ "dummytokens1", "100000000000.000 IQ"]' -p dummytokens1@active
-#cleos push action dummytokens1 create '[ "dummytokens1", "100000000000.0000 UTG"]' -p dummytokens1@active
-#cleos push action dummytokens1 create '[ "dummytokens1", "100000000000.0000 PTI"]' -p dummytokens1@active
-#cleos push action dummytokens1 create '[ "dummytokens1", "100000000000.0000 OWN"]' -p dummytokens1@active
+cleos push action dummytokensx create '[ "dummytokensx", "100000000000.000 IQ"]' -p dummytokensx@active
+#cleos push action dummytokensx create '[ "dummytokensx", "100000000000.0000 UTG"]' -p dummytokensx@active
+#cleos push action dummytokensx create '[ "dummytokensx", "100000000000.0000 PTI"]' -p dummytokensx@active
+#cleos push action dummytokensx create '[ "dummytokensx", "100000000000.0000 OWN"]' -p dummytokensx@active
 
-cleos push action dummytokens1 issue '[ "dummytokens1", "10000000000.000 IQ", "m"]' -p dummytokens1@active
-#cleos push action dummytokens1 issue '[ "dummytokens1", "10000000000.0000 UTG", "m"]' -p dummytokens1@active
-#cleos push action dummytokens1 issue '[ "dummytokens1", "10000000000.0000 PTI", "m"]' -p dummytokens1@active
-#cleos push action dummytokens1 issue '[ "dummytokens1", "10000000000.0000 OWN", "m"]' -p dummytokens1@active
+cleos push action dummytokensx issue '[ "dummytokensx", "10000000000.000 IQ", "m"]' -p dummytokensx@active
+#cleos push action dummytokensx issue '[ "dummytokensx", "10000000000.0000 UTG", "m"]' -p dummytokensx@active
+#cleos push action dummytokensx issue '[ "dummytokensx", "10000000000.0000 PTI", "m"]' -p dummytokensx@active
+#cleos push action dummytokensx issue '[ "dummytokensx", "10000000000.0000 OWN", "m"]' -p dummytokensx@active
 
-cleos push action dummytokens1 transfer '[ "dummytokens1", "testborrow31", "100000.000 IQ", "m" ]' -p dummytokens1@active
-#cleos push action dummytokens1 transfer '[ "dummytokens1", "testborrow31", "100000.0000 UTG", "m" ]' -p dummytokens1@active
-#cleos push action dummytokens1 transfer '[ "dummytokens1", "testborrow31", "100000.0000 PTI", "m" ]' -p dummytokens1@active
-#cleos push action dummytokens1 transfer '[ "dummytokens1", "testborrow31", "100000.0000 OWN", "m" ]' -p dummytokens1@active
+cleos push action dummytokensx transfer '[ "dummytokensx", "testbrw11111", "100000.000 IQ", "m" ]' -p dummytokensx@active
+#cleos push action dummytokensx transfer '[ "dummytokensx", "testbrw11111", "100000.0000 UTG", "m" ]' -p dummytokensx@active
+#cleos push action dummytokensx transfer '[ "dummytokensx", "testbrw11111", "100000.0000 PTI", "m" ]' -p dummytokensx@active
+#cleos push action dummytokensx transfer '[ "dummytokensx", "testbrw11111", "100000.0000 OWN", "m" ]' -p dummytokensx@active
 
-cleos push action dummytokens1 transfer '[ "dummytokens1", "testborrow32", "100000.000 IQ", "m" ]' -p dummytokens1@active
-#cleos push action dummytokens1 transfer '[ "dummytokens1", "testborrow32", "100000.0000 UTG", "m" ]' -p dummytokens1@active
-#cleos push action dummytokens1 transfer '[ "dummytokens1", "testborrow32", "100000.0000 PTI", "m" ]' -p dummytokens1@active
-#cleos push action dummytokens1 transfer '[ "dummytokens1", "testborrow32", "100000.0000 OWN", "m" ]' -p dummytokens1@active
+cleos push action dummytokensx transfer '[ "dummytokensx", "testbrw11112", "100000.000 IQ", "m" ]' -p dummytokensx@active
+#cleos push action dummytokensx transfer '[ "dummytokensx", "testbrw11112", "100000.0000 UTG", "m" ]' -p dummytokensx@active
+#cleos push action dummytokensx transfer '[ "dummytokensx", "testbrw11112", "100000.0000 PTI", "m" ]' -p dummytokensx@active
+#cleos push action dummytokensx transfer '[ "dummytokensx", "testbrw11112", "100000.0000 OWN", "m" ]' -p dummytokensx@active
 
-cleos push action dummytokens1 transfer '[ "dummytokens1", "testinsure31", "100000.000 IQ", "m" ]' -p dummytokens1@active
-#cleos push action dummytokens1 transfer '[ "dummytokens1", "testinsure31", "100000.0000 UTG", "m" ]' -p dummytokens1@active
-#cleos push action dummytokens1 transfer '[ "dummytokens1", "testinsure31", "100000.0000 PTI", "m" ]' -p dummytokens1@active
-#cleos push action dummytokens1 transfer '[ "dummytokens1", "testinsure31", "100000.0000 OWN", "m" ]' -p dummytokens1@active
+cleos push action dummytokensx transfer '[ "dummytokensx", "testins11111", "100000.000 IQ", "m" ]' -p dummytokensx@active
+#cleos push action dummytokensx transfer '[ "dummytokensx", "testins11111", "100000.0000 UTG", "m" ]' -p dummytokensx@active
+#cleos push action dummytokensx transfer '[ "dummytokensx", "testins11111", "100000.0000 PTI", "m" ]' -p dummytokensx@active
+#cleos push action dummytokensx transfer '[ "dummytokensx", "testins11111", "100000.0000 OWN", "m" ]' -p dummytokensx@active
 
-cleos push action dummytokens1 transfer '[ "dummytokens1", "testinsure32", "100000.000 IQ", "m" ]' -p dummytokens1@active
-#cleos push action dummytokens1 transfer '[ "dummytokens1", "testinsure32", "100000.0000 UTG", "m" ]' -p dummytokens1@active
-#cleos push action dummytokens1 transfer '[ "dummytokens1", "testinsure32", "100000.0000 PTI", "m" ]' -p dummytokens1@active
-#cleos push action dummytokens1 transfer '[ "dummytokens1", "testinsure32", "100000.0000 OWN", "m" ]' -p dummytokens1@active
+cleos push action dummytokensx transfer '[ "dummytokensx", "testins11112", "100000.000 IQ", "m" ]' -p dummytokensx@active
+#cleos push action dummytokensx transfer '[ "dummytokensx", "testins11112", "100000.0000 UTG", "m" ]' -p dummytokensx@active
+#cleos push action dummytokensx transfer '[ "dummytokensx", "testins11112", "100000.0000 PTI", "m" ]' -p dummytokensx@active
+#cleos push action dummytokensx transfer '[ "dummytokensx", "testins11112", "100000.0000 OWN", "m" ]' -p dummytokensx@active
 
 #=================================================================================#
 # create the oracle contract for local testnet
-cleos system newaccount eosio oracle111111 $OWNER_KEY --stake-cpu "50 EOS" --stake-net "10 EOS" --buy-ram-kbytes 50000 --transfer
+cleos system newaccount eosio oracleoracle $OWNER_KEY --stake-cpu "50 EOS" --stake-net "10 EOS" --buy-ram-kbytes 50000 --transfer
 #cleos system newaccount eosio eostitanprod $OWNER_KEY --stake-cpu "50 EOS" --stake-net "10 EOS" --buy-ram-kbytes 50000 --transfer
 cleos system newaccount eosio feeder111111 $OWNER_KEY --stake-cpu "50 EOS" --stake-net "10 EOS" --buy-ram-kbytes 50000 --transfer
 cleos system newaccount eosio feeder111112 $OWNER_KEY --stake-cpu "50 EOS" --stake-net "10 EOS" --buy-ram-kbytes 50000 --transfer
 cleos system newaccount eosio feeder111113 $OWNER_KEY --stake-cpu "50 EOS" --stake-net "10 EOS" --buy-ram-kbytes 50000 --transfer
-cleos system newaccount eosio datapreproc1 $OWNER_KEY --stake-cpu "50 EOS" --stake-net "10 EOS" --buy-ram-kbytes 50000 --transfer
+cleos system newaccount eosio datapreprocx $OWNER_KEY --stake-cpu "50 EOS" --stake-net "10 EOS" --buy-ram-kbytes 50000 --transfer
 
 ORACLE_ROOT=/home/gg/contracts/vigor/contracts/oracle/src
 ORACLE_OUT=/home/gg/contracts/vigor/contracts/oracle
@@ -183,8 +183,8 @@ ORACLE_ABI="$ORACLE.abi"
 ORACLE_CPP="$ORACLE.cpp"
 EOSIO_CONTRACTS_ROOT=/home/gg/contracts/eosio.contracts/contracts
 eosio-cpp -contract=$ORACLE -I=$ORACLE_INCLUDE -I=$EOSIO_CONTRACTS_ROOT/eosio.system/include -o="$ORACLE_OUT/$ORACLE_WASM" -abigen "$ORACLE_ROOT/$ORACLE_CPP" 
-cleos set contract oracle111111 $ORACLE_OUT $ORACLE_WASM $ORACLE_ABI -p oracle111111@active
-cleos push action oracle111111 configure '{}' -p oracle111111@active
+cleos set contract oracleoracle $ORACLE_OUT $ORACLE_WASM $ORACLE_ABI -p oracleoracle@active
+cleos push action oracleoracle configure '{}' -p oracleoracle@active
 cd /home/gg/contracts/vigor/contracts/oracle && ORACLE=feeder111111 node updater_eosusd.js
 cd /home/gg/contracts/vigor/contracts/oracle && ORACLE=feeder111112 node updater_eosusd.js
 cd /home/gg/contracts/vigor/contracts/oracle && ORACLE=feeder111113 node updater_eosusd.js
@@ -195,24 +195,24 @@ cd /home/gg/contracts/vigor/contracts/oracle && ORACLE=feeder111111 node updater
 cd /home/gg/contracts/vigor/contracts/oracle && ORACLE=feeder111112 node updater_vigeos.js
 cd /home/gg/contracts/vigor/contracts/oracle && ORACLE=feeder111113 node updater_vigeos.js
 
-#cleos push action oracle111111 write '{"owner": "feeder111111","quotes": [{"value":"20000","pair":"eosusd", "base": {"sym": "4,EOS", "con": "eosio.token"}}]}' -p feeder111111@active
-#cleos push action oracle111111 write '{"owner": "feeder111111","quotes": [{"value":"10000","pair":"eosusd"},{"value":"80000","pair":"eosbtc"}]}' -p feeder111111@active
-#cleos push action oracle111111 write '{"owner": "feeder111112","quotes": [{"value":"20000","pair":"eosusd"},{"value":"80000","pair":"eosbtc"}]}' -p feeder111112@active
-#cleos push action oracle111111 write '{"owner": "feeder111113","quotes": [{"value":"30000","pair":"eosusd"},{"value":"80000","pair":"eosbtc"}]}' -p feeder111113@active
-#cleos push action oracle111111 write '{"owner": "feeder111111","quotes": [{"value":"70000","pair":"eosusd"},{"value":"70000","pair":"eosbtc"}]}' -p feeder111111@active
-#cleos push action oracle111111 write '{"owner": "feeder111111","quotes": [{"value":"60000","pair":"eosusd"},{"value":"60000","pair":"eosbtc"}]}' -p feeder111111@active
-#cleos push action oracle111111 write '{"owner": "feeder111111","quotes": [{"value":"50000","pair":"eosusd"},{"value":"50000","pair":"eosbtc"}]}' -p feeder111111@active
-#cleos push action oracle111111 write '{"owner": "feeder111111","quotes": [{"value":"40000","pair":"eosusd"},{"value":"40000","pair":"eosbtc"}]}' -p feeder111111@active
-#cleos push action oracle111111 write '{"owner": "feeder111111","quotes": [{"value":"30000","pair":"eosusd"},{"value":"30000","pair":"eosbtc"}]}' -p feeder111111@active
-#cleos push action oracle111111 write '{"owner": "feeder111111","quotes": [{"value":"20000","pair":"eosusd"},{"value":"20000","pair":"eosbtc"}]}' -p feeder111111@active
-#cleos push action oracle111111 write '{"owner": "feeder111111","quotes": [{"value":"10000","pair":"eosusd"},{"value":"10000","pair":"eosbtc"}]}' -p feeder111111@active
-#cleos push action oracle111111 clear '{"pair":"eosusd"}' -p oracle111111@active
-#cleos push action oracle111111 clear '{"pair":"eosbtc"}' -p oracle111111@active
-cleos get table oracle111111 eosusd datapoints --limit -1
-cleos get table oracle111111 iqeos datapoints --limit -1
-cleos get table oracle111111 vigeos datapoints --limit -1
-cleos get table oracle111111 oracle111111 stats
-cleos get table oracle111111 oracle111111 pairs
+#cleos push action oracleoracle write '{"owner": "feeder111111","quotes": [{"value":"20000","pair":"eosusd", "base": {"sym": "4,EOS", "con": "eosio.token"}}]}' -p feeder111111@active
+#cleos push action oracleoracle write '{"owner": "feeder111111","quotes": [{"value":"10000","pair":"eosusd"},{"value":"80000","pair":"eosbtc"}]}' -p feeder111111@active
+#cleos push action oracleoracle write '{"owner": "feeder111112","quotes": [{"value":"20000","pair":"eosusd"},{"value":"80000","pair":"eosbtc"}]}' -p feeder111112@active
+#cleos push action oracleoracle write '{"owner": "feeder111113","quotes": [{"value":"30000","pair":"eosusd"},{"value":"80000","pair":"eosbtc"}]}' -p feeder111113@active
+#cleos push action oracleoracle write '{"owner": "feeder111111","quotes": [{"value":"70000","pair":"eosusd"},{"value":"70000","pair":"eosbtc"}]}' -p feeder111111@active
+#cleos push action oracleoracle write '{"owner": "feeder111111","quotes": [{"value":"60000","pair":"eosusd"},{"value":"60000","pair":"eosbtc"}]}' -p feeder111111@active
+#cleos push action oracleoracle write '{"owner": "feeder111111","quotes": [{"value":"50000","pair":"eosusd"},{"value":"50000","pair":"eosbtc"}]}' -p feeder111111@active
+#cleos push action oracleoracle write '{"owner": "feeder111111","quotes": [{"value":"40000","pair":"eosusd"},{"value":"40000","pair":"eosbtc"}]}' -p feeder111111@active
+#cleos push action oracleoracle write '{"owner": "feeder111111","quotes": [{"value":"30000","pair":"eosusd"},{"value":"30000","pair":"eosbtc"}]}' -p feeder111111@active
+#cleos push action oracleoracle write '{"owner": "feeder111111","quotes": [{"value":"20000","pair":"eosusd"},{"value":"20000","pair":"eosbtc"}]}' -p feeder111111@active
+#cleos push action oracleoracle write '{"owner": "feeder111111","quotes": [{"value":"10000","pair":"eosusd"},{"value":"10000","pair":"eosbtc"}]}' -p feeder111111@active
+#cleos push action oracleoracle clear '{"pair":"eosusd"}' -p oracleoracle@active
+#cleos push action oracleoracle clear '{"pair":"eosbtc"}' -p oracleoracle@active
+cleos get table oracleoracle eosusd datapoints --limit -1
+cleos get table oracleoracle iqeos datapoints --limit -1
+cleos get table oracleoracle vigeos datapoints --limit -1
+cleos get table oracleoracle oracleoracle stats
+cleos get table oracleoracle oracleoracle pairs
 
 CONTRACT_ROOT=/home/gg/contracts/vigor/contracts/datapreproc/src
 CONTRACT_OUT=/home/gg/contracts/vigor/contracts/datapreproc
@@ -239,79 +239,79 @@ cleos get table datapreproc1 vigeos stats
 #cleos -u http://api.eosnewyork.io:80 get code delphioracle --wasm -c delphioracle.wasm
 #cleos -u http://api.eosnewyork.io:80 get code delphioracle --abi delphioracle.abi
 
-#cleos set contract oracle111111 . delphioracle.wasm delphioracle.abi -p oracle111111@active
+#cleos set contract oracleoracle . delphioracle.wasm delphioracle.abi -p oracleoracle@active
 
-#cleos push action oracle111111 setoracles '{"oracleslist":["feeder111111"]}' -p eostitanprod@active
+#cleos push action oracleoracle setoracles '{"oracleslist":["feeder111111"]}' -p eostitanprod@active
 
 #=================================================================================#
 
 ###### OPTIONAL FOR LOCAL TESTNET #############
 # cd ~/contracts/delphioracle/scripts
-# nodeosurl='http://127.0.0.1:8888' interval=15000 account="oracle111111" defaultPrivateKey="5J3TQGkkiRQBKcg8Gg2a7Kk5a2QAQXsyGrkCnnq4krSSJSUkW12" feeder="feeder111111" node updater2.js
-#cleos get table oracle111111 oracle111111 eosusd --limit 1
-#cleos get table oracle111111 oracle111111 oracles
-#cleos get table oracle111111 oracle111111 eosusdstats
+# nodeosurl='http://127.0.0.1:8888' interval=15000 account="oracleoracle" defaultPrivateKey="5J3TQGkkiRQBKcg8Gg2a7Kk5a2QAQXsyGrkCnnq4krSSJSUkW12" feeder="feeder111111" node updater2.js
+#cleos get table oracleoracle oracleoracle eosusd --limit 1
+#cleos get table oracleoracle oracleoracle oracles
+#cleos get table oracleoracle oracleoracle eosusdstats
 
 # launch two oracle feeders
 #in a new shell
 #=================================================================================#
 # exposed actions for vigor demo starts here
-cleos push action eosio.token transfer '{"from":"testborrow31","to":"vigor1111114","quantity":"6.0000 EOS","memo":"collateral"}' -p testborrow31@active
-cleos push action dummytokens1 transfer '{"from":"testborrow31","to":"vigor1111114","quantity":"3000.000 IQ","memo":"collateral"}' -p testborrow31@active
-#cleos push action dummytokens1 transfer '{"from":"testborrow31","to":"vigor1111114","quantity":"3000.0000 UTG","memo":"collateral"}' -p testborrow31@active
-#cleos push action dummytokens1 transfer '{"from":"testborrow31","to":"vigor1111114","quantity":"3000.0000 PTI","memo":"collateral"}' -p testborrow31@active
-#cleos push action dummytokens1 transfer '{"from":"testborrow31","to":"vigor1111114","quantity":"3000.0000 OWN","memo":"collateral"}' -p testborrow31@active
-cleos push action vig111111111 transfer '{"from":"testborrow31","to":"vigor1111114","quantity":"3000.0000 VIG","memo":"collateral"}' -p testborrow31@active
+cleos push action eosio.token transfer '{"from":"testbrw11111","to":"vigor1111111","quantity":"6.0000 EOS","memo":"collateral"}' -p testbrw11111@active
+cleos push action dummytokensx transfer '{"from":"testbrw11111","to":"vigor1111111","quantity":"3000.000 IQ","memo":"collateral"}' -p testbrw11111@active
+#cleos push action dummytokensx transfer '{"from":"testbrw11111","to":"vigor1111111","quantity":"3000.0000 UTG","memo":"collateral"}' -p testbrw11111@active
+#cleos push action dummytokensx transfer '{"from":"testbrw11111","to":"vigor1111111","quantity":"3000.0000 PTI","memo":"collateral"}' -p testbrw11111@active
+#cleos push action dummytokensx transfer '{"from":"testbrw11111","to":"vigor1111111","quantity":"3000.0000 OWN","memo":"collateral"}' -p testbrw11111@active
+cleos push action vig111111111 transfer '{"from":"testbrw11111","to":"vigor1111111","quantity":"3000.0000 VIG","memo":"collateral"}' -p testbrw11111@active
 
-cleos push action eosio.token transfer '{"from":"testborrow32","to":"vigor1111114","quantity":"6.0000 EOS","memo":"collateral"}' -p testborrow32@active
-cleos push action dummytokens1 transfer '{"from":"testborrow32","to":"vigor1111114","quantity":"3000.000 IQ","memo":"collateral"}' -p testborrow32@active
-#cleos push action dummytokens1 transfer '{"from":"testborrow32","to":"vigor1111114","quantity":"3000.0000 UTG","memo":"collateral"}' -p testborrow32@active
-#cleos push action dummytokens1 transfer '{"from":"testborrow32","to":"vigor1111114","quantity":"3000.0000 PTI","memo":"collateral"}' -p testborrow32@active
-#cleos push action dummytokens1 transfer '{"from":"testborrow32","to":"vigor1111114","quantity":"3000.0000 OWN","memo":"collateral"}' -p testborrow32@active
-cleos push action vig111111111 transfer '{"from":"testborrow32","to":"vigor1111114","quantity":"3000.0000 VIG","memo":"collateral"}' -p testborrow32@active
+cleos push action eosio.token transfer '{"from":"testbrw11112","to":"vigor1111111","quantity":"6.0000 EOS","memo":"collateral"}' -p testbrw11112@active
+cleos push action dummytokensx transfer '{"from":"testbrw11112","to":"vigor1111111","quantity":"3000.000 IQ","memo":"collateral"}' -p testbrw11112@active
+#cleos push action dummytokensx transfer '{"from":"testbrw11112","to":"vigor1111111","quantity":"3000.0000 UTG","memo":"collateral"}' -p testbrw11112@active
+#cleos push action dummytokensx transfer '{"from":"testbrw11112","to":"vigor1111111","quantity":"3000.0000 PTI","memo":"collateral"}' -p testbrw11112@active
+#cleos push action dummytokensx transfer '{"from":"testbrw11112","to":"vigor1111111","quantity":"3000.0000 OWN","memo":"collateral"}' -p testbrw11112@active
+cleos push action vig111111111 transfer '{"from":"testbrw11112","to":"vigor1111111","quantity":"3000.0000 VIG","memo":"collateral"}' -p testbrw11112@active
 
-cleos push action eosio.token transfer '{"from":"testinsure31","to":"vigor1111114","quantity":"6.0000 EOS","memo":"insurance"}' -p testinsure31@active
-cleos push action dummytokens1 transfer '{"from":"testinsure31","to":"vigor1111114","quantity":"3000.000 IQ","memo":"insurance"}' -p testinsure31@active
-#cleos push action dummytokens1 transfer '{"from":"testinsure31","to":"vigor1111114","quantity":"1000.0000 UTG","memo":"insurance"}' -p testinsure31@active
-#cleos push action dummytokens1 transfer '{"from":"testinsure31","to":"vigor1111114","quantity":"1000.0000 PTI","memo":"insurance"}' -p testinsure31@active
-#cleos push action dummytokens1 transfer '{"from":"testinsure31","to":"vigor1111114","quantity":"1000.0000 OWN","memo":"insurance"}' -p testinsure31@active
+cleos push action eosio.token transfer '{"from":"testins11111","to":"vigor1111111","quantity":"6.0000 EOS","memo":"insurance"}' -p testins11111@active
+cleos push action dummytokensx transfer '{"from":"testins11111","to":"vigor1111111","quantity":"3000.000 IQ","memo":"insurance"}' -p testins11111@active
+#cleos push action dummytokensx transfer '{"from":"testins11111","to":"vigor1111111","quantity":"1000.0000 UTG","memo":"insurance"}' -p testins11111@active
+#cleos push action dummytokensx transfer '{"from":"testins11111","to":"vigor1111111","quantity":"1000.0000 PTI","memo":"insurance"}' -p testins11111@active
+#cleos push action dummytokensx transfer '{"from":"testins11111","to":"vigor1111111","quantity":"1000.0000 OWN","memo":"insurance"}' -p testins11111@active
 
-cleos push action eosio.token transfer '{"from":"testinsure32","to":"vigor1111114","quantity":"6.0000 EOS","memo":"insurance"}' -p testinsure32@active
-cleos push action dummytokens1 transfer '{"from":"testinsure32","to":"vigor1111114","quantity":"3000.000 IQ","memo":"insurance"}' -p testinsure32@active
-#cleos push action dummytokens1 transfer '{"from":"testinsure32","to":"vigor1111114","quantity":"1000.0000 UTG","memo":"insurance"}' -p testinsure32@active
-#cleos push action dummytokens1 transfer '{"from":"testinsure32","to":"vigor1111114","quantity":"1000.0000 PTI","memo":"insurance"}' -p testinsure32@active
-#cleos push action dummytokens1 transfer '{"from":"testinsure32","to":"vigor1111114","quantity":"1000.0000 OWN","memo":"insurance"}' -p testinsure32@active
+cleos push action eosio.token transfer '{"from":"testins11112","to":"vigor1111111","quantity":"6.0000 EOS","memo":"insurance"}' -p testins11112@active
+cleos push action dummytokensx transfer '{"from":"testins11112","to":"vigor1111111","quantity":"3000.000 IQ","memo":"insurance"}' -p testins11112@active
+#cleos push action dummytokensx transfer '{"from":"testins11112","to":"vigor1111111","quantity":"1000.0000 UTG","memo":"insurance"}' -p testins11112@active
+#cleos push action dummytokensx transfer '{"from":"testins11112","to":"vigor1111111","quantity":"1000.0000 PTI","memo":"insurance"}' -p testins11112@active
+#cleos push action dummytokensx transfer '{"from":"testins11112","to":"vigor1111111","quantity":"1000.0000 OWN","memo":"insurance"}' -p testins11112@active
 
-cleos push action vigor1111114 assetout '{"usern":"testborrow31","assetout":"5.6000 VIGOR","memo":"borrow"}' -p testborrow31@active
-cleos push action vigor1111114 assetout '{"usern":"testborrow32","assetout":"24.6000 VIGOR","memo":"borrow"}' -p testborrow32@active
+cleos push action vigor1111111 assetout '{"usern":"testbrw11111","assetout":"5.6000 VIGOR","memo":"borrow"}' -p testbrw11111@active
+cleos push action vigor1111111 assetout '{"usern":"testbrw11112","assetout":"24.6000 VIGOR","memo":"borrow"}' -p testbrw11112@active
 
-cleos push action vigor1111114 assetout '{"usern":"testborrow31","assetout":"1.0000 EOS","memo":"collateral"}' -p testborrow31@active
-cleos push action vigor1111114 assetout '{"usern":"testborrow32","assetout":"1.0000 EOS","memo":"collateral"}' -p testborrow32@active
-cleos push action vigor1111114 assetout '{"usern":"testinsure31","assetout":"1.0000 EOS","memo":"insurance"}' -p testinsure31@active
-cleos push action vigor1111114 assetout '{"usern":"testinsure32","assetout":"1.0000 EOS","memo":"insurance"}' -p testinsure32@active
+cleos push action vigor1111111 assetout '{"usern":"testbrw11111","assetout":"1.0000 EOS","memo":"collateral"}' -p testbrw11111@active
+cleos push action vigor1111111 assetout '{"usern":"testbrw11112","assetout":"1.0000 EOS","memo":"collateral"}' -p testbrw11112@active
+cleos push action vigor1111111 assetout '{"usern":"testins11111","assetout":"1.0000 EOS","memo":"insurance"}' -p testins11111@active
+cleos push action vigor1111111 assetout '{"usern":"testins11112","assetout":"1.0000 EOS","memo":"insurance"}' -p testins11112@active
 
-cleos push action vigor1111114 transfer '{"from":"testborrow31","to":"vigor1111114","quantity":"10.0000 VIGOR","memo":"payoff debt"}' -p testborrow31@active
-cleos push action vigor1111114 transfer '{"from":"testborrow32","to":"vigor1111114","quantity":"10.0000 VIGOR","memo":"payoff debt"}' -p testborrow32@active
+cleos push action vigor1111111 transfer '{"from":"testbrw11111","to":"vigor1111111","quantity":"10.0000 VIGOR","memo":"payoff debt"}' -p testbrw11111@active
+cleos push action vigor1111111 transfer '{"from":"testbrw11112","to":"vigor1111111","quantity":"10.0000 VIGOR","memo":"payoff debt"}' -p testbrw11112@active
 
-#cleos push action vigor1111114 doupdate '{}' -p vigor1111114@active
+#cleos push action vigor1111111 doupdate '{}' -p vigor1111111@active
 #sleep 5
-#cleos push action vigor1111114 doupdate '' -p vigor1111114@active
+#cleos push action vigor1111111 doupdate '' -p vigor1111111@active
 #sleep 5
-#cleos get table vigor1111114 vigor1111114 user
+#cleos get table vigor1111111 vigor1111111 user
 
 # get all the user data
-cleos get table vigor1111114 vigor1111114 user
-cleos get table vigor1111114 vigor1111114 user -Ltestborrow31 -Utestborrow31
-cleos get table vigor1111114 vigor1111114 user -Ltestborrow32 -Utestborrow32
-cleos get table vigor1111114 vigor1111114 user -Ltestinsure31 -Utestinsure31
-cleos get table vigor1111114 vigor1111114 user -Ltestinsure32 -Utestinsure32
-cleos get table vigor1111114 vigor1111114 globals
-# cleos get table vigor1111114 VIGOR stat
-# cleos get table eosio.token vigor1111114 accounts
-# cleos get table eosio.token testborrow31 accounts
-# cleos get table vigor1111114 testborrow31 accounts
-# cleos get currency balance vigor1111114 testborrow31
-# cleos get currency balance eosio.token vigor1111114
+cleos get table vigor1111111 vigor1111111 user
+cleos get table vigor1111111 vigor1111111 user -Ltestborrow31 -Utestborrow31
+cleos get table vigor1111111 vigor1111111 user -Ltestborrow32 -Utestborrow32
+cleos get table vigor1111111 vigor1111111 user -Ltestinsure31 -Utestinsure31
+cleos get table vigor1111111 vigor1111111 user -Ltestinsure32 -Utestinsure32
+cleos get table vigor1111111 vigor1111111 globals
+# cleos get table vigor1111111 VIGOR stat
+# cleos get table eosio.token vigor1111111 accounts
+# cleos get table eosio.token testbrw11111 accounts
+# cleos get table vigor1111111 testbrw11111 accounts
+# cleos get currency balance vigor1111111 testbrw11111
+# cleos get currency balance eosio.token vigor1111111
 
 cleos -u https://api.kylin.alohaeos.com get table delphioracle delphioracle eosusd
 cleos -u https://api.kylin.alohaeos.com get table eostitantest eostitantest eosusd
@@ -320,4 +320,3 @@ cleos -u https://api.kylin.alohaeos.com get table eostitantest eosbtc datapoints
 cleos -u https://api.kylin.alohaeos.com get table eostitantest eostitantest stats
 cleos -u https://api.kylin.alohaeos.com get table eostitantest eostitantest pairs
 cleos -u https://api.kylin.alohaeos.com get table eosio eosio producers
-
