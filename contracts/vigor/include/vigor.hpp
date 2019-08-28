@@ -85,10 +85,10 @@ CONTRACT vigor : public eosio::contract {
       map <symbol, name> issueracct {
          {symbol("EOS",4),	    name("eosio.token")},
          {symbol("VIG",4),	    name("vig111111111")},
-         {symbol("IQ",3),	    name("dummytokens1")},
-         {symbol("PEOS",4),	    name("dummytokens1")},
-         {symbol("DICE",4),	    name("dummytokens1")},
-         {symbol("TPT",4),	    name("dummytokens1")},
+         {symbol("IQ",3),	    name("dummytokensx")},
+         {symbol("PEOS",4),	    name("dummytokensx")},
+         {symbol("DICE",4),	    name("dummytokensx")},
+         {symbol("TPT",4),	    name("dummytokensx")},
       };
 
       map <symbol, name> issuerfeed {

@@ -223,17 +223,17 @@ CONTRACT_ABI="$CONTRACT.abi"
 CONTRACT_CPP="$CONTRACT.cpp"
 EOSIO_CONTRACTS_ROOT=/home/gg/contracts/eosio.contracts/contracts
 eosio-cpp -contract=$CONTRACT -I=$CONTRACT_INCLUDE -I=$EOSIO_CONTRACTS_ROOT/eosio.system/include -o="$CONTRACT_OUT/$CONTRACT_WASM" -abigen "$CONTRACT_ROOT/$CONTRACT_CPP" 
-cleos set contract datapreproc1 $CONTRACT_OUT $CONTRACT_WASM $CONTRACT_ABI -p datapreproc1@active
-cleos push action datapreproc1 clear '{}' -p datapreproc1@active
-cleos push action datapreproc1 addpair '{"newpair":"eosusd"}' -p datapreproc1@active
-cleos push action datapreproc1 addpair '{"newpair":"iqeos"}' -p datapreproc1@active
-cleos push action datapreproc1 addpair '{"newpair":"vigeos"}' -p datapreproc1@active
-cleos push action datapreproc1 update '{}' -p feeder111111@active
-cd /home/gg/contracts/vigor/contracts/oracle && CONTRACT=datapreproc1 OWNER=feeder111111 node dataupdate.js
-cleos get table datapreproc1 datapreproc1 pairtoproc --limit -1
-cleos get table datapreproc1 eosusd stats
-cleos get table datapreproc1 iqeos stats
-cleos get table datapreproc1 vigeos stats
+cleos set contract datapreprocx $CONTRACT_OUT $CONTRACT_WASM $CONTRACT_ABI -p datapreprocx@active
+cleos push action datapreprocx clear '{}' -p datapreprocx@active
+cleos push action datapreprocx addpair '{"newpair":"eosusd"}' -p datapreprocx@active
+cleos push action datapreprocx addpair '{"newpair":"iqeos"}' -p datapreprocx@active
+cleos push action datapreprocx addpair '{"newpair":"vigeos"}' -p datapreprocx@active
+#cleos push action datapreprocx update '{}' -p feeder111111@active
+cd /home/gg/contracts/vigor/contracts/oracle && CONTRACT=datapreprocx OWNER=feeder111111 node dataupdate.js
+cleos get table datapreprocx datapreprocx pairtoproc --limit -1
+cleos get table datapreprocx eosusd tseries
+cleos get table datapreprocx iqeos tseries
+cleos get table datapreprocx vigeos tseries
 
 
 #cleos -u http://api.eosnewyork.io:80 get code delphioracle --wasm -c delphioracle.wasm
@@ -256,7 +256,7 @@ cleos get table datapreproc1 vigeos stats
 #in a new shell
 #=================================================================================#
 # exposed actions for vigor demo starts here
-cleos push action eosio.token transfer '{"from":"testbrw11111","to":"vigor1111111","quantity":"6.0000 EOS","memo":"collateral"}' -p testbrw11111@active
+cleos push action eosio.token transfer '{"from":"testbrw11111","to":"vigor1111111","quantity":"5.0000 EOS","memo":"collateral"}' -p testbrw11111@active
 cleos push action dummytokensx transfer '{"from":"testbrw11111","to":"vigor1111111","quantity":"3000.000 IQ","memo":"collateral"}' -p testbrw11111@active
 #cleos push action dummytokensx transfer '{"from":"testbrw11111","to":"vigor1111111","quantity":"3000.0000 UTG","memo":"collateral"}' -p testbrw11111@active
 #cleos push action dummytokensx transfer '{"from":"testbrw11111","to":"vigor1111111","quantity":"3000.0000 PTI","memo":"collateral"}' -p testbrw11111@active
@@ -282,8 +282,8 @@ cleos push action dummytokensx transfer '{"from":"testins11112","to":"vigor11111
 #cleos push action dummytokensx transfer '{"from":"testins11112","to":"vigor1111111","quantity":"1000.0000 PTI","memo":"insurance"}' -p testins11112@active
 #cleos push action dummytokensx transfer '{"from":"testins11112","to":"vigor1111111","quantity":"1000.0000 OWN","memo":"insurance"}' -p testins11112@active
 
-cleos push action vigor1111111 assetout '{"usern":"testbrw11111","assetout":"5.6000 VIGOR","memo":"borrow"}' -p testbrw11111@active
-cleos push action vigor1111111 assetout '{"usern":"testbrw11112","assetout":"24.6000 VIGOR","memo":"borrow"}' -p testbrw11112@active
+cleos push action vigor1111111 assetout '{"usern":"testbrw11111","assetout":"20.6000 VIGOR","memo":"borrow"}' -p testbrw11111@active
+cleos push action vigor1111111 assetout '{"usern":"testbrw11112","assetout":"20.6000 VIGOR","memo":"borrow"}' -p testbrw11112@active
 
 cleos push action vigor1111111 assetout '{"usern":"testbrw11111","assetout":"1.0000 EOS","memo":"collateral"}' -p testbrw11111@active
 cleos push action vigor1111111 assetout '{"usern":"testbrw11112","assetout":"1.0000 EOS","memo":"collateral"}' -p testbrw11112@active
@@ -301,10 +301,10 @@ cleos push action vigor1111111 transfer '{"from":"testbrw11112","to":"vigor11111
 
 # get all the user data
 cleos get table vigor1111111 vigor1111111 user
-cleos get table vigor1111111 vigor1111111 user -Ltestborrow31 -Utestborrow31
-cleos get table vigor1111111 vigor1111111 user -Ltestborrow32 -Utestborrow32
-cleos get table vigor1111111 vigor1111111 user -Ltestinsure31 -Utestinsure31
-cleos get table vigor1111111 vigor1111111 user -Ltestinsure32 -Utestinsure32
+cleos get table vigor1111111 vigor1111111 user -Ltestbrw11111 -Utestbrw11111
+cleos get table vigor1111111 vigor1111111 user -Ltestbrw11112 -Utestbrw11112
+cleos get table vigor1111111 vigor1111111 user -Ltestins11111 -Utestins11111
+cleos get table vigor1111111 vigor1111111 user -Ltestins11112 -Utestins11112
 cleos get table vigor1111111 vigor1111111 globals
 # cleos get table vigor1111111 VIGOR stat
 # cleos get table eosio.token vigor1111111 accounts

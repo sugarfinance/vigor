@@ -370,7 +370,7 @@ void vigor::assetout(name usern, asset assetout, string memo)
           
           double valueofasset = assetout.amount / std::pow(10.0, it->symbol.precision());
 
-          t_series stats(name("datapreproc1"),name(issuerfeed[assetout.symbol]).value);
+          t_series stats(name("datapreprocx"),name(issuerfeed[assetout.symbol]).value);
           auto itr = stats.find(1);
           valueofasset *= (double)itr->price[0] / pricePrecision;
 
@@ -447,7 +447,7 @@ double vigor::portVarianceCol(name usern)
     auto sym_code_raw = i->symbol.code().raw();
     const auto& iV = _coinstats.get( sym_code_raw, "symbol does not exist" );
     
-    t_series stats(name("datapreproc1"),name(issuerfeed[i->symbol]).value);
+    t_series stats(name("datapreprocx"),name(issuerfeed[i->symbol]).value);
     auto itr = stats.find(1);
     double iVvol = (double)itr->vol/volPrecision;
     double iW = (double)itr->price[0] / pricePrecision;
@@ -459,7 +459,7 @@ double vigor::portVarianceCol(name usern)
     sym_code_raw = j->symbol.code().raw();
     const auto& jV = _coinstats.get( sym_code_raw, "symbol does not exist" );
 
-    t_series statsj(name("datapreproc1"),name(issuerfeed[j->symbol]).value);
+    t_series statsj(name("datapreprocx"),name(issuerfeed[j->symbol]).value);
     auto itr = statsj.find(1);
     double jVvol = (double)itr->vol/volPrecision;
     double jW = (double)itr->price[0] / pricePrecision;
@@ -484,7 +484,7 @@ double vigor::portVarianceIns()
     auto sym_code_raw = i->symbol.code().raw();
     const auto& iV = _coinstats.get( sym_code_raw, "symbol does not exist" );
 
-    t_series stats(name("datapreproc1"),name(issuerfeed[i->symbol]).value);
+    t_series stats(name("datapreprocx"),name(issuerfeed[i->symbol]).value);
     auto itr = stats.find(1);
     double iVvol = (double)itr->vol/volPrecision;
     double iW = (double)itr->price[0] / pricePrecision;
@@ -498,7 +498,7 @@ double vigor::portVarianceIns()
       sym_code_raw = j->symbol.code().raw();
       const auto& jV = _coinstats.get( sym_code_raw, "symbol does not exist" );
 
-      t_series stats(name("datapreproc1"),name(issuerfeed[j->symbol]).value);
+      t_series stats(name("datapreprocx"),name(issuerfeed[j->symbol]).value);
       auto itr = stats.find(1);
       double jVvol = (double)itr->vol/volPrecision;
       double jW = (double)itr->price[0] / pricePrecision;
@@ -598,7 +598,7 @@ double vigor::stressinsx(name usern) { // same as stressins, but remove remove t
     auto sym_code_raw = i->symbol.code().raw();
     const auto& iV = _coinstats.get( sym_code_raw, "symbol does not exist" );
 
-    t_series stats(name("datapreproc1"),name(issuerfeed[i->symbol]).value);
+    t_series stats(name("datapreprocx"),name(issuerfeed[i->symbol]).value);
     auto itr = stats.find(1);
     double iVvol = (double)itr->vol/volPrecision;
     double iW = (double)itr->price[0] / pricePrecision;
@@ -619,7 +619,7 @@ double vigor::stressinsx(name usern) { // same as stressins, but remove remove t
       sym_code_raw = j->symbol.code().raw();
       const auto& jV = _coinstats.get( sym_code_raw, "symbol does not exist" );
 
-      t_series stats(name("datapreproc1"),name(issuerfeed[j->symbol]).value);
+      t_series stats(name("datapreprocx"),name(issuerfeed[j->symbol]).value);
       auto itr = stats.find(1);
       double jVvol = (double)itr->vol/volPrecision;
       double jW = (double)itr->price[0] / pricePrecision;
@@ -711,40 +711,42 @@ void vigor::payfee(name usern) {
   bool late = true;
   uint64_t amt = 0;
   symbol vig = symbol("VIG", 4);
+  asset amta = asset(amt, vig);
   uint32_t dsec = now() - user.lastupdate + 1; //+1 to protect against 0
   uint32_t T = (uint32_t)(360.0 * 24.0 * 60.0 * (60.0 / (double)dsec));
   double tespay = (user.debt.amount / std::pow(10.0, 4)) * (std::pow((1 + user.tesprice), (1.0 / T)) - 1); // $ amount user must pay over time T
   
     auto it = user.collateral.begin();
     bool found = false;
-    while ( !found && it++ != user.collateral.end() )
+    while ( !found && it++ != user.collateral.end() ) 
       found = (it-1)->symbol == vig; //User collateral type found
     const auto& st = _coinstats.get( vig.code().raw(), "symbol doesn't exist");
     t_series stats(name("datapreprocx"),name(issuerfeed[vig]).value);
     auto itr = stats.find(1);
-    amt = uint64_t(( tespay * std::pow(10.0, 4) ) / // number of VIG*10e4 user must pay over time T
+    amta.amount = uint64_t(( tespay * std::pow(10.0, 4) ) / // number of VIG*10e4 user must pay over time T
           ((double)itr->price[0] / pricePrecision));
       if (!found)
           _user.modify(user, _self, [&]( auto& modified_user) { // withdraw fee
             modified_user.latepays += 1;
           });
-      else
-        if (amt > it->amount)
+      else {
+        if (amta.amount > (it-1)->amount)
           _user.modify(user, _self, [&]( auto& modified_user) { // withdraw fee
             modified_user.latepays += 1;
           });
-        else if (amt > 0) {
+        else if (amta.amount > 0) {
           _user.modify(user, _self, [&]( auto& modified_user) { // withdraw fee
-            modified_user.feespaid.amount += amt;
-            if (amt == it->amount)
+            modified_user.feespaid.amount += amta.amount;
+            if (amta.amount == (it-1)->amount)
               modified_user.collateral.erase(it-1);
-            else
-              modified_user.collateral[it - user.collateral.begin()].amount -= amt;
+            else {
+            modified_user.collateral[(it-1) - user.collateral.begin()] -= amta;
+            }         
           });
           for ( auto itr = gstats.collateral.begin(); itr != gstats.collateral.end(); ++itr )
             if ( itr->symbol == vig ) {
-              if (gstats.collateral[itr - gstats.collateral.begin()].amount - amt > 0) {
-                gstats.collateral[itr - gstats.collateral.begin()].amount -= amt;
+              if (gstats.collateral[itr - gstats.collateral.begin()].amount - amta.amount > 0) {
+                gstats.collateral[itr - gstats.collateral.begin()].amount -= amta.amount;
                 gstats.valueofcol -= tespay;
               }
               else {
@@ -755,48 +757,48 @@ void vigor::payfee(name usern) {
             }
           late = false;
         }
+      }
   
   if (!late) {
-    uint64_t res = amt * 0.25;
+    uint64_t res = (uint64_t)(std::pow(10.0, 4)*(amta.amount/std::pow(10.0, 4) * 0.25));
     gstats.inreserve.amount += res;
     
-    amt *= 0.75;
+    amta.amount = (uint64_t)(std::pow(10.0, 4)*(amta.amount/std::pow(10.0, 4) * 0.75));
     for ( auto itr = _user.begin(); itr != _user.end(); ++itr ) {
     double weight = itr->pcts; //eosio::print( "percent contribution to risk : ", weight, "\n");
       if ( weight > 0.0 ) {
-        asset viga = asset(amt * weight, vig);
-
+        asset viga = asset(amta.amount * weight, vig);
         found = false;
-        auto it = user.insurance.begin();
-        while ( !found && it++ != user.insurance.end() )
+        auto it = itr->insurance.begin();
+        while ( !found && it++ != itr->insurance.end() )
           found = (it-1)->symbol == vig;
-        if (!found && amt > 0)
+        if (!found && amta.amount > 0)
             _user.modify(itr, _self, [&]( auto& modified_user) { // deposit fee
               modified_user.insurance.push_back(viga);
               });
         else
-            if (amt > 0) {
+            if (amta.amount > 0) {
               _user.modify( itr, _self, [&]( auto& modified_user ) { // deposit fee
-              modified_user.insurance[it - itr->insurance.begin()] += viga;
+              modified_user.insurance[(it-1) - itr->insurance.begin()] += viga;
               });
             }
-
         found = false;
         auto itg = gstats.insurance.begin();   
         while ( !found && itg++ != gstats.insurance.end() )
           found = (itg-1)->symbol == vig;  
-        if (!found && amt > 0) {
+        if (!found && amta.amount > 0) {
           gstats.insurance.push_back(viga);
-          gstats.valueofcol += tespay;
+          gstats.valueofins += tespay;
         }
-        else if (amt > 0){
-          gstats.insurance[itg - gstats.insurance.begin()] += viga;
-          gstats.valueofcol += tespay;
+        else if (amta.amount > 0){
+          gstats.insurance[(itg-1) - gstats.insurance.begin()] += viga;
+          gstats.valueofins += tespay;
         }       
       }
     }
   _globals.set(gstats, _self);
   }
+  
 }
 
 void vigor::update(name usern) 
@@ -809,13 +811,13 @@ void vigor::update(name usern)
   double valueofcol = 0.0;
   
   for ( auto it = user.insurance.begin(); it != user.insurance.end(); ++it ) {
-    t_series stats(name("datapreproc1"),name(issuerfeed[it->symbol]).value);
+    t_series stats(name("datapreprocx"),name(issuerfeed[it->symbol]).value);
     auto itr = stats.find(1);
     valueofins += (it->amount) / std::pow(10.0, it->symbol.precision()) * 
                   ( (double)itr->price[0] / pricePrecision );
   }
   for ( auto it = user.collateral.begin(); it != user.collateral.end(); ++it ){
-    t_series statsj(name("datapreproc1"),name(issuerfeed[it->symbol]).value);
+    t_series statsj(name("datapreprocx"),name(issuerfeed[it->symbol]).value);
     auto itr = statsj.find(1);
     valueofcol += (it->amount) / std::pow(10.0, it->symbol.precision()) * 
                   ( (double)itr->price[0] / pricePrecision );
@@ -919,7 +921,7 @@ extern "C" {
   [[noreturn]] void apply(uint64_t receiver, uint64_t code, uint64_t action) {
     if((code==name("eosio.token").value ||
         code==name("vig111111111").value ||
-        code==name("dummytokens1").value) && action==name("transfer").value) {
+        code==name("dummytokensx").value) && action==name("transfer").value) {
       eosio::execute_action(name(receiver),name(code), &vigor::assetin);
     }
     if (code == receiver) {
