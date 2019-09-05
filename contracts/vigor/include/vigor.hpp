@@ -74,6 +74,7 @@ CONTRACT vigor : public eosio::contract {
       void stressins();
       double stressinsx(name usern);
       double portVarianceCol(name usern);
+      double portVarianceIns(name usern);
       double portVarianceIns();
       void update(name usern);
       void payfee(name usern);

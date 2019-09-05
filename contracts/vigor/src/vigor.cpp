@@ -473,6 +473,45 @@ double vigor::portVarianceCol(name usern)
 return portVariance;
 }
 
+double vigor::portVarianceIns(name usern)
+{
+
+  const auto& user = _user.get( usern.value, "User not found" );  
+
+  eosio_assert(_globals.exists(), "globals not found");
+  globalstats gstats = _globals.get();
+
+  double portVariance = 0.0;
+  for ( auto i = user.insurance.begin(); i != user.insurance.end(); ++i ) {
+    auto sym_code_raw = i->symbol.code().raw();
+    const auto& iV = _coinstats.get( sym_code_raw, "symbol does not exist" );
+    
+    t_series stats(name("datapreprocx"),name(issuerfeed[i->symbol]).value);
+    auto itr = stats.find(1);
+    double iVvol = (double)itr->vol/volPrecision;
+    double iW = (double)itr->price[0] / pricePrecision;
+    iW *= i->amount / std::pow(10.0, i->symbol.precision()); 
+    iW /= user.valueofins;
+
+  for (auto j = i + 1; j != user.insurance.end(); ++j ) {
+    double c = (double)itr->correlation_matrix.at(j->symbol)/corrPrecision;
+    sym_code_raw = j->symbol.code().raw();
+    const auto& jV = _coinstats.get( sym_code_raw, "symbol does not exist" );
+
+    t_series statsj(name("datapreprocx"),name(issuerfeed[j->symbol]).value);
+    auto itr = statsj.find(1);
+    double jVvol = (double)itr->vol/volPrecision;
+    double jW = (double)itr->price[0] / pricePrecision;
+    jW *= j->amount / std::pow(10.0, j->symbol.precision());
+    jW /= user.valueofins;
+
+    portVariance += 2.0 * iW * jW * c * iVvol * jVvol;
+  }
+  portVariance += std::pow(iW, 2) * std::pow(iVvol, 2);
+}
+return portVariance;
+}
+
 double vigor::portVarianceIns()
 {
   eosio_assert( _globals.exists(), "no global table exists yet" );
@@ -741,7 +780,7 @@ void vigor::payfee(name usern) {
               modified_user.collateral.erase(it-1);
             else {
             modified_user.collateral[(it-1) - user.collateral.begin()] -= amta;
-            }         
+            }
           });
           for ( auto itr = gstats.collateral.begin(); itr != gstats.collateral.end(); ++itr )
             if ( itr->symbol == vig ) {
@@ -859,46 +898,75 @@ void vigor::update(name usern)
  * their collateral bucket so that it overcollateralizes their debt
  * at some default setting like 1.5
 */
-void vigor::bailout(name usern) 
+void vigor::bailout(name usern)
 {
   eosio_assert(_globals.exists(), "globals not found");
   auto &user = _user.get(usern.value, "User not found");
   globalstats gstats = _globals.get();
 
   for ( auto itr = _user.begin(); itr != _user.end(); ++itr ) {
-    if (itr->valueofins > 0) {
-      double weight = itr->pcts;
-      //double weight = itr->valueofins / gstats.valueofins;
+    if (itr->pcts > 0.0) {
+      // all insurers participate to recap bad debt, each insurer taking ownership of a fraction of the imparied collateral and debt; insurer participation is based on their percent contribution to solvency
       asset debt = user.debt;
-      debt.amount *= weight;
+      debt.amount *= itr->pcts; // insurer share of failed loan debt, in stablecoin
+      double W1 = std::min(user.valueofcol,debt.amount)*itr->pcts; // insurer share of impaired collateral, in dollars
+      double s1 = user.volcol/std::sqrt(52); // volatility of the impaired collateral portfolio, weekly
+      double s2 = std::sqrt(portVarianceIns(itr->usern)/52.0); // volatility of the particular insurers insurance portfolio, weekly
+      double w1 = W1/((debt.amount/std::pow(10.0, 4))*(1.0+std::max(s1,s2))); // estimated percentage weight of recapped loan collateral covered by impaired collateral 
+      double sp = std::pow(w1,2)*std::pow(s1,2) + std::pow(1.0-w1,2)*std::pow(s2,2) + 2.0*w1*(1.0-w1)*s1*s2 // estimated volatility of recapped loan collateral portfolio including a minimum amount of insurance assets
+      // insurers auotmatically convert some of their insurance assets into collateral, and combined with the impaired collateral recapitalizes the bad debt
+      // recapReq: required amount of insurance assets to be converted to collateral to recap the failed loan such that the overcollateralization amount becomes equivalent to a 1 standard deviation weekly move of the new recapped collateral portfolio
+      double recapReq = std::min((((debt.amount/std::pow(10.0, 4))*(1.0+sp)) - W1)/itr->valueofins,1.0); // recapReq as a percentage of the insurers insurance assets
 
       for ( auto c = user.collateral.begin(); c != user.collateral.end(); ++c ) {
         asset amt = *c;
-        amt.amount *= weight;
+        amt.amount *= itr->pcts;
+        t_series stats(name("datapreprocx"),name(issuerfeed[amt.symbol]).value);
+        auto itrs = stats.find(1);
+        double valueofasset = amt.amount / std::pow(10.0, it->symbol.precision());
+        valueofasset *= (double)itrs->price[0] / pricePrecision;
         _user.modify(user, _self, [&]( auto& modified_user) { // weighted fee withdrawl
-            modified_user.collateral[c - user.collateral.begin()] -= amt;
+            if (modified_user.collateral[c - user.collateral.begin()] - amt > 0.0){
+              modified_user.collateral[c - user.collateral.begin()] -= amt;
+              modified_user.valueofcol -= valueofasset;
+            }
+            else {
+              modified_user.collateral.erase(c-1);
+              modified_user.valueofcol -= valueofasset;
+            }
         });
         for ( auto it = itr->collateral.begin(); it != itr->collateral.end(); ++it )
           if (it->symbol == c->symbol) {
             _user.modify(itr, _self, [&]( auto& modified_user) { // weighted fee deposit
               modified_user.collateral[it - itr->collateral.begin()] += amt;
+              modified_user.valueofcol += valueofasset;
             });
             amt.amount = 0;
             break;
-          } 
+          }
         if (amt.amount > 0) 
           _user.modify(itr, _self, [&]( auto& modified_user) { // weighted fee deposit
             modified_user.collateral.push_back(amt);
+            modified_user.valueofcol += valueofasset;
           });
       }
       _user.modify(itr, _self, [&]( auto& modified_user) { // weighted fee deposit
         modified_user.debt += debt;
       });
+
       for ( auto i = itr->insurance.begin(); i != itr->insurance.end(); ++i ) {
         asset amt = *i;
-        amt.amount *= 0.25; //convert some insurance into collateral
+        amt.amount *= recapReq; //convert some insurance into collateral, recapitalizing the bad debt
+        
         _user.modify(itr, _self, [&]( auto& modified_user) { // weighted fee withdrawl
-            modified_user.insurance[i - itr->insurance.begin()] -= amt;
+            if (modified_user.insurance[i - itr->insurance.begin()] - amt > 0.0){
+              modified_user.insurance[i - itr->insurance.begin()] -= amt;
+              modified_user.valueofins -= valueofasset;
+            }
+            else {
+              modified_user.insurance.erase(c-1);
+              modified_user.valueofins -= valueofasset;
+            }
         });
         for ( auto it = itr->collateral.begin(); it != itr->collateral.end(); ++it )
           if ( it->symbol == i->symbol ) {
@@ -907,7 +975,7 @@ void vigor::bailout(name usern)
             });
             amt.amount = 0;
             break;
-          } 
+          }
         if (amt.amount > 0) 
           _user.modify(itr, _self, [&]( auto& modified_user) { // weighted fee deposit
             modified_user.collateral.push_back(amt);
