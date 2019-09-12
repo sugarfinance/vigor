@@ -45,6 +45,16 @@
             ]
         },
         {
+            "name": "doshock",
+            "base": "",
+            "fields": [
+                {
+                    "name": "shockvalue",
+                    "type": "float64"
+                }
+            ]
+        },
+        {
             "name": "pair_symbol_int64",
             "base": "",
             "fields": [
@@ -163,6 +173,16 @@
             ]
         },
         {
+            "name": "shocktable",
+            "base": "",
+            "fields": [
+                {
+                    "name": "shock",
+                    "type": "float64"
+                }
+            ]
+        },
+        {
             "name": "statspre",
             "base": "",
             "fields": [
@@ -210,6 +230,11 @@
             "ricardian_contract": ""
         },
         {
+            "name": "doshock",
+            "type": "doshock",
+            "ricardian_contract": ""
+        },
+        {
             "name": "update",
             "type": "update",
             "ricardian_contract": ""
@@ -233,6 +258,13 @@
         {
             "name": "pairtoproc",
             "type": "pairtoproc",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
+        {
+            "name": "shock",
+            "type": "shocktable",
             "index_type": "i64",
             "key_names": [],
             "key_types": []

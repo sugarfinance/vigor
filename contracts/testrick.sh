@@ -224,11 +224,12 @@ CONTRACT_CPP="$CONTRACT.cpp"
 EOSIO_CONTRACTS_ROOT=/home/gg/contracts/eosio.contracts/contracts
 eosio-cpp -contract=$CONTRACT -I=$CONTRACT_INCLUDE -I=$EOSIO_CONTRACTS_ROOT/eosio.system/include -o="$CONTRACT_OUT/$CONTRACT_WASM" -abigen "$CONTRACT_ROOT/$CONTRACT_CPP" 
 cleos set contract datapreprocx $CONTRACT_OUT $CONTRACT_WASM $CONTRACT_ABI -p datapreprocx@active
-cleos push action datapreprocx clear '{}' -p datapreprocx@active
+#cleos push action datapreprocx clear '{}' -p datapreprocx@active
 cleos push action datapreprocx addpair '{"newpair":"eosusd"}' -p datapreprocx@active
 cleos push action datapreprocx addpair '{"newpair":"iqeos"}' -p datapreprocx@active
 cleos push action datapreprocx addpair '{"newpair":"vigeos"}' -p datapreprocx@active
 #cleos push action datapreprocx update '{}' -p feeder111111@active
+#cleos push action datapreprocx doshock '{"shockvalue":0.5}' -p feeder111111@active
 cd /home/gg/contracts/vigor/contracts/oracle && CONTRACT=datapreprocx OWNER=feeder111111 node dataupdate.js
 cleos get table datapreprocx datapreprocx pairtoproc --limit -1
 cleos get table datapreprocx eosusd tseries
@@ -276,14 +277,14 @@ cleos push action dummytokensx transfer '{"from":"testins11111","to":"vigor11111
 #cleos push action dummytokensx transfer '{"from":"testins11111","to":"vigor1111111","quantity":"1000.0000 PTI","memo":"insurance"}' -p testins11111@active
 #cleos push action dummytokensx transfer '{"from":"testins11111","to":"vigor1111111","quantity":"1000.0000 OWN","memo":"insurance"}' -p testins11111@active
 
-cleos push action eosio.token transfer '{"from":"testins11112","to":"vigor1111111","quantity":"6.0000 EOS","memo":"insurance"}' -p testins11112@active
+cleos push action eosio.token transfer '{"from":"testins11112","to":"vigor1111111","quantity":"12.0000 EOS","memo":"insurance"}' -p testins11112@active
 cleos push action dummytokensx transfer '{"from":"testins11112","to":"vigor1111111","quantity":"3000.000 IQ","memo":"insurance"}' -p testins11112@active
 #cleos push action dummytokensx transfer '{"from":"testins11112","to":"vigor1111111","quantity":"1000.0000 UTG","memo":"insurance"}' -p testins11112@active
 #cleos push action dummytokensx transfer '{"from":"testins11112","to":"vigor1111111","quantity":"1000.0000 PTI","memo":"insurance"}' -p testins11112@active
 #cleos push action dummytokensx transfer '{"from":"testins11112","to":"vigor1111111","quantity":"1000.0000 OWN","memo":"insurance"}' -p testins11112@active
 
-cleos push action vigor1111111 assetout '{"usern":"testbrw11111","assetout":"20.6000 VIGOR","memo":"borrow"}' -p testbrw11111@active
-cleos push action vigor1111111 assetout '{"usern":"testbrw11112","assetout":"20.6000 VIGOR","memo":"borrow"}' -p testbrw11112@active
+cleos push action vigor1111111 assetout '{"usern":"testbrw11111","assetout":"24.0000 VIGOR","memo":"borrow"}' -p testbrw11111@active
+cleos push action vigor1111111 assetout '{"usern":"testbrw11112","assetout":"27.0000 VIGOR","memo":"borrow"}' -p testbrw11112@active
 
 cleos push action vigor1111111 assetout '{"usern":"testbrw11111","assetout":"1.0000 EOS","memo":"collateral"}' -p testbrw11111@active
 cleos push action vigor1111111 assetout '{"usern":"testbrw11112","assetout":"1.0000 EOS","memo":"collateral"}' -p testbrw11112@active
@@ -306,6 +307,10 @@ cleos get table vigor1111111 vigor1111111 user -Ltestbrw11112 -Utestbrw11112
 cleos get table vigor1111111 vigor1111111 user -Ltestins11111 -Utestins11111
 cleos get table vigor1111111 vigor1111111 user -Ltestins11112 -Utestins11112
 cleos get table vigor1111111 vigor1111111 globals
+
+cleos push action datapreprocx doshock '{"shockvalue":0.5}' -p feeder111111@active
+cleos push action eosio.token transfer '{"from":"testbrw11111","to":"vigor1111111","quantity":"0.0001 EOS","memo":"collateral"}' -p testbrw11111@active
+
 # cleos get table vigor1111111 VIGOR stat
 # cleos get table eosio.token vigor1111111 accounts
 # cleos get table eosio.token testbrw11111 accounts
@@ -320,3 +325,115 @@ cleos -u https://api.kylin.alohaeos.com get table eostitantest eosbtc datapoints
 cleos -u https://api.kylin.alohaeos.com get table eostitantest eostitantest stats
 cleos -u https://api.kylin.alohaeos.com get table eostitantest eostitantest pairs
 cleos -u https://api.kylin.alohaeos.com get table eosio eosio producers
+
+
+
+debug 2019-09-11T00:34:43.344 thread-0  apply_context.cpp:28          print_debug          ] 
+[(eosio.token,transfer)->vigor1111111]: CONSOLE OUTPUT BEGIN =====================
+it->debt.amount : 240000
+it->valueofcol : 1.472667893320000e+01
+B : testbrw11111
+usern : testbrw11111
+itr->usern : testins11111
+sumpcts : 0.000000000000000e+00
+itr->pcts : 2.610471113510617e-01
+pcts : 2.610471113510617e-01
+debtshare : 62651
+W1 : 3.844356995306395e+00
+s1 : 8.320502943378437e-02
+s2 : 8.320502943378438e-02
+w1 : 5.664805919822989e-01
+sp : 8.320502943378437e-02
+recapReq : 1.962530838840495e-01
+user collateral 3.6949 EOS amt 1.3052 EOS
+insurer collateral push_back 1.3052 EOS
+user collateral 2216.859 IQ amt 783.141 IQ
+insurer collateral push_back 783.141 IQ
+user collateral 2216.8442 VIG amt 783.1361 VIG
+insurer collateral push_back 783.1361 VIG
+insurer insurance 4.8225 EOS amt 1.1775 EOS
+insurer collateral 2.4827 EOS amt 1.1775 EOS
+insurer insurance 2411.241 IQ amt 588.759 IQ
+insurer collateral 1371.900 IQ amt 588.759 IQ
+insurer insurance 0.0065 VIG amt 0.0015 VIG
+insurer collateral 783.1376 VIG amt 0.0015 VIG
+itr->usern : testins11112
+sumpcts : 2.610471113510617e-01
+itr->pcts : 7.389528886489382e-01
+pcts : 9.999999999999998e-01
+debtshare : 177348
+W1 : 1.088232193789360e+01
+s1 : 8.320502943378437e-02
+s2 : 8.320502943378436e-02
+w1 : 5.664800330762826e-01
+sp : 8.320502943378437e-02
+recapReq : 3.158171666205817e-01
+erase collateral 
+insurer collateral push_back 3.6949 EOS
+erase collateral 
+insurer collateral push_back 2216.859 IQ
+erase collateral 
+insurer collateral push_back 2216.8442 VIG
+insurer insurance 8.2102 EOS amt 3.7898 EOS
+insurer collateral 7.4847 EOS amt 3.7898 EOS
+insurer insurance 2052.549 IQ amt 947.451 IQ
+insurer collateral 3164.310 IQ amt 947.451 IQ
+insurer insurance 0.0157 VIG amt 0.0072 VIG
+insurer collateral 2216.8514 VIG amt 0.0072 VIG
+C : 
+it->debt.amount : 270000
+it->valueofcol : 1.662298808640000e+01
+B : testbrw11112
+usern : testbrw11112
+itr->usern : testins11111
+sumpcts : 0.000000000000000e+00
+itr->pcts : 2.610471113510617e-01
+pcts : 2.610471113510617e-01
+debtshare : 70482
+W1 : 4.339383021977834e+00
+s1 : 8.320502943378438e-02
+s2 : 8.320502943378437e-02
+w1 : 5.683804067737778e-01
+sp : 8.320502943378437e-02
+recapReq : 2.734882744424689e-01
+user collateral 4.4338 EOS amt 1.5662 EOS
+insurer collateral 4.0489 EOS amt 1.5662 EOS
+user collateral 2216.859 IQ amt 783.141 IQ
+insurer collateral 2155.041 IQ amt 783.141 IQ
+user collateral 2216.8425 VIG amt 783.1356 VIG
+insurer collateral 1566.2732 VIG amt 783.1356 VIG
+insurer insurance 3.5037 EOS amt 1.3188 EOS
+insurer collateral 5.3677 EOS amt 1.3188 EOS
+insurer insurance 1751.795 IQ amt 659.446 IQ
+insurer collateral 2814.487 IQ amt 659.446 IQ
+insurer insurance 0.0048 VIG amt 0.0017 VIG
+insurer collateral 1566.2749 VIG amt 0.0017 VIG
+itr->usern : testins11112
+sumpcts : 2.610471113510617e-01
+itr->pcts : 7.389528886489382e-01
+pcts : 9.999999999999998e-01
+debtshare : 199517
+W1 : 1.228360506442217e+01
+s1 : 8.320502943378438e-02
+s2 : 8.320502943378437e-02
+w1 : 5.683753975583458e-01
+sp : 8.320502943378437e-02
+recapReq : 5.170278868133239e-01
+erase collateral 
+insurer collateral 11.9185 EOS amt 4.4338 EOS
+erase collateral 
+insurer collateral 5381.169 IQ amt 2216.859 IQ
+erase collateral 
+insurer collateral 4433.6939 VIG amt 2216.8425 VIG
+insurer insurance 3.9653 EOS amt 4.2449 EOS
+insurer collateral 16.1634 EOS amt 4.2449 EOS
+insurer insurance 991.324 IQ amt 1061.225 IQ
+insurer collateral 6442.394 IQ amt 1061.225 IQ
+insurer insurance 0.0076 VIG amt 0.0081 VIG
+insurer collateral 4433.7020 VIG amt 0.0081 VIG
+C : 
+C : 
+C : 
+stress : 
+
+[(eosio.token,transfer)->vigor1111111]: CONSOLE OUTPUT END   =====================

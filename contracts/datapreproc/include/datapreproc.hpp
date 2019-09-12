@@ -4,6 +4,7 @@
 #include <eosiolib/time.hpp>
 #include <eosiolib/eosio.hpp>
 #include <cmath>
+#include <eosiolib/singleton.hpp>
 
 /*#include "../dist/contracts/eos/dappservices/multi_index.hpp"
 #define DAPPSERVICES_ACTIONS() \
@@ -165,7 +166,14 @@ CONTRACT datapreproc : public eosio::contract {
   typedef eosio::multi_index<name("tseries"), statspre> statstable;
   statstable _ststable;
   
-  
+  TABLE shocktable {
+         double shock = 1.0;
+   
+      EOSLIB_SERIALIZE(shocktable, (shock))
+  }; typedef eosio::multi_index<name("shock"), shocktable> shockm;
+      typedef eosio::singleton<name("shock"), shocktable> shocks;
+                                                            shocks _shocks;
+
 public:
 
 using contract::contract;
@@ -174,7 +182,11 @@ datapreproc(name receiver, name code, datastream<const char*> ds) : eosio::contr
    _dptable(receiver, receiver.value), 
    _prstable(receiver, receiver.value), 
    _ptptable(receiver, receiver.value), 
-   _ststable(receiver, receiver.value){}
+   _ststable(receiver, receiver.value), 
+   _shocks(receiver, receiver.value){}
+
+//apply a shock to the prices for testing
+ACTION doshock(double shockvalue);
 
 //add to the list of pairs to process
 ACTION addpair(name newpair);

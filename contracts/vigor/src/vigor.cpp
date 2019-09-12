@@ -4,26 +4,60 @@ void vigor::doupdate()
 {
    //require_auth(_self);
 
-  for ( auto it = _user.begin(); it != _user.end(); it++ ) {
+  for ( auto it = _user.begin(); it != _user.end(); it++ )
     update(it->usern);
-  }
+  updateglobal();
 
   for ( auto it = _user.begin(); it != _user.end(); it++ ) {
-    stresscol(it->usern);
+    if ( it->debt.amount > 0 ) 
+      payfee(it->usern);
   }
+
+  for ( auto it = _user.begin(); it != _user.end(); it++ ) 
+    update(it->usern);
+  updateglobal();
+
+  for ( auto it = _user.begin(); it != _user.end(); it++ ) {
+    auto &user = _user.get(it->usern.value,"User not found");
+      if (it->debt.amount > 0 && it->latepays > 4) {
+        _user.modify(user, _self, [&]( auto& modified_user) {
+          modified_user.latepays = 0; 
+          modified_user.recaps += 1;
+        });
+        eosio::print( "A : ", it->usern, "\n");
+        bailout(it->usern);
+      //  break;
+      }
+      else if (( it->debt.amount / std::pow(10.0, 4) ) > it->valueofcol ) {
+        _user.modify(user, _self, [&]( auto& modified_user) {
+          modified_user.recaps += 1;
+        });
+        eosio::print( "it->debt.amount : ", it->debt.amount, "\n");
+        eosio::print( "it->valueofcol : ", it->valueofcol, "\n");
+        eosio::print( "B : ", it->usern, "\n");
+        bailout(it->usern);
+     //   break;
+      }
+    for ( auto itr = _user.begin(); itr != _user.end(); itr++ )
+      update(itr->usern);
+    updateglobal();
+    eosio::print( "C : ", "\n");
+  }
+  
+eosio::print( "stress : ", "\n");
+  for ( auto it = _user.begin(); it != _user.end(); it++ )
+    stresscol(it->usern);
 
   stressins();
 
   risk();
 
-  for ( auto it = _user.begin(); it != _user.end(); it++ ) {
+  for ( auto it = _user.begin(); it != _user.end(); it++ ) 
     pricing(it->usern);
-  }
 
   double rm = RM();
-  for ( auto it = _user.begin(); it != _user.end(); it++ ) {
+  for ( auto it = _user.begin(); it != _user.end(); it++ )
     pcts(it->usern,rm);
-  }
 
 }
 
@@ -842,9 +876,7 @@ void vigor::payfee(name usern) {
 
 void vigor::update(name usern) 
 {
-  eosio_assert(_globals.exists(), "globals not found");
   auto &user = _user.get(usern.value, "User not found");
-  globalstats gstats = _globals.get();
 
   double valueofins = 0.0;
   double valueofcol = 0.0;
@@ -862,125 +894,178 @@ void vigor::update(name usern)
                   ( (double)itr->price[0] / pricePrecision );
   }
 
-  gstats.valueofins += valueofins - user.valueofins;
-  gstats.valueofcol += valueofcol - user.valueofcol;
-  _globals.set(gstats, _self);
-
   _user.modify( user, _self, [&]( auto& modified_user ) { // Update value of collateral
     modified_user.valueofins = valueofins;
     modified_user.valueofcol = valueofcol;
   });
-  
-  if ( user.valueofcol > 0.0 && user.debt.amount > 0 ) { // Update tesprice    
-    payfee(usern);
-    
-
-    if (user.latepays > 4) {
-      _user.modify(user, _self, [&]( auto& modified_user) {
-        modified_user.latepays = 0; 
-        modified_user.recaps += 1;
-      });
-      bailout(usern);
-    } 
-    else if (( user.debt.amount / std::pow(10.0, 4) ) > user.valueofcol ) {
-      _user.modify(user, _self, [&]( auto& modified_user) {
-        modified_user.recaps += 1;
-      });
-      bailout(usern);
-    }
-  }
 }
 
-/* illiquidity risk is offloaded to insurers who are compensated
- * to take this risk. insurers may start of with zero debt but in
- * a bailout they acquire it, along with a failed loan's remaining 
- * collateral. some of their insurance assets will be assigned to 
- * their collateral bucket so that it overcollateralizes their debt
- * at some default setting like 1.5
-*/
-void vigor::bailout(name usern)
+void vigor::updateglobal() 
 {
   eosio_assert(_globals.exists(), "globals not found");
-  auto &user = _user.get(usern.value, "User not found");
   globalstats gstats = _globals.get();
 
+  double valueofins = 0.0;
+  double valueofcol = 0.0;
+  
+  for ( auto it = gstats.insurance.begin(); it != gstats.insurance.end(); ++it ) {
+    t_series stats(name("datapreprocx"),name(issuerfeed[it->symbol]).value);
+    auto itr = stats.find(1);
+    valueofins += (it->amount) / std::pow(10.0, it->symbol.precision()) * 
+                  ( (double)itr->price[0] / pricePrecision );
+  }
+  for ( auto it = gstats.collateral.begin(); it != gstats.collateral.end(); ++it ){
+    t_series statsj(name("datapreprocx"),name(issuerfeed[it->symbol]).value);
+    auto itr = statsj.find(1);
+    valueofcol += (it->amount) / std::pow(10.0, it->symbol.precision()) * 
+                  ( (double)itr->price[0] / pricePrecision );
+  }
+
+  gstats.valueofins = valueofins;
+  gstats.valueofcol = valueofcol;
+  _globals.set(gstats, _self);
+}
+
+void vigor::bailout(name usern)
+{
+  eosio::print( "usern : ", usern, "\n");   
+  auto &user = _user.get(usern.value, "User not found");
+  asset debt = user.debt;
+  double sumpcts = 0.0;
+  bool selfbailout = false;
+  double selfrecapReq = 0.0;
   for ( auto itr = _user.begin(); itr != _user.end(); ++itr ) {
     if (itr->pcts > 0.0) {
       // all insurers participate to recap bad debt, each insurer taking ownership of a fraction of the imparied collateral and debt; insurer participation is based on their percent contribution to solvency
-      asset debt = user.debt;
-      debt.amount *= itr->pcts; // insurer share of failed loan debt, in stablecoin
-      double W1 = std::min(user.valueofcol,debt.amount)*itr->pcts; // insurer share of impaired collateral, in dollars
+      uint64_t debtshare = debt.amount * itr->pcts; // insurer share of failed loan debt, in stablecoin
+      eosio::print( "debtshare : ", debtshare, "\n");
+      double W1 = std::min(user.valueofcol*itr->pcts,debtshare/std::pow(10.0, 4)); // insurer share of impaired collateral, in dollars
+      eosio::print( "W1 : ", W1, "\n");
       double s1 = user.volcol/std::sqrt(52); // volatility of the impaired collateral portfolio, weekly
+      eosio::print( "s1 : ", s1, "\n");
       double s2 = std::sqrt(portVarianceIns(itr->usern)/52.0); // volatility of the particular insurers insurance portfolio, weekly
-      double w1 = W1/((debt.amount/std::pow(10.0, 4))*(1.0+std::max(s1,s2))); // estimated percentage weight of recapped loan collateral covered by impaired collateral 
-      double sp = std::pow(w1,2)*std::pow(s1,2) + std::pow(1.0-w1,2)*std::pow(s2,2) + 2.0*w1*(1.0-w1)*s1*s2 // estimated volatility of recapped loan collateral portfolio including a minimum amount of insurance assets
+      eosio::print( "s2 : ", s2, "\n");
+      double w1 = W1/((debtshare/std::pow(10.0, 4))*(1.0+std::max(s1,s2))); // estimated percentage weight of recapped loan collateral covered by impaired collateral
+      eosio::print( "w1 : ", w1, "\n");
+      double sp = std::sqrt(std::pow(w1,2)*std::pow(s1,2) + std::pow(1.0-w1,2)*std::pow(s2,2) + 2.0*w1*(1.0-w1)*s1*s2); // estimated volatility of recapped loan collateral portfolio including a minimum amount of insurance assets
       // insurers auotmatically convert some of their insurance assets into collateral, and combined with the impaired collateral recapitalizes the bad debt
       // recapReq: required amount of insurance assets to be converted to collateral to recap the failed loan such that the overcollateralization amount becomes equivalent to a 1 standard deviation weekly move of the new recapped collateral portfolio
-      double recapReq = std::min((((debt.amount/std::pow(10.0, 4))*(1.0+sp)) - W1)/itr->valueofins,1.0); // recapReq as a percentage of the insurers insurance assets
-
+      eosio::print( "sp : ", sp, "\n");
+      double recapReq = std::min((((debtshare/std::pow(10.0, 4))*(1.0+sp)) - W1)/itr->valueofins,1.0); // recapReq as a percentage of the insurers insurance assets
+      eosio::print( "recapReq : ", recapReq, "\n");
+      eosio::print( "itr->usern : ", itr->usern, "\n");
+      eosio::print( "sumpcts : ", sumpcts, "\n");
+      eosio::print( "itr->pcts : ", itr->pcts, "\n");
+      double pcts = itr->pcts*(1.0/(1.0-sumpcts));
+      if (selfbailout)
+        pcts /= (1.0 + (selfrecapReq/(user.valueofcol*(1.0-sumpcts)))); // adust all users after self recap
+      if (itr->usern.value == usern.value) {
+        selfrecapReq = recapReq*itr->valueofins; // store self recap requirement
+        selfbailout = true;
+      } else
+          sumpcts += itr->pcts; // skip if self receiving its own impaired collateral
+      eosio::print( "pcts : ", pcts, "\n");
+      // assign ownership of the impaired collateral and debt to the insurers
       for ( auto c = user.collateral.begin(); c != user.collateral.end(); ++c ) {
         asset amt = *c;
-        amt.amount *= itr->pcts;
-        t_series stats(name("datapreprocx"),name(issuerfeed[amt.symbol]).value);
-        auto itrs = stats.find(1);
-        double valueofasset = amt.amount / std::pow(10.0, it->symbol.precision());
-        valueofasset *= (double)itrs->price[0] / pricePrecision;
-        _user.modify(user, _self, [&]( auto& modified_user) { // weighted fee withdrawl
-            if (modified_user.collateral[c - user.collateral.begin()] - amt > 0.0){
+        amt.amount *= pcts;
+        _user.modify(user, _self, [&]( auto& modified_user) {
+            if (modified_user.collateral[c - user.collateral.begin()].amount - amt.amount > 1){
+             // eosio::print( "user collateral ", modified_user.collateral[c - user.collateral.begin()],"\n");
+            //  eosio::print( "amt ", amt,"\n");
               modified_user.collateral[c - user.collateral.begin()] -= amt;
-              modified_user.valueofcol -= valueofasset;
+              eosio::print( "user collateral ", modified_user.collateral[c - user.collateral.begin()]," amt ", amt,"\n");
             }
             else {
-              modified_user.collateral.erase(c-1);
-              modified_user.valueofcol -= valueofasset;
+              if (modified_user.collateral[c - user.collateral.begin()].amount - amt.amount == 1)
+                amt.amount += 1; // dust
+              modified_user.collateral[c - user.collateral.begin()].amount = 0;
+              eosio::print( "erase collateral ","\n");
             }
         });
-        for ( auto it = itr->collateral.begin(); it != itr->collateral.end(); ++it )
-          if (it->symbol == c->symbol) {
-            _user.modify(itr, _self, [&]( auto& modified_user) { // weighted fee deposit
+        for ( auto it = itr->collateral.begin(); it != itr->collateral.end(); ++it ) {
+          if (it->symbol == amt.symbol) {
+            _user.modify(itr, _self, [&]( auto& modified_user) {
+              //eosio::print( "insurer collateral ", modified_user.collateral[it - itr->collateral.begin()],"\n");
+              //eosio::print( "amt ", amt,"\n");
               modified_user.collateral[it - itr->collateral.begin()] += amt;
-              modified_user.valueofcol += valueofasset;
+              eosio::print( "insurer collateral ", modified_user.collateral[it - itr->collateral.begin()]," amt ", amt,"\n");
             });
             amt.amount = 0;
             break;
           }
+      }
         if (amt.amount > 0) 
-          _user.modify(itr, _self, [&]( auto& modified_user) { // weighted fee deposit
+          _user.modify(itr, _self, [&]( auto& modified_user) {
+            eosio::print( "insurer collateral push_back ", amt,"\n");
             modified_user.collateral.push_back(amt);
-            modified_user.valueofcol += valueofasset;
           });
       }
-      _user.modify(itr, _self, [&]( auto& modified_user) { // weighted fee deposit
-        modified_user.debt += debt;
+
+      _user.modify(user, _self, [&]( auto& modified_user) {
+        modified_user.collateral.erase(
+            std::remove_if(modified_user.collateral.begin(), modified_user.collateral.end(),
+                  [](const asset & o) { return o.amount==0; }),
+            modified_user.collateral.end());
+       });
+
+      _user.modify(user, _self, [&]( auto& modified_user) {
+            if (modified_user.debt.amount - debtshare > 1){
+              modified_user.debt.amount -= debtshare;
+            }
+            else {
+               if (modified_user.debt.amount - debtshare == 1)
+                 debtshare += 1; // dust
+               modified_user.debt.amount = 0;
+            }
       });
 
+      _user.modify(itr, _self, [&]( auto& modified_user) {
+        modified_user.debt.amount += debtshare;
+      });
+
+      //convert some insurance into collateral, recapitalizing the bad debt
       for ( auto i = itr->insurance.begin(); i != itr->insurance.end(); ++i ) {
         asset amt = *i;
-        amt.amount *= recapReq; //convert some insurance into collateral, recapitalizing the bad debt
+        amt.amount *= recapReq;
         
-        _user.modify(itr, _self, [&]( auto& modified_user) { // weighted fee withdrawl
-            if (modified_user.insurance[i - itr->insurance.begin()] - amt > 0.0){
+        _user.modify(itr, _self, [&]( auto& modified_user) {
+            if (modified_user.insurance[i - itr->insurance.begin()].amount - amt.amount > 1){
+             // eosio::print( "insurer insurance ", modified_user.insurance[i - itr->insurance.begin()],"\n");
+              //eosio::print( "amt ", amt,"\n");
               modified_user.insurance[i - itr->insurance.begin()] -= amt;
-              modified_user.valueofins -= valueofasset;
+              eosio::print( "insurer insurance ", modified_user.insurance[i - itr->insurance.begin()]," amt ", amt,"\n");
             }
             else {
-              modified_user.insurance.erase(c-1);
-              modified_user.valueofins -= valueofasset;
+              if (modified_user.insurance[i - itr->insurance.begin()].amount - amt.amount == 1)
+                 amt.amount += 1; //dust
+              modified_user.insurance[i - itr->insurance.begin()].amount = 0;
+              eosio::print( "erase insurance ","\n");
             }
         });
         for ( auto it = itr->collateral.begin(); it != itr->collateral.end(); ++it )
-          if ( it->symbol == i->symbol ) {
-            _user.modify(itr, _self, [&]( auto& modified_user) { // weighted fee deposit
+          if ( it->symbol == amt.symbol ) {
+            _user.modify(itr, _self, [&]( auto& modified_user) {
+              //eosio::print( "insurer collateral ", modified_user.collateral[it - itr->collateral.begin()],"\n");
+              //eosio::print( "amt ", amt,"\n");
               modified_user.collateral[it - itr->collateral.begin()] += amt;
+              eosio::print( "insurer collateral ", modified_user.collateral[it - itr->collateral.begin()]," amt ", amt,"\n");
             });
             amt.amount = 0;
             break;
           }
         if (amt.amount > 0) 
-          _user.modify(itr, _self, [&]( auto& modified_user) { // weighted fee deposit
+          _user.modify(itr, _self, [&]( auto& modified_user) {
+            eosio::print( "insurer collateral push_back ", amt,"\n");
             modified_user.collateral.push_back(amt);
           });
       }
+        _user.modify(itr, _self, [&]( auto& modified_user) {
+        modified_user.insurance.erase(
+            std::remove_if(modified_user.insurance.begin(), modified_user.insurance.end(),
+                  [](const asset & o) { return o.amount==0; }),
+            modified_user.insurance.end());
+       });
     }
   }
 }
