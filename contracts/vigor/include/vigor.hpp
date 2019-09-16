@@ -83,6 +83,7 @@ CONTRACT vigor : public eosio::contract {
       void pricing(name usern);
       void pcts(name usern, double RM);
       double RM();
+      void reserve();
 
       map <symbol, name> issueracct {
          {symbol("EOS",4),	    name("eosio.token")},
