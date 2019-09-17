@@ -5,6 +5,12 @@ ACTION datapreproc::addpair(name newpair) {
     
     //require_auth(_self);
 
+    if (!_shocks.exists()){
+      shocktable s;
+      s.shock = 1.0;
+      _shocks.set(s, _self);
+    }
+
     pairstable pairsname(name("oracleoracle"), name("oracleoracle").value);
     auto itr = pairsname.find(newpair.value);
     if ( itr != pairsname.end() ) { //pair must exist in the oracle
@@ -27,6 +33,15 @@ ACTION datapreproc::addpair(name newpair) {
             });
         };
    };
+}
+
+//apply a shock to the prices for testing
+ACTION datapreproc::doshock(double shockvalue) {
+shocktable s;
+if (_shocks.exists())
+  s = _shocks.get();
+s.shock = shockvalue;
+_shocks.set(s, _self);
 }
 
 //Clear the list of pairs to process
@@ -148,21 +163,21 @@ void datapreproc::averageVol(name aname){
     itr = store.find(one_day);
     uint64_t vol6 = itr->vol;
     uint64_t vol = (uint64_t)(0.1*(double)vol1+0.1*(double)vol2+0.1*(double)vol3+0.1*(double)vol4+0.1*(double)vol5+0.5*(double)vol6);
-
           uint64_t ctime = current_time();
+          shocktable shockt = _shocks.get();
           itr = store.find(1);
           if (itr != store.end()){
             store.modify( itr, _self, [&]( auto& s ) {
             s.vol = vol;
             s.timestamp = ctime;
-            s.price[0]=lastprice;
+            s.price[0]=(uint64_t)((((double)(lastprice/pricePrecision))*shockt.shock)*pricePrecision);
             });
           } else {
             store.emplace(_self, [&](auto& s) {
               s.freq=1;
               s.vol = vol;
               s.timestamp = ctime;
-              s.price.push_front(lastprice);
+              s.price.push_front((uint64_t)((((double)(lastprice/pricePrecision))*shockt.shock)*pricePrecision));
             });
           };
   }
@@ -337,7 +352,7 @@ extern "C" {
       {
           switch(action)
           {
-              EOSIO_DISPATCH_HELPER(datapreproc, (update)(addpair)(clear))
+              EOSIO_DISPATCH_HELPER(datapreproc, (update)(addpair)(clear)(doshock))
           }
       }
      // else if(code=="eosio.token"_n.value && action=="transfer"_n.value) {

@@ -75,13 +75,16 @@ CONTRACT vigor : public eosio::contract {
       void stressins();
       double stressinsx(name usern);
       double portVarianceCol(name usern);
+      double portVarianceIns(name usern);
       double portVarianceIns();
       void update(name usern);
+      void updateglobal();
       void payfee(name usern);
       void bailout(name usern);
       void pricing(name usern);
       void pcts(name usern, double RM);
       double RM();
+      void reserve();
 
       map <symbol, name> issueracct {
          {symbol("EOS",4),	    name("eosio.token")},

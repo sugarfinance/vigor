@@ -1,32 +1,10 @@
-# eosusd
-Website: https://eosUSD.com  
-Whitepaper: https://eosUSD.com/eosUSD.pdf
+# VIGOR lending DAC
 
-# Usage
+VIGOR is a decentralized autonomous community building finance dApps on the eosio blockchain, first product is a crypto backed stablecoin called VIGOR powered by the VIG utility token.
 
-Build your eos development image
+Help us build VIGOR -> Register as a candidate of the DAC at vig.ai or vigor.ai or vigstack.io (need to ask us for a stake token) and fill out a profile, top 21 voted candidates can claim VIG every day
 
-```
-docker build -t my/eos .
-```
-
-In a new terminal, start the required environment
-
-```
-docker-compose up # down or rm to clean up
-```
-
-Initialize the smart contract
-
-```
-sh bootstrap.sh # it prepares the environment
-alias cleos="docker exec -it nodeos cleos --url http://127.0.0.1:8888 --wallet-url http://keosd:8901"
-
-# Environment is ready, start here your tests/demo
-# ..and / or use Scatter configured for local Testnet
-cleos get info
-cleos get table eosusdcom111 eosusdcom111 user
-
-```
-
-Congrats, here are your first Localnet eosUSD
+Whitepaper: https://vig.ai/vigor.pdf
+Summary: https://vig.ai/vigorstablecoin.pdf
+Website: https://www.vigorstablecoin.com
+Telegram: https://t.me/vigorstablecoin

@@ -7,6 +7,7 @@
 #include <eosio/symbol.hpp>
 #include <eosio/time.hpp>
 #include <cmath>
+#include <eosiolib/singleton.hpp>
 
 using namespace eosio;
 
@@ -153,7 +154,14 @@ CONTRACT datapreproc : public eosio::contract {
   typedef eosio::multi_index<name("tseries"), statspre> statstable;
   statstable _ststable;
   
-  
+  TABLE shocktable {
+         double shock = 1.0;
+   
+      EOSLIB_SERIALIZE(shocktable, (shock))
+  }; typedef eosio::multi_index<name("shock"), shocktable> shockm;
+      typedef eosio::singleton<name("shock"), shocktable> shocks;
+                                                            shocks _shocks;
+
 public:
 
 using contract::contract;
@@ -162,9 +170,11 @@ datapreproc(name receiver, name code, datastream<const char*> ds) : eosio::contr
    _dptable(receiver, receiver.value), 
    _prstable(receiver, receiver.value), 
    _ptptable(receiver, receiver.value), 
-   _ststable(receiver, receiver.value){}
-   
+   _ststable(receiver, receiver.value), 
+   _shocks(receiver, receiver.value){}
 
+//apply a shock to the prices for testing
+ACTION doshock(double shockvalue);
 
 uint32_t current_time() {
           return current_time_point().sec_since_epoch();
