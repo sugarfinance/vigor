@@ -165,48 +165,6 @@ void datapreproc::averageVol(name aname){
               s.price.push_front(lastprice);
             });
           };
-/*
-    auto itr = store.find(one_minute);
-    if (itr != store.end()){
-      auto itr = store.get(one_minute);
-      uint64_t vol1 = itr.vol;
-    }
-    itr = store.find(five_minute);
-    uint64_t vol2 = defaultVol;
-    if (itr != store.end()){
-      auto itr = store.get(five_minute);
-      if (itr.vol != defaultVol)
-        vol2 = itr.vol;
-    }
-    itr = store.find(fifteen_minute);
-    uint64_t vol3 = defaultVol;
-    if (itr != store.end()){
-      auto itr = store.get(fifteen_minute);
-      if (itr.vol != defaultVol)
-        vol3 = itr.vol;
-    }
-    itr = store.find(one_hour);
-    uint64_t vol4 = defaultVol;
-    if (itr != store.end()){
-      auto itr = store.get(one_hour);
-      if (itr.vol != defaultVol)
-        vol4 = itr.vol;
-    }
-    itr = store.find(four_hour);
-    uint64_t vol5 = defaultVol;
-    if (itr != store.end()){
-      auto itr = store.get(four_hour);
-      if (itr.vol != defaultVol)
-        vol5 = itr.vol;
-    }
-    itr = store.find(one_day);
-    uint64_t vol6 = defaultVol;
-    if (itr != store.end()){
-      auto itr = store.get(one_day);
-      if (itr.vol != defaultVol)
-        vol6 = itr.vol;
-    }
-    */
   }
 
 void datapreproc::averageCor(name aname){
