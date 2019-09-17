@@ -76,12 +76,12 @@ void vigor::create( name   issuer,
     require_auth( _self );
 
     auto sym = maximum_supply.symbol;
-    eosio_assert( sym.is_valid(), "invalid symbol name" );
-    eosio_assert( maximum_supply.is_valid(), "invalid supply");
-    eosio_assert( maximum_supply.amount > 0, "max-supply must be positive");
+    check( sym.is_valid(), "invalid symbol name" );
+    check( maximum_supply.is_valid(), "invalid supply");
+    check( maximum_supply.amount > 0, "max-supply must be positive");
 
     auto existing = _coinstats.find( sym.code().raw() );
-    eosio_assert( existing == _coinstats.end(), "token with symbol already exists" );
+    check( existing == _coinstats.end(), "token with symbol already exists" );
 
     _coinstats.emplace( _self, [&]( auto& s ) {
        s.supply.symbol = maximum_supply.symbol;
@@ -93,18 +93,18 @@ void vigor::create( name   issuer,
 void vigor::setsupply( name issuer, asset maximum_supply )
 {
     auto sym = maximum_supply.symbol;
-    eosio_assert( sym.is_valid(), "invalid symbol name" );
+    check( sym.is_valid(), "invalid symbol name" );
 
     auto existing = _coinstats.find( sym.code().raw() );
-    eosio_assert( existing != _coinstats.end(), "token with symbol does not exist, create token before setting supply" );
+    check( existing != _coinstats.end(), "token with symbol does not exist, create token before setting supply" );
     const auto& st = *existing;
 
     require_auth( st.issuer );
-    eosio_assert( maximum_supply.is_valid(), "invalid maximum_supply" );
-    eosio_assert( maximum_supply.amount > 0, "must issue positive maximum_supply" );
+    check( maximum_supply.is_valid(), "invalid maximum_supply" );
+    check( maximum_supply.amount > 0, "must issue positive maximum_supply" );
 
-    eosio_assert( maximum_supply.symbol == st.supply.symbol, "symbol precision mismatch" );
-    eosio_assert( maximum_supply.amount >= st.supply.amount, "cannot set max_supply to less than available supply");
+    check( maximum_supply.symbol == st.supply.symbol, "symbol precision mismatch" );
+    check( maximum_supply.amount >= st.supply.amount, "cannot set max_supply to less than available supply");
 
     _coinstats.modify( st, same_payer, [&]( auto& s ) {
        s.max_supply = maximum_supply;
@@ -114,19 +114,19 @@ void vigor::setsupply( name issuer, asset maximum_supply )
 void vigor::issue( name to, asset quantity, string memo )
 {
     auto sym = quantity.symbol;
-    eosio_assert( sym.is_valid(), "invalid symbol name" );
-    eosio_assert( memo.size() <= 256, "memo has more than 256 bytes" );
+    check( sym.is_valid(), "invalid symbol name" );
+    check( memo.size() <= 256, "memo has more than 256 bytes" );
 
     auto existing = _coinstats.find( sym.code().raw() );
-    eosio_assert( existing != _coinstats.end(), "token with symbol does not exist, create token before issue" );
+    check( existing != _coinstats.end(), "token with symbol does not exist, create token before issue" );
     const auto& st = *existing;
 
     require_auth( st.issuer );
-    eosio_assert( quantity.is_valid(), "invalid quantity" );
-    eosio_assert( quantity.amount > 0, "must issue positive quantity" );
+    check( quantity.is_valid(), "invalid quantity" );
+    check( quantity.amount > 0, "must issue positive quantity" );
 
-    eosio_assert( quantity.symbol == st.supply.symbol, "symbol precision mismatch" );
-    eosio_assert( quantity.amount <= st.max_supply.amount - st.supply.amount, "quantity exceeds available supply");
+    check( quantity.symbol == st.supply.symbol, "symbol precision mismatch" );
+    check( quantity.amount <= st.max_supply.amount - st.supply.amount, "quantity exceeds available supply");
 
     _coinstats.modify( st, same_payer, [&]( auto& s ) {
        s.supply += quantity;
@@ -144,18 +144,18 @@ void vigor::issue( name to, asset quantity, string memo )
 void vigor::retire( asset quantity, string memo )
 {
     auto sym = quantity.symbol;
-    eosio_assert( sym.is_valid(), "invalid symbol name" );
-    eosio_assert( memo.size() <= 256, "memo has more than 256 bytes" );
+    check( sym.is_valid(), "invalid symbol name" );
+    check( memo.size() <= 256, "memo has more than 256 bytes" );
 
     auto existing = _coinstats.find( sym.code().raw() );
-    eosio_assert( existing != _coinstats.end(), "token with symbol does not exist 6" );
+    check( existing != _coinstats.end(), "token with symbol does not exist 6" );
     const auto& st = *existing;
 
     require_auth( st.issuer );
-    eosio_assert( quantity.is_valid(), "invalid quantity" );
-    eosio_assert( quantity.amount > 0, "must retire positive quantity" );
+    check( quantity.is_valid(), "invalid quantity" );
+    check( quantity.amount > 0, "must retire positive quantity" );
 
-    eosio_assert( quantity.symbol == st.supply.symbol, "symbol precision mismatch" );
+    check( quantity.symbol == st.supply.symbol, "symbol precision mismatch" );
 
     _coinstats.modify( st, same_payer, [&]( auto& s ) {
        s.supply -= quantity;
@@ -168,21 +168,21 @@ void vigor::transfer(name    from,
                       asset   quantity,
                       string  memo )
 {
-    eosio_assert( from != to, "cannot transfer to self" );
+    check( from != to, "cannot transfer to self" );
     require_auth( from );
-    eosio_assert( is_account( to ), "to account does not exist");
-    eosio_assert( quantity.is_valid(), "invalid quantity" );
-    eosio_assert( quantity.amount > 0, "must transfer positive quantity" );
-    eosio_assert( memo.size() <= 256, "memo has more than 256 bytes" );
+    check( is_account( to ), "to account does not exist");
+    check( quantity.is_valid(), "invalid quantity" );
+    check( quantity.amount > 0, "must transfer positive quantity" );
+    check( memo.size() <= 256, "memo has more than 256 bytes" );
 
     auto payer = has_auth( to ) ? to : from;
 
     if (to == _self && quantity.symbol == symbol("VIGOR", 4)) {
       auto &user = _user.get(from.value,"User not found");
       
-      eosio_assert(user.debt.amount >= quantity.amount, "Payment too high");
+      check(user.debt.amount >= quantity.amount, "Payment too high");
       
-      eosio_assert(_globals.exists(), "");
+      check(_globals.exists(), "");
       globalstats gstats = _globals.get();
 
       _user.modify(user, _self, [&]( auto& modified_user) { // Transfer stablecoin into user
@@ -208,7 +208,7 @@ void vigor::sub_balance( name owner, asset value ) {
    accounts from_acnts( _self, owner.value );
 
    const auto& from = from_acnts.get( value.symbol.code().raw(), "no balance object found" );
-   eosio_assert( from.balance.amount >= value.amount, "overdrawn balance" );
+   check( from.balance.amount >= value.amount, "overdrawn balance" );
 
    from_acnts.modify( from, owner, [&]( auto& a ) {
       a.balance -= value;
@@ -236,7 +236,7 @@ void vigor::open( name owner, const symbol& symbol, name ram_payer )
    auto sym_code_raw = symbol.code().raw();
    const auto& st = _coinstats.get( sym_code_raw, "symbol does not exist 7" );
 
-   eosio_assert( st.supply.symbol == symbol, "symbol precision mismatch" );
+   check( st.supply.symbol == symbol, "symbol precision mismatch" );
 
    accounts acnts( _self, owner.value );
    auto it = acnts.find( sym_code_raw );
@@ -252,8 +252,8 @@ void vigor::close( name owner, const symbol& symbol )
    require_auth( owner );
    accounts acnts( _self, owner.value );
    auto it = acnts.find( symbol.code().raw() );
-   eosio_assert( it != acnts.end(), "Balance row already deleted or never existed. Action won't have any effect." );
-   eosio_assert( it->balance.amount == 0, "Cannot close because the balance is not zero." );
+   check( it != acnts.end(), "Balance row already deleted or never existed. Action won't have any effect." );
+   check( it->balance.amount == 0, "Cannot close because the balance is not zero." );
    acnts.erase( it );
 }
 
@@ -265,9 +265,9 @@ void vigor::assetin( name   from,
     return;
 
   require_auth( from );
-  eosio_assert(assetin.symbol.is_valid(), "Symbol must be valid.");
-  eosio_assert(assetin.amount > 0, "Amount must be > 0.");
-  eosio_assert( memo.c_str() == string("insurance") ||
+  check(assetin.symbol.is_valid(), "Symbol must be valid.");
+  check(assetin.amount > 0, "Amount must be > 0.");
+  check( memo.c_str() == string("insurance") ||
                 memo.c_str() == string("collateral"),  
                 "memo must be composed of either word: insurance or collateral"
               );
@@ -347,19 +347,19 @@ void vigor::assetout(name usern, asset assetout, string memo)
   require_auth(usern);
 
   auto &user = _user.get( usern.value,"User not found" );
-  eosio_assert( assetout.symbol.is_valid(), "Symbol must be valid." );
-  eosio_assert( assetout.amount > 0, "Amount must be > 0." );
-  eosio_assert( memo.c_str() == string("collateral") || 
+  check( assetout.symbol.is_valid(), "Symbol must be valid." );
+  check( assetout.amount > 0, "Amount must be > 0." );
+  check( memo.c_str() == string("collateral") || 
                 memo.c_str() == string("insurance") || 
                 memo.c_str() == string("borrow"), 
                 "memo must be composed of either word: insurance | collateral | borrow"
               );
-  eosio_assert(_globals.exists(), "globals don't exist");
+  check(_globals.exists(), "globals don't exist");
   globalstats gstats = _globals.get();
   bool found = false;
 
   if ( memo.c_str() == string("borrow") ) {
-    eosio_assert( assetout.symbol == symbol("VIGOR", 4), 
+    check( assetout.symbol == symbol("VIGOR", 4), 
                   "Borrow asset type must be VIGOR" 
                 );
     asset debt = user.debt + assetout;
@@ -367,7 +367,7 @@ void vigor::assetout(name usern, asset assetout, string memo)
     * if overcollateralization is C then leverage L is found as 
     * L = 1 / ( 1 - ( 1 / C ) )
     */
-    eosio_assert( user.valueofcol >= 1.11 * ( debt.amount / std::pow(10.0, 4) ),
+    check( user.valueofcol >= 1.11 * ( debt.amount / std::pow(10.0, 4) ),
     "Dollar value of collateral would become less than dollar value of debt" );
     
     _user.modify(user, _self, [&]( auto& modified_user) {
@@ -386,7 +386,7 @@ void vigor::assetout(name usern, asset assetout, string memo)
     if ( memo.c_str() == string("insurance") ) {
       for ( auto it = user.insurance.begin(); it < user.insurance.end(); ++it )
         if (it->symbol == assetout.symbol) { // User insurance type found
-          eosio_assert( it->amount >= assetout.amount,
+          check( it->amount >= assetout.amount,
           "Insufficient insurance assets available." );
           if ( it->amount - assetout.amount == 0 )
             _user.modify(user, _self, [&]( auto& modified_user) {
@@ -408,7 +408,7 @@ void vigor::assetout(name usern, asset assetout, string memo)
     else {
       for ( auto it = user.collateral.begin(); it != user.collateral.end(); ++it )
         if ( it->symbol == assetout.symbol ) { //User collateral type found
-          eosio_assert( it->amount >= assetout.amount,
+          check( it->amount >= assetout.amount,
           "Insufficient collateral assets available." );
           
           double valueofasset = assetout.amount / std::pow(10.0, it->symbol.precision());
@@ -419,7 +419,7 @@ void vigor::assetout(name usern, asset assetout, string memo)
 
           double valueofcol = user.valueofcol - valueofasset;
 
-          eosio_assert( valueofcol >= 1.01 * ( user.debt.amount / std::pow(10.0, 4) ),
+          check( valueofcol >= 1.01 * ( user.debt.amount / std::pow(10.0, 4) ),
           "Dollar value of collateral would become less than dollar value of debt" );
           
           if ( it->amount - assetout.amount == 0 )
@@ -439,7 +439,7 @@ void vigor::assetout(name usern, asset assetout, string memo)
           break;
         }  
     }
-    eosio_assert(found, "asset not found in user");
+    check(found, "asset not found in user");
     memo += std::string("assets to be transfered out for: ") + usern.to_string();
     action( permission_level{_self, name("active")},
             issueracct[assetout.symbol], name("transfer"),
@@ -454,7 +454,7 @@ void vigor::stresscol(name usern) {
 
   const auto& user = _user.get( usern.value, "User not found" );  
   
-  eosio_assert(_globals.exists(), "globals not found");
+  check(_globals.exists(), "globals not found");
   globalstats gstats = _globals.get();
 
   double portVariance = portVarianceCol(usern);
@@ -547,7 +547,7 @@ return portVariance;
 
 double vigor::portVarianceIns()
 {
-  eosio_assert( _globals.exists(), "no global table exists yet" );
+  check( _globals.exists(), "no global table exists yet" );
   globalstats gstats = _globals.get();
 
   double portVariance = 0.0;
@@ -583,7 +583,7 @@ double vigor::portVarianceIns()
 
 void vigor::stressins()
 {
-  eosio_assert( _globals.exists(), "no global table exists yet" );
+  check( _globals.exists(), "no global table exists yet" );
   globalstats gstats = _globals.get();
 
   double portVariance = portVarianceIns();
@@ -597,7 +597,7 @@ void vigor::stressins()
 
 void vigor::risk()
 {
-  eosio_assert( _globals.exists(), "no global table exists yet" );
+  check( _globals.exists(), "no global table exists yet" );
   globalstats gstats = _globals.get();
 
   // market value of assets and liabilities from the perspective of insurers
@@ -630,7 +630,7 @@ void vigor::pricing(name usern) {
 */
   const auto& user = _user.get( usern.value, "User not found" );  
   
-  eosio_assert(_globals.exists(), "globals not found");
+  check(_globals.exists(), "globals not found");
   globalstats gstats = _globals.get();
 
   double ivol = user.volcol * gstats.scale; // market determined implied volaility
@@ -658,7 +658,7 @@ double vigor::stressinsx(name usern) { // same as stressins, but remove remove t
 
   const auto& user = _user.get( usern.value, "User not found" );  
 
-  eosio_assert( _globals.exists(), "no global table exists yet" );
+  check( _globals.exists(), "no global table exists yet" );
   globalstats gstats = _globals.get();
 
   double portVariancex = 0.0;
@@ -716,7 +716,7 @@ double vigor::stressinsx(name usern) { // same as stressins, but remove remove t
 
 double vigor::riskx(name usern)
 { // same as risk, but remove remove the specified user
-  eosio_assert( _globals.exists(), "no global table exists yet" );
+  check( _globals.exists(), "no global table exists yet" );
   globalstats gstats = _globals.get();
 
   // market value of assets and liabilities from the perspective of insurers
@@ -742,7 +742,7 @@ double vigor::riskx(name usern)
 
 double vigor::RM() {
 // sum of weighted marginal contribution to risk (solvency), used for rescaling
-  eosio_assert( _globals.exists(), "no global table exists yet" );
+  check( _globals.exists(), "no global table exists yet" );
   globalstats gstats = _globals.get();
 
   double smctr = 0;
@@ -762,7 +762,7 @@ void vigor::pcts(name usern, double RM) { // percent contribution to solvency
   if (usern.value == name("finalreserve").value) // exclude the reserve because it only absorbs bailout after all insurers are wiped out, handled in reserve() method
     return;
   const auto& user = _user.get( usern.value, "User not found" );
-  eosio_assert( _globals.exists(), "no global table exists yet" );
+  check( _globals.exists(), "no global table exists yet" );
   globalstats gstats = _globals.get();
 
   double solvencyx = riskx(usern);
@@ -783,7 +783,7 @@ void vigor::pcts(name usern, double RM) { // percent contribution to solvency
 
 void vigor::payfee(name usern) {
   auto &user = _user.get( usern.value, "User not found" );
-  eosio_assert(_globals.exists(), "no global table exists yet");
+  check(_globals.exists(), "no global table exists yet");
   globalstats gstats = _globals.get();
 
   bool late = true;
@@ -908,7 +908,7 @@ void vigor::update(name usern)
 
 void vigor::updateglobal() 
 {
-  eosio_assert(_globals.exists(), "globals not found");
+  check(_globals.exists(), "globals not found");
   globalstats gstats = _globals.get();
 
   double valueofins = 0.0;
