@@ -1,18 +1,13 @@
-#include <eosiolib/asset.hpp>
-#include <eosiolib/symbol.hpp>
-#include <eosiolib/chain.h>
-#include <eosiolib/time.hpp>
-#include <eosiolib/eosio.hpp>
+#include <eosio/transaction.hpp>
+#include <eosio/singleton.hpp>
+#include <eosio/asset.hpp>
+#include <eosio/eosio.hpp>
+#include <eosio/print.hpp>
+#include <eosio/system.hpp>
+#include <eosio/symbol.hpp>
+#include <eosio/time.hpp>
 #include <cmath>
-
-/*#include "../dist/contracts/eos/dappservices/multi_index.hpp"
-#define DAPPSERVICES_ACTIONS() \
-    XSIGNAL_DAPPSERVICE_ACTION \
-    IPFS_DAPPSERVICE_ACTIONS
-#define DAPPSERVICE_ACTIONS_COMMANDS() \
-    IPFS_SVC_COMMANDS()
-  
-#define CONTRACT_NAME() datapreproc*/
+#include <eosiolib/singleton.hpp>
 
 using namespace eosio;
 
@@ -49,10 +44,7 @@ const  std::map <uint64_t, double> volScale {
 
 CONTRACT datapreproc : public eosio::contract {
  private:
- 
- //DAPPSERVICES_ACTIONS()
- 
-  //datapreproc(name receiver, name code, datastream<const char*> ds);
+
 
 //Types
   enum asset_type: uint16_t {
@@ -84,10 +76,8 @@ CONTRACT datapreproc : public eosio::contract {
       indexed_by<name("value"), const_mem_fun<datapoints, uint64_t, &datapoints::by_value>>, 
       indexed_by<name("timestamp"), const_mem_fun<datapoints, uint64_t, &datapoints::by_timestamp>>> datapointstable;
 
-   // typedef eosio::multi_index<"datapoints"_n, datapoints> datapointstable;
     datapointstable _dptable;
-    //typedef dapp::multi_index<"datapoints"_n, datapoints> datapointstable;
-    //typedef eosio::multi_index<".datapoints"_n, datapoints> datapointstable_t_v_abi;
+
 
   //Holds the list of pairs available in the oracle
   TABLE pairs {
@@ -120,7 +110,7 @@ CONTRACT datapreproc : public eosio::contract {
 
   typedef eosio::multi_index<name("pairs"), pairs> pairstable;
   pairstable _prstable;
-  //typedef dapp::eosio::multi_index<"pairs"_n, pairs> pairstable;
+
 
   //Holds the list of pairs to process
   TABLE pairtoproc {
@@ -143,8 +133,7 @@ CONTRACT datapreproc : public eosio::contract {
 
   };
 
-    /*typedef eosio::multi_index<name("pairtoproc"), pairtoproc, 
-      indexed_by<name("aname"), const_mem_fun<pairtoproc, uint64_t, &pairtoproc::by_name>>> pairtoproctb;*/
+
     typedef eosio::multi_index<"pairtoproc"_n, pairtoproc> pairtoproctb;
     pairtoproctb _ptptable;
 
@@ -165,7 +154,14 @@ CONTRACT datapreproc : public eosio::contract {
   typedef eosio::multi_index<name("tseries"), statspre> statstable;
   statstable _ststable;
   
-  
+  TABLE shocktable {
+         double shock = 1.0;
+   
+      EOSLIB_SERIALIZE(shocktable, (shock))
+  }; typedef eosio::multi_index<name("shock"), shocktable> shockm;
+      typedef eosio::singleton<name("shock"), shocktable> shocks;
+                                                            shocks _shocks;
+
 public:
 
 using contract::contract;
@@ -174,7 +170,15 @@ datapreproc(name receiver, name code, datastream<const char*> ds) : eosio::contr
    _dptable(receiver, receiver.value), 
    _prstable(receiver, receiver.value), 
    _ptptable(receiver, receiver.value), 
-   _ststable(receiver, receiver.value){}
+   _ststable(receiver, receiver.value), 
+   _shocks(receiver, receiver.value){}
+
+//apply a shock to the prices for testing
+ACTION doshock(double shockvalue);
+
+uint32_t current_time() {
+          return current_time_point().sec_since_epoch();
+}
 
 //add to the list of pairs to process
 ACTION addpair(name newpair);

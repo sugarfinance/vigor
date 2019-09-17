@@ -1,8 +1,9 @@
-#include <eosiolib/transaction.hpp>
-#include <eosiolib/singleton.hpp>
-#include <eosiolib/asset.hpp>
-#include <eosiolib/eosio.hpp>
-#include <eosiolib/print.hpp>
+#include <eosio/transaction.hpp>
+#include <eosio/singleton.hpp>
+#include <eosio/asset.hpp>
+#include <eosio/eosio.hpp>
+#include <eosio/print.hpp>
+#include <eosio/system.hpp>
 
 #include <string>
 #include <cmath>
@@ -74,13 +75,16 @@ CONTRACT vigor : public eosio::contract {
       void stressins();
       double stressinsx(name usern);
       double portVarianceCol(name usern);
+      double portVarianceIns(name usern);
       double portVarianceIns();
       void update(name usern);
+      void updateglobal();
       void payfee(name usern);
       void bailout(name usern);
       void pricing(name usern);
       void pcts(name usern, double RM);
       double RM();
+      void reserve();
 
       map <symbol, name> issueracct {
          {symbol("EOS",4),	    name("eosio.token")},
@@ -152,6 +156,10 @@ CONTRACT vigor : public eosio::contract {
 
       void sub_balance( name owner, asset value );
       void add_balance( name owner, asset value, name ram_payer );
+      
+      uint32_t now() {
+          return current_time_point().sec_since_epoch();
+      }
 
    public:
       using contract::contract;
