@@ -113,7 +113,7 @@ CONTRACT vigor : public eosio::contract {
       const double volPrecision = 1000000;
       const double corrPrecision = 1000000;
       const double pricePrecision = 1000000;
-      double stressQuantile = 1.65;
+      double alphatest = 0.95;
       double solvencyTarget = 1.0;
       double maxtesprice = 0.25;
       double mintesprice = 0.005;

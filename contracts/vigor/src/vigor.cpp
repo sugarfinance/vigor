@@ -458,7 +458,8 @@ void vigor::stresscol(name usern) {
   globalstats gstats = _globals.get();
 
   double portVariance = portVarianceCol(usern);
-  double stresscol = -1.0*(std::exp(-1.0*stressQuantile * std::sqrt(portVariance))-1.0);
+  // Expected Shortfall, CVaR
+  double stresscol = -1.0*(std::exp(-1.0*((std::exp(-1.0*(std::pow(-1.0*std::sqrt(2.0)*std::erfcinv(2.0*alphatest),2.0))/2.0)/(std:sqrt(2.0*M_PI)))/(1.0-alphatest)) * std::sqrt(portVariance))-1.0);
   double svalueofcol = ((1.0 - stresscol) * user.valueofcol);
   double svalueofcole = std::max( 0.0,
     user.debt.amount / std::pow(10.0, 4) - ((1.0 - stresscol) * user.valueofcol)
@@ -588,7 +589,8 @@ void vigor::stressins()
 
   double portVariance = portVarianceIns();
 
-  double stressins = -1.0*(std::exp(-1.0*stressQuantile * std::sqrt(portVariance))-1.0); // model suggested percentage loss that the total insurance asset portfolio would experience in a stress event.
+  // Expected Shortfall, CVaR
+  double stressins = -1.0*(std::exp(-1.0*((std::exp(-1.0*(std::pow(-1.0*std::sqrt(2.0)*std::erfcinv(2.0*alphatest),2.0))/2.0)/(std:sqrt(2.0*M_PI)))/(1.0-alphatest)) * std::sqrt(portVariance))-1.0); // model suggested percentage loss that the total insurance asset portfolio would experience in a stress event.
   gstats.stressins = stressins;
   gstats.svalueofins = (1.0 - stressins) * gstats.valueofins; // model suggested dollar value of the total insurance asset portfolio in a stress event.
 
@@ -654,7 +656,7 @@ void vigor::pricing(name usern) {
   });
 }
 
-double vigor::stressinsx(name usern) { // same as stressins, but remove remove the specified user
+double vigor::stressinsx(name usern) { // same as stressins, but remove the specified user
 
   const auto& user = _user.get( usern.value, "User not found" );  
 
@@ -708,7 +710,8 @@ double vigor::stressinsx(name usern) { // same as stressins, but remove remove t
     portVariancex += std::pow(iW, 2) * std::pow(iVvol, 2);
   }
   
-  double stressinsx = -1.0*(std::exp(-1.0*stressQuantile * std::sqrt(portVariancex))-1.0); // model suggested percentage loss that the total insurance asset portfolio (ex the specified user) would experience in a stress event.
+  // Expected Shortfall, CVaR
+  double stressinsx = -1.0*(std::exp(-1.0*((std::exp(-1.0*(std::pow(-1.0*std::sqrt(2.0)*std::erfcinv(2.0*alphatest),2.0))/2.0)/(std:sqrt(2.0*M_PI)))/(1.0-alphatest)) * std::sqrt(portVariancex))-1.0); // model suggested percentage loss that the total insurance asset portfolio (ex the specified user) would experience in a stress event.
   double svalueofinsx = (1.0 - stressinsx) * (gstats.valueofins  - user.valueofins); // model suggested dollar value of the total insurance asset portfolio (ex the specified user) in a stress event.
   
   return svalueofinsx;
