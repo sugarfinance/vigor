@@ -15,6 +15,17 @@ namespace eosiosystem {
    class system_contract;
 }
 
+      const uint32_t one_minute = 60; 
+      const uint32_t five_minute = 60 * 5;
+      const uint32_t fifteen_minute = 60 * 15;
+      const uint32_t one_hour = 60 * 60;
+      const uint32_t four_hour = 60 * 60 * 4; 
+      const uint32_t one_day = 60 * 60 * 24; 
+      const double volPrecision = 1000000;
+      const double corrPrecision = 1000000;
+      const double pricePrecision = 1000000;
+      const uint64_t defaultVol = 600000;
+
 CONTRACT vigor : public eosio::contract {
 
    private:
@@ -37,7 +48,7 @@ CONTRACT vigor : public eosio::contract {
          double svalueofcole = 0.0; // model suggested dollar amount of insufficient collateral of a user loan in a stressed market.   min((1 - svalueofcol ) * valueofcol - debt,0) 
          asset feespaid = asset( 0, symbol("VIG", 4) ); // VIG
          uint64_t creditscore = 500; //out of 800
-         uint32_t lastupdate = 0;
+         time_point lastupdate = time_point(microseconds(0));;
          uint32_t latepays = 0;
          uint32_t recaps = 0;
          
@@ -104,16 +115,7 @@ CONTRACT vigor : public eosio::contract {
          {symbol("TPT",4),	    name("tpteos")},
       };
 
-      const uint64_t one_minute = 1000000.0 * 60.0; 
-      const uint64_t five_minute = 1000000.0 * 60.0 * 5.0;
-      const uint64_t fifteen_minute = 1000000.0 * 60.0 * 15.0;
-      const uint64_t one_hour = 1000000.0 * 60.0 * 60.0;
-      const uint64_t four_hour = 1000000.0 * 60.0 * 60.0 * 4.0; 
-      const uint64_t one_day = 1000000.0 * 60.0 * 60.0 * 24.0;
-      const double volPrecision = 1000000;
-      const double corrPrecision = 1000000;
-      const double pricePrecision = 1000000;
-      double stressQuantile = 1.65;
+      double alphatest = 0.95;
       double solvencyTarget = 1.0;
       double maxtesprice = 0.25;
       double mintesprice = 0.005;
@@ -139,14 +141,14 @@ CONTRACT vigor : public eosio::contract {
 
       //From datepreproc, holds the time series of prices, returns, volatility and correlation
       TABLE statspre {
-         uint64_t freq;
-         uint64_t timestamp;
+         uint32_t freq;
+         time_point timestamp;
          std::deque<uint64_t> price;
          std::deque<int64_t> returns;
          std::map <symbol, int64_t> correlation_matrix;
-         std::uint64_t vol = 1000;
+         std::uint64_t vol = defaultVol;
 
-         uint64_t primary_key() const {return freq;}
+         uint32_t primary_key() const {return freq;}
 
       };
 
@@ -157,10 +159,6 @@ CONTRACT vigor : public eosio::contract {
       void sub_balance( name owner, asset value );
       void add_balance( name owner, asset value, name ram_payer );
       
-      uint32_t now() {
-          return current_time_point().sec_since_epoch();
-      }
-
    public:
       using contract::contract;
       vigor(name receiver, name code, datastream<const char*> ds):contract(receiver, code, ds), 

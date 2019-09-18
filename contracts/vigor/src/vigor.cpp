@@ -1,4 +1,6 @@
 #include <vigor.hpp>
+#include <boost/math/special_functions/erf.hpp>
+using boost::math::erfc_inv;
 
 void vigor::doupdate()
 {
@@ -234,7 +236,7 @@ void vigor::open( name owner, const symbol& symbol, name ram_payer )
    require_auth( ram_payer );
 
    auto sym_code_raw = symbol.code().raw();
-   const auto& st = _coinstats.get( sym_code_raw, "symbol does not exist 7" );
+   const auto& st = _coinstats.get( sym_code_raw, "symbol does not exist" );
 
    check( st.supply.symbol == symbol, "symbol precision mismatch" );
 
@@ -276,7 +278,7 @@ void vigor::assetin( name   from,
     itr = _user.emplace(_self, [&](auto& new_user) {
       new_user.usern = from;
       new_user.creditscore = 500;
-      new_user.lastupdate = now();
+      new_user.lastupdate = current_time_point();
       new_user.debt = asset( 0, symbol("VIGOR", 4) );
     });
     action( permission_level{ _self, name("active") },
@@ -291,16 +293,6 @@ void vigor::assetin( name   from,
   globalstats gstats;
   if (_globals.exists())
     gstats = _globals.get();
-
-  symbol sym = assetin.symbol;
-  auto st = _coinstats.find( sym.code().raw());
-
-  if ( st == _coinstats.end() )        
-    _coinstats.emplace( _self, [&]( auto& s ) {
-      s.supply.symbol = sym;
-      s.max_supply.symbol = sym;
-      s.issuer = get_code(); //TODO: verify against issuer map
-    });
 
   if (memo.c_str() == string("insurance")) {
     auto it = user.insurance.begin();
@@ -458,7 +450,8 @@ void vigor::stresscol(name usern) {
   globalstats gstats = _globals.get();
 
   double portVariance = portVarianceCol(usern);
-  double stresscol = -1.0*(std::exp(-1.0*stressQuantile * std::sqrt(portVariance))-1.0);
+  // Expected Shortfall, CVaR
+  double stresscol = -1.0*(std::exp(-1.0*((std::exp(-1.0*(std::pow(-1.0*std::sqrt(2.0)*erfc_inv(2.0*alphatest),2.0))/2.0)/(std::sqrt(2.0*M_PI)))/(1.0-alphatest)) * std::sqrt(portVariance))-1.0);
   double svalueofcol = ((1.0 - stresscol) * user.valueofcol);
   double svalueofcole = std::max( 0.0,
     user.debt.amount / std::pow(10.0, 4) - ((1.0 - stresscol) * user.valueofcol)
@@ -494,8 +487,6 @@ double vigor::portVarianceCol(name usern)
 
   for (auto j = i + 1; j != user.collateral.end(); ++j ) {
     double c = (double)itr->correlation_matrix.at(j->symbol)/corrPrecision;
-    auto sym_code_raw = j->symbol.code().raw();
-    const auto& jV = _coinstats.get( sym_code_raw, "symbol does not exist" );
 
     t_series statsj(name("datapreprocx"),name(issuerfeed[j->symbol]).value);
     auto itr = statsj.find(1);
@@ -528,8 +519,6 @@ double vigor::portVarianceIns(name usern)
 
   for (auto j = i + 1; j != user.insurance.end(); ++j ) {
     double c = (double)itr->correlation_matrix.at(j->symbol)/corrPrecision;
-    auto sym_code_raw = j->symbol.code().raw();
-    const auto& jV = _coinstats.get( sym_code_raw, "symbol does not exist" );
 
     t_series statsj(name("datapreprocx"),name(issuerfeed[j->symbol]).value);
     auto itr = statsj.find(1);
@@ -563,9 +552,6 @@ double vigor::portVarianceIns()
 
     for (auto j = i + 1; j != gstats.insurance.end(); ++j ) {
       double c = (double)itr->correlation_matrix.at(j->symbol)/corrPrecision;
-      
-      auto sym_code_raw = j->symbol.code().raw();
-      const auto& jV = _coinstats.get( sym_code_raw, "symbol does not exist" );
 
       t_series stats(name("datapreprocx"),name(issuerfeed[j->symbol]).value);
       auto itr = stats.find(1);
@@ -588,7 +574,8 @@ void vigor::stressins()
 
   double portVariance = portVarianceIns();
 
-  double stressins = -1.0*(std::exp(-1.0*stressQuantile * std::sqrt(portVariance))-1.0); // model suggested percentage loss that the total insurance asset portfolio would experience in a stress event.
+  // Expected Shortfall, CVaR
+  double stressins = -1.0*(std::exp(-1.0*((std::exp(-1.0*(std::pow(-1.0*std::sqrt(2.0)*erfc_inv(2.0*alphatest),2.0))/2.0)/(std::sqrt(2.0*M_PI)))/(1.0-alphatest)) * std::sqrt(portVariance))-1.0); // model suggested percentage loss that the total insurance asset portfolio would experience in a stress event.
   gstats.stressins = stressins;
   gstats.svalueofins = (1.0 - stressins) * gstats.valueofins; // model suggested dollar value of the total insurance asset portfolio in a stress event.
 
@@ -650,11 +637,11 @@ void vigor::pricing(name usern) {
   _user.modify(user, _self, [&]( auto& modified_user) { 
     modified_user.tesprice = tesprice; // annualized rate borrowers pay in periodic premiums to insure their collateral
     modified_user.istresscol = istresscol; // market determined implied percentage loss that the user collateral portfolio would experience in a stress event.
-    modified_user.lastupdate = now();
+    modified_user.lastupdate = current_time_point();
   });
 }
 
-double vigor::stressinsx(name usern) { // same as stressins, but remove remove the specified user
+double vigor::stressinsx(name usern) { // same as stressins, but remove the specified user
 
   const auto& user = _user.get( usern.value, "User not found" );  
 
@@ -664,8 +651,6 @@ double vigor::stressinsx(name usern) { // same as stressins, but remove remove t
   double portVariancex = 0.0;
 
   for ( auto i = gstats.insurance.begin(); i != gstats.insurance.end(); ++i ) {
-    auto sym_code_raw = i->symbol.code().raw();
-    const auto& iV = _coinstats.get( sym_code_raw, "symbol does not exist" );
 
     t_series stats(name("datapreprocx"),name(issuerfeed[i->symbol]).value);
     auto itr = stats.find(1);
@@ -684,9 +669,6 @@ double vigor::stressinsx(name usern) { // same as stressins, but remove remove t
 
     for (auto j = i + 1; j != gstats.insurance.end(); ++j ) {
       double c = (double)itr->correlation_matrix.at(j->symbol)/corrPrecision;
-      
-      sym_code_raw = j->symbol.code().raw();
-      const auto& jV = _coinstats.get( sym_code_raw, "symbol does not exist" );
 
       t_series stats(name("datapreprocx"),name(issuerfeed[j->symbol]).value);
       auto itr = stats.find(1);
@@ -708,7 +690,8 @@ double vigor::stressinsx(name usern) { // same as stressins, but remove remove t
     portVariancex += std::pow(iW, 2) * std::pow(iVvol, 2);
   }
   
-  double stressinsx = -1.0*(std::exp(-1.0*stressQuantile * std::sqrt(portVariancex))-1.0); // model suggested percentage loss that the total insurance asset portfolio (ex the specified user) would experience in a stress event.
+  // Expected Shortfall, CVaR
+  double stressinsx = -1.0*(std::exp(-1.0*((std::exp(-1.0*(std::pow(-1.0*std::sqrt(2.0)*erfc_inv(2.0*alphatest),2.0))/2.0)/(std::sqrt(2.0*M_PI)))/(1.0-alphatest)) * std::sqrt(portVariancex))-1.0); // model suggested percentage loss that the total insurance asset portfolio (ex the specified user) would experience in a stress event.
   double svalueofinsx = (1.0 - stressinsx) * (gstats.valueofins  - user.valueofins); // model suggested dollar value of the total insurance asset portfolio (ex the specified user) in a stress event.
   
   return svalueofinsx;
@@ -790,7 +773,7 @@ void vigor::payfee(name usern) {
   uint64_t amt = 0;
   symbol vig = symbol("VIG", 4);
   asset amta = asset(amt, vig);
-  uint32_t dsec = now() - user.lastupdate + 1; //+1 to protect against 0
+  uint32_t dsec = current_time_point().sec_since_epoch() - user.lastupdate.sec_since_epoch() + 1; //+1 to protect against 0
   uint32_t T = (uint32_t)(360.0 * 24.0 * 60.0 * (60.0 / (double)dsec));
   double tespay = (user.debt.amount / std::pow(10.0, 4)) * (std::pow((1 + user.tesprice), (1.0 / T)) - 1); // $ amount user must pay over time T
   
@@ -798,7 +781,6 @@ void vigor::payfee(name usern) {
     bool found = false;
     while ( !found && it++ != user.collateral.end() ) 
       found = (it-1)->symbol == vig; //User collateral type found
-    const auto& st = _coinstats.get( vig.code().raw(), "symbol doesn't exist");
     t_series stats(name("datapreprocx"),name(issuerfeed[vig]).value);
     auto itr = stats.find(1);
     amta.amount = uint64_t(( tespay * std::pow(10.0, 4) ) / // number of VIG*10e4 user must pay over time T
@@ -1107,7 +1089,7 @@ void vigor::bailout(name usern)
 }
 
 extern "C" {
-  [[noreturn]] void apply(uint64_t receiver, uint64_t code, uint64_t action) {
+  void apply(uint64_t receiver, uint64_t code, uint64_t action) {
     if((code==name("eosio.token").value ||
         code==name("vig111111111").value ||
         code==name("dummytokensx").value) && action==name("transfer").value) {

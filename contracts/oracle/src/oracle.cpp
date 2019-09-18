@@ -2,7 +2,7 @@
 
   //Check if calling account is a qualified oracle
   bool oracle::check_oracle(const name owner){
-
+/* 
     producers_table ptable(name("eosio"), name("eosio").value);
 
     auto p_idx = ptable.get_index<name("prototalvote")>();
@@ -18,7 +18,7 @@
       count++;
       if (count>standbys) break;
     }
-
+*/
     return true;
   }
 
@@ -31,10 +31,10 @@
     auto itr = store.find(owner.value);
     if (itr != store.end()) {
 
-      uint64_t ctime = current_time();
+      time_point ctime = current_time_point();
       auto last = store.get(owner.value);
 
-      eosio_assert(last.timestamp + one_minute <= ctime, "can only call every 60 seconds");
+      check(last.timestamp.sec_since_epoch() + one_minute <= ctime.sec_since_epoch() , "can only call every 60 seconds");
 
       store.modify( itr, _self, [&]( auto& s ) {
         s.timestamp = ctime;
@@ -45,7 +45,7 @@
 
       store.emplace(_self, [&](auto& s) {
         s.owner = owner;
-        s.timestamp = current_time();
+        s.timestamp = current_time_point();
         s.count = 1;
         s.balance = asset(0, symbol("EOS",4));
         s.last_claim = 0;
@@ -56,7 +56,7 @@
     auto gitr = gstore.find(owner.value);
     if (gitr != gstore.end()) {
 
-      uint64_t ctime = current_time();
+      time_point ctime = current_time_point();
 
       gstore.modify( gitr, _self, [&]( auto& s ) {
         s.timestamp = ctime;
@@ -67,7 +67,7 @@
 
       gstore.emplace(_self, [&](auto& s) {
         s.owner = owner;
-        s.timestamp = current_time();
+        s.timestamp = current_time_point();
         s.count = 1;
        s.balance = asset(0, symbol("EOS",4));
        s.last_claim = 0;
@@ -81,7 +81,7 @@
   void oracle::update_datapoints(const name owner, const uint64_t value, name pair){
 
     datapointstable dstore(_self, pair.value);
-    uint64_t ctime = current_time();
+    time_point ctime = current_time_point();
 
     auto size = std::distance(dstore.begin(), dstore.end());
 
@@ -97,7 +97,7 @@
        
        //Pop old points (older than one minute)
        while (latest != dstore.end()){
-        if (latest->timestamp + one_minute < ctime)
+        if (latest->timestamp.sec_since_epoch() + one_minute < ctime.sec_since_epoch())
           latest = dstore.erase(latest);
         else
           latest++;
@@ -138,7 +138,7 @@
         s.owner = owner;
         s.value = value;
         s.median = median;
-        s.timestamp = current_time();
+        s.timestamp = current_time_point();
       });
 
     }
@@ -161,12 +161,12 @@
 
    // print("length ", length);
 
-    eosio_assert(length>0, "must supply non-empty array of quotes");
-    eosio_assert(check_oracle(owner), "account is not an active producer or approved oracle");
+    check(length>0, "must supply non-empty array of quotes");
+    check(check_oracle(owner), "account is not an active producer or approved oracle");
 
     for (int i=0; i<length;i++){
      // print("quote ", i, " ", quotes[i].value, " ",  quotes[i].pair, "\n");
-       eosio_assert(quotes[i].value >= val_min && quotes[i].value <= val_max, "value outside of allowed range");
+       check(quotes[i].value >= val_min && quotes[i].value <= val_max, "value outside of allowed range");
     }
 
     for (int i=0; i<length;i++){    
@@ -188,8 +188,8 @@
 
     auto itr = gstore.find(owner.value);
 
-    eosio_assert(itr != gstore.end(), "oracle not found");
-    eosio_assert( itr->balance.amount > 0, "no rewards to claim" );
+    check(itr != gstore.end(), "oracle not found");
+    check( itr->balance.amount > 0, "no rewards to claim" );
 
     asset payout = itr->balance;
 

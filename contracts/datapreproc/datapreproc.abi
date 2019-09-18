@@ -40,7 +40,7 @@
                 },
                 {
                     "name": "timestamp",
-                    "type": "uint64"
+                    "type": "time_point"
                 }
             ]
         },
@@ -188,11 +188,11 @@
             "fields": [
                 {
                     "name": "freq",
-                    "type": "uint64"
+                    "type": "uint32"
                 },
                 {
                     "name": "timestamp",
-                    "type": "uint64"
+                    "type": "time_point"
                 },
                 {
                     "name": "price",

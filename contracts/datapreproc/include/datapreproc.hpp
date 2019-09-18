@@ -7,23 +7,23 @@
 #include <eosio/symbol.hpp>
 #include <eosio/time.hpp>
 #include <cmath>
-#include <eosiolib/singleton.hpp>
+#include <eosio/singleton.hpp>
 
 using namespace eosio;
 
 
-const uint64_t one_minute = 1000000.0 * 60.0; 
-const uint64_t five_minute = 1000000.0 * 60.0 * 5.0;
-const uint64_t fifteen_minute = 1000000.0 * 60.0 * 15.0;
-const uint64_t one_hour = 1000000.0 * 60.0 * 60.0;
-const uint64_t four_hour = 1000000.0 * 60.0 * 60.0 * 4.0; 
-const uint64_t one_day = 1000000.0 * 60.0 * 60.0 * 24.0; 
-const uint64_t cronlag = 5000000; //give extra time for cron jobs
+const uint32_t one_minute = 60; 
+const uint32_t five_minute = 60 * 5;
+const uint32_t fifteen_minute = 60 * 15;
+const uint32_t one_hour = 60 * 60;
+const uint32_t four_hour = 60 * 60 * 4; 
+const uint32_t one_day = 60 * 60 * 24; 
+const uint32_t cronlag = 5; //give extra time for cron jobs
 const uint64_t dequesize = 30;
 const double returnsPrecision = 1000000.0;
 const double pricePrecision = 1000000.0;
 const uint64_t defaultVol = 600000;
-int64_t defaultCorr = 1000000;
+const int64_t defaultCorr = 1000000;
 const double one_minute_scale = sqrt(252.0*24.0*(60.0/1.0));
 const double five_minute_scale = sqrt(252.0*24.0*(60.0/5.0));
 const double fifteen_minute_scale = sqrt(252.0*24.0*(60.0/15.0));
@@ -32,7 +32,7 @@ const double four_hour_scale = sqrt(252.0*24.0*(60.0/(60.0*4.0)));
 const double one_day_scale = sqrt(252.0*24.0*(60.0/(60.0*24.0)));
 
 
-const  std::map <uint64_t, double> volScale {
+const  std::map <uint32_t, double> volScale {
          {one_minute,	    one_minute_scale},
          {five_minute,	  five_minute_scale},
          {fifteen_minute,	fifteen_minute_scale},
@@ -63,14 +63,13 @@ CONTRACT datapreproc : public eosio::contract {
     name owner;
     uint64_t value;
     uint64_t median;
-    uint64_t timestamp;
+    time_point timestamp;
 
     uint64_t primary_key() const {return id;}
-    uint64_t by_timestamp() const {return timestamp;}
+    uint64_t by_timestamp() const {return timestamp.elapsed.to_seconds();}
     uint64_t by_value() const {return value;}
 
   };
-
 
     typedef eosio::multi_index<name("datapoints"), datapoints,
       indexed_by<name("value"), const_mem_fun<datapoints, uint64_t, &datapoints::by_value>>, 
@@ -140,14 +139,14 @@ CONTRACT datapreproc : public eosio::contract {
 
   //Holds the time series of prices, returns, volatility and correlation
   TABLE statspre {
-    uint64_t freq;
-    uint64_t timestamp;
+    uint32_t freq;
+    time_point timestamp;
     std::deque<uint64_t> price;
     std::deque<int64_t> returns;
     std::map <symbol, int64_t> correlation_matrix;
     std::uint64_t vol = defaultVol;
 
-    uint64_t primary_key() const {return freq;}
+    uint32_t primary_key() const {return freq;}
 
   };
 
@@ -176,10 +175,6 @@ datapreproc(name receiver, name code, datastream<const char*> ds) : eosio::contr
 //apply a shock to the prices for testing
 ACTION doshock(double shockvalue);
 
-uint32_t current_time() {
-          return current_time_point().sec_since_epoch();
-}
-
 //add to the list of pairs to process
 ACTION addpair(name newpair);
 
@@ -200,7 +195,7 @@ void averageVol(name aname);
 void averageCor(name aname);
 
 //  calculate vol and correlation matrix
-void calcstats(const name pair, const uint64_t freq);
+void calcstats(const name pair, const uint32_t freq);
 
 // correlation coefficient
 int64_t corrCalc(std::deque<int64_t> X, std::deque<int64_t> Y, uint64_t n);
@@ -209,6 +204,6 @@ double volCalc(std::deque<int64_t> returns, uint64_t n);
 
   
 //store last price from the oracle, append to time series
-void store_last_price(const name pair, const uint64_t freq, const uint64_t lastprice);
+void store_last_price(const name pair, const uint32_t freq, const uint64_t lastprice);
 
 };

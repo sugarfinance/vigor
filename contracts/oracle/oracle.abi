@@ -50,7 +50,7 @@
                 },
                 {
                     "name": "timestamp",
-                    "type": "uint64"
+                    "type": "time_point"
                 }
             ]
         },
@@ -147,10 +147,6 @@
                     "type": "float64"
                 },
                 {
-                    "name": "producer_key",
-                    "type": "public_key"
-                },
-                {
                     "name": "is_active",
                     "type": "bool"
                 },
@@ -196,7 +192,7 @@
                 },
                 {
                     "name": "timestamp",
-                    "type": "uint64"
+                    "type": "time_point"
                 },
                 {
                     "name": "count",
