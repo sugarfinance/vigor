@@ -163,7 +163,7 @@ void datapreproc::averageVol(name aname){
     itr = store.find(one_day);
     uint64_t vol6 = itr->vol;
     uint64_t vol = (uint64_t)(0.1*(double)vol1+0.1*(double)vol2+0.1*(double)vol3+0.1*(double)vol4+0.1*(double)vol5+0.5*(double)vol6);
-          uint64_t ctime = current_time();
+          time_point ctime = current_time_point();
           shocktable shockt = _shocks.get();
           itr = store.find(1);
           if (itr != store.end()){
@@ -205,7 +205,7 @@ void datapreproc::averageCor(name aname){
       std::map <symbol, int64_t> m6 = obj.correlation_matrix;
       int64_t c6 = m6[it.first];
       int64_t corr = (int64_t)(0.1*(double)c1+0.1*(double)c2+0.1*(double)c3+0.1*(double)c4+0.1*(double)c5+0.5*(double)c6);
-      uint64_t ctime = current_time();
+      time_point ctime = current_time_point();
       auto itr = store.find(1);
           if (itr != store.end()){
             store.modify( itr, _self, [&]( auto& s ) {
@@ -223,7 +223,7 @@ void datapreproc::averageCor(name aname){
   }
 
 //  calculate vol and correlation matrix
-void datapreproc::calcstats(const name pair, const uint64_t freq){
+void datapreproc::calcstats(const name pair, const uint32_t freq){
     
           statstable store(_self, pair.value);
           auto itr = store.find(freq);
@@ -299,15 +299,15 @@ double datapreproc::volCalc(std::deque<int64_t> returns, uint64_t n) {
 
   
    //store last price from the oracle, append to time series
-void datapreproc::store_last_price(const name pair, const uint64_t freq, const uint64_t lastprice){
+void datapreproc::store_last_price(const name pair, const uint32_t freq, const uint64_t lastprice){
 
     statstable store(_self, pair.value);
 
     auto itr = store.find(freq);
-    uint64_t ctime = current_time();
+    time_point ctime = current_time_point();
     if (itr != store.end()) {
       auto last = store.get(freq);
-      if (last.timestamp + freq - cronlag <= ctime){
+      if (last.timestamp.sec_since_epoch() + freq - cronlag <= ctime.sec_since_epoch()){
 
         if (size(last.price)==dequesize){ // append to time series, remove oldest
           store.modify( itr, _self, [&]( auto& s ) {

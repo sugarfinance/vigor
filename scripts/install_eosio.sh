@@ -3,6 +3,9 @@
 sudo apt remove eosio
 wget https://github.com/eosio/eos/releases/download/v1.7.4/eosio_1.7.4-1-ubuntu-18.04_amd64.deb
 sudo apt install ./eosio_1.7.4-1-ubuntu-18.04_amd64.deb
+
+wget https://github.com/eosio/eos/releases/download/v1.8.3/eosio_1.8.3-1-ubuntu-18.04_amd64.deb
+sudo apt install ./eosio_1.8.3-1-ubuntu-18.04_amd64.deb
 ##############################################
 #eosio install script method
 git clone --recursive https://github.com/EOSIO/eos.git --branch v1.7.4 --single-branch
@@ -57,9 +60,14 @@ git log -1
 sudo apt remove eosio.cdt
 wget https://github.com/EOSIO/eosio.cdt/releases/download/v1.5.0/eosio.cdt_1.5.0-1_amd64.deb
 sudo apt install ./eosio.cdt_1.5.0-1_amd64.deb
+
+wget https://github.com/eosio/eosio.cdt/releases/download/v1.6.2/eosio.cdt_1.6.2-1_amd64.deb
+sudo apt install ./eosio.cdt_1.6.2-1_amd64.deb
 #eosio-cdt install script method
 git clone --recursive https://github.com/eosio/eosio.cdt --branch v1.5.0 --single-branch
 cd eosio.cdt
 ./build.sh
 sudo ./install.sh
 ##############################################
+#eosio 1.5.7
+#eosio.cdt 1.6.1

@@ -233,11 +233,11 @@
             "fields": [
                 {
                     "name": "freq",
-                    "type": "uint64"
+                    "type": "uint32"
                 },
                 {
                     "name": "timestamp",
-                    "type": "uint64"
+                    "type": "time_point"
                 },
                 {
                     "name": "price",
@@ -345,7 +345,7 @@
                 },
                 {
                     "name": "lastupdate",
-                    "type": "uint32"
+                    "type": "time_point"
                 },
                 {
                     "name": "latepays",
