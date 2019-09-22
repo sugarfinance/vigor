@@ -257,6 +257,7 @@ void vigor::close( name owner, const symbol& symbol )
    acnts.erase( it );
 }
 
+// the precisionswap() method is called by this method
 void vigor::assetin( name   from, 
                          name   to,
                          asset  assetin,
@@ -342,6 +343,8 @@ void vigor::assetin( name   from,
   doupdate();
 }
 
+
+// the precisionswap() function is called by this method
 void vigor::assetout(name usern, asset assetout, string memo) 
 {
   require_auth(usern);
@@ -788,7 +791,8 @@ void vigor::payfee(name usern) {
 
   bool late = true;
   uint64_t amt = 0;
-  symbol vig = symbol("VIG", 4);
+  //symbol vig = symbol("VIG", 4);
+  symbol vig = symbol("VIG", 10);
   asset amta = asset(amt, vig);
   uint32_t dsec = now() - user.lastupdate + 1; //+1 to protect against 0
   uint32_t T = (uint32_t)(360.0 * 24.0 * 60.0 * (60.0 / (double)dsec));
@@ -1104,6 +1108,10 @@ void vigor::bailout(name usern)
       _globals.set(gstats, _self);
     }
   }
+}
+
+void vigor::precisionswap(){
+
 }
 
 extern "C" {

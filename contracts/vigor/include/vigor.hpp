@@ -35,7 +35,8 @@ CONTRACT vigor : public eosio::contract {
          double istresscol = 0.0; // market determined implied percentage loss that the user collateral portfolio would experience in a stress event.
          double svalueofcol = 0.0; // model suggested dollar value of the user collateral portfolio in a stress event.
          double svalueofcole = 0.0; // model suggested dollar amount of insufficient collateral of a user loan in a stressed market.   min((1 - svalueofcol ) * valueofcol - debt,0) 
-         asset feespaid = asset( 0, symbol("VIG", 4) ); // VIG
+         //asset feespaid = asset( 0, symbol("VIG", 4) ); // VIG
+         asset feespaid = asset( 0, symbol("VIG", 10) ); // VIG
          uint64_t creditscore = 500; //out of 800
          uint32_t lastupdate = 0;
          uint32_t latepays = 0;
@@ -56,7 +57,8 @@ CONTRACT vigor : public eosio::contract {
          double svalueofins = 0.0; // model suggested dollar value of the total insurance asset portfolio in a stress event. [ (1 - stressins ) * INS ]
          double stressins = 0.0; // model suggested percentage loss that the total insurance asset portfolio would experience in a stress event.
 
-         asset inreserve = asset( 0, symbol("VIG", 4) ); // VIG
+         //asset inreserve = asset( 0, symbol("VIG", 4) ); // VIG
+         asset inreserve = asset( 0, symbol("VIG", 10) ); // VIG
          asset totaldebt = asset( 0, symbol("VIGOR", 4) ); // VIGOR
          
          vector<asset> insurance;
@@ -85,10 +87,12 @@ CONTRACT vigor : public eosio::contract {
       void pcts(name usern, double RM);
       double RM();
       void reserve();
+      void precisionswap();
 
       map <symbol, name> issueracct {
          {symbol("EOS",4),	    name("eosio.token")},
-         {symbol("VIG",4),	    name("vig111111111")},
+         //{symbol("VIG",4),	    name("vig111111111")},
+         {symbol("VIG",10),	    name("vig111111111")},
          {symbol("IQ",3),	    name("dummytokensx")},
          {symbol("PEOS",4),	    name("dummytokensx")},
          {symbol("DICE",4),	    name("dummytokensx")},
@@ -97,7 +101,8 @@ CONTRACT vigor : public eosio::contract {
 
       map <symbol, name> issuerfeed {
          {symbol("EOS",4),	    name("eosusd")},
-         {symbol("VIG",4),	    name("vigeos")},
+         //{symbol("VIG",4),	    name("vigeos")},
+         {symbol("VIG",10),	    name("vigeos")},
          {symbol("IQ",3),	    name("iqeos")},
          {symbol("PEOS",4),	    name("peoseos")},
          {symbol("DICE",4),	    name("diceeos")},
