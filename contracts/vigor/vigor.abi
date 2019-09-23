@@ -132,10 +132,6 @@
                     "type": "float64"
                 },
                 {
-                    "name": "inreserve",
-                    "type": "asset"
-                },
-                {
                     "name": "totaldebt",
                     "type": "asset"
                 },
@@ -145,6 +141,46 @@
                 },
                 {
                     "name": "collateral",
+                    "type": "asset[]"
+                },
+                {
+                    "name": "l_solvency",
+                    "type": "float64"
+                },
+                {
+                    "name": "l_valueofcol",
+                    "type": "float64"
+                },
+                {
+                    "name": "l_valueofins",
+                    "type": "float64"
+                },
+                {
+                    "name": "l_scale",
+                    "type": "float64"
+                },
+                {
+                    "name": "l_svalueofcole",
+                    "type": "float64"
+                },
+                {
+                    "name": "l_svalueofins",
+                    "type": "float64"
+                },
+                {
+                    "name": "l_stressins",
+                    "type": "float64"
+                },
+                {
+                    "name": "l_totaldebt",
+                    "type": "asset"
+                },
+                {
+                    "name": "l_insurance",
+                    "type": "asset[]"
+                },
+                {
+                    "name": "l_collateral",
                     "type": "asset[]"
                 }
             ]
@@ -353,6 +389,62 @@
                 },
                 {
                     "name": "recaps",
+                    "type": "uint32"
+                },
+                {
+                    "name": "l_debt",
+                    "type": "asset"
+                },
+                {
+                    "name": "l_collateral",
+                    "type": "asset[]"
+                },
+                {
+                    "name": "l_insurance",
+                    "type": "asset[]"
+                },
+                {
+                    "name": "l_valueofcol",
+                    "type": "float64"
+                },
+                {
+                    "name": "l_valueofins",
+                    "type": "float64"
+                },
+                {
+                    "name": "l_tesprice",
+                    "type": "float64"
+                },
+                {
+                    "name": "l_pcts",
+                    "type": "float64"
+                },
+                {
+                    "name": "l_volcol",
+                    "type": "float64"
+                },
+                {
+                    "name": "l_stresscol",
+                    "type": "float64"
+                },
+                {
+                    "name": "l_istresscol",
+                    "type": "float64"
+                },
+                {
+                    "name": "l_svalueofcol",
+                    "type": "float64"
+                },
+                {
+                    "name": "l_svalueofcole",
+                    "type": "float64"
+                },
+                {
+                    "name": "l_latepays",
+                    "type": "uint32"
+                },
+                {
+                    "name": "l_recaps",
                     "type": "uint32"
                 }
             ]

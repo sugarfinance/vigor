@@ -31,7 +31,7 @@ CONTRACT vigor : public eosio::contract {
    private:
       TABLE user_s {
          name usern;
-         asset debt;
+         asset debt = asset( 0, symbol("VIGOR", 4) );
 
          vector<asset> collateral;
          vector<asset> insurance;
@@ -51,10 +51,29 @@ CONTRACT vigor : public eosio::contract {
          time_point lastupdate = time_point(microseconds(0));;
          uint32_t latepays = 0;
          uint32_t recaps = 0;
+
+         asset l_debt = asset( 0, symbol("VIGOR", 4) );
+
+         vector<asset> l_collateral;
+         vector<asset> l_insurance;
+
+         double l_valueofcol = 0.0; // dollar value of user portfolio of collateral crypto assets
+         double l_valueofins = 0.0; // dollar value of user portfolio of insurance crypto assets
+
+         double l_tesprice = 0.0; // annualized rate borrowers pay in periodic premiums to insure their collateral
+         double l_pcts = 0.0; // percent contribution to solvency (weighted marginal contribution to risk (solvency) rescaled by sum of that
+         double l_volcol = 1.0; // volatility of the user collateral portfolio
+         double l_stresscol = 0.0; // model suggested percentage loss that the user collateral portfolio would experience in a stress event.
+         double l_istresscol = 0.0; // market determined implied percentage loss that the user collateral portfolio would experience in a stress event.
+         double l_svalueofcol = 0.0; // model suggested dollar value of the user collateral portfolio in a stress event.
+         double l_svalueofcole = 0.0; // model suggested dollar amount of insufficient collateral of a user loan in a stressed market.   min((1 - svalueofcol ) * valueofcol - debt,0) 
+
+         uint32_t l_latepays = 0;
+         uint32_t l_recaps = 0;
          
          auto primary_key() const { return usern.value; }
 
-         EOSLIB_SERIALIZE(user_s, (usern)(debt)(collateral)(insurance)(valueofcol)(valueofins)(tesprice)(pcts)(volcol)(stresscol)(istresscol)(svalueofcol)(svalueofcole)(feespaid)(creditscore)(lastupdate)(latepays)(recaps))
+         EOSLIB_SERIALIZE(user_s, (usern)(debt)(collateral)(insurance)(valueofcol)(valueofins)(tesprice)(pcts)(volcol)(stresscol)(istresscol)(svalueofcol)(svalueofcole)(feespaid)(creditscore)(lastupdate)(latepays)(recaps)(l_debt)(l_collateral)(l_insurance)(l_valueofcol)(l_valueofins)(l_tesprice)(l_pcts)(l_volcol)(l_stresscol)(l_istresscol)(l_svalueofcol)(l_svalueofcole)(l_latepays)(l_recaps))
       }; typedef eosio::multi_index<name("user"), user_s> user_t;
                                                           user_t _user;
 
@@ -67,14 +86,25 @@ CONTRACT vigor : public eosio::contract {
          double svalueofins = 0.0; // model suggested dollar value of the total insurance asset portfolio in a stress event. [ (1 - stressins ) * INS ]
          double stressins = 0.0; // model suggested percentage loss that the total insurance asset portfolio would experience in a stress event.
 
-         asset inreserve = asset( 0, symbol("VIG", 4) ); // VIG
          asset totaldebt = asset( 0, symbol("VIGOR", 4) ); // VIGOR
          
          vector<asset> insurance;
          vector<asset> collateral;
 
-   
-         EOSLIB_SERIALIZE(globalstats, (solvency)(valueofcol)(valueofins)(scale)(svalueofcole)(svalueofins)(stressins)(inreserve)(totaldebt)(insurance)(collateral))
+         double l_solvency = 1.0; // solvency, represents capital adequacy to back the stablecoin
+         double l_valueofcol = 0.0; // dollar value of total portfolio of borrowers crypto collateral assets
+         double l_valueofins = 0.0; // dollar value of total portfolio of insurance crypto assets
+         double l_scale = 1.0; // TES pricing model parameters are scaled to drive risk (solvency) to a target set by custodians.
+         double l_svalueofcole = 0.0; // model suggested dollar value of the sum of all insufficient collateral in a stressed market SUM_i [ min((1 - svalueofcoli ) * valueofcoli - debti,0) ]
+         double l_svalueofins = 0.0; // model suggested dollar value of the total insurance asset portfolio in a stress event. [ (1 - stressins ) * INS ]
+         double l_stressins = 0.0; // model suggested percentage loss that the total insurance asset portfolio would experience in a stress event.
+
+         asset l_totaldebt = asset( 0, symbol("VIGOR", 4) ); // VIGOR
+         
+         vector<asset> l_insurance;
+         vector<asset> l_collateral;
+
+         EOSLIB_SERIALIZE(globalstats, (solvency)(valueofcol)(valueofins)(scale)(svalueofcole)(svalueofins)(stressins)(totaldebt)(insurance)(collateral)(l_solvency)(l_valueofcol)(l_valueofins)(l_scale)(l_svalueofcole)(l_svalueofins)(l_stressins)(l_totaldebt)(l_insurance)(l_collateral))
       }; typedef eosio::multi_index<name("globals"), globalstats> globalsm;
          typedef eosio::singleton<name("globals"), globalstats> globals;
                                                             globals _globals;
@@ -104,6 +134,7 @@ CONTRACT vigor : public eosio::contract {
          {symbol("PEOS",4),	    name("dummytokensx")},
          {symbol("DICE",4),	    name("dummytokensx")},
          {symbol("TPT",4),	    name("dummytokensx")},
+         {symbol("VIGOR",4),	    name("vigor1111111")}
       };
 
       map <symbol, name> issuerfeed {
@@ -112,7 +143,7 @@ CONTRACT vigor : public eosio::contract {
          {symbol("IQ",3),	    name("iqeos")},
          {symbol("PEOS",4),	    name("peoseos")},
          {symbol("DICE",4),	    name("diceeos")},
-         {symbol("TPT",4),	    name("tpteos")},
+         {symbol("TPT",4),	    name("tpteos")}
       };
 
       double alphatest = 0.95;
