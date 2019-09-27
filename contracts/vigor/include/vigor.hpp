@@ -21,7 +21,8 @@ CONTRACT vigor : public eosio::contract {
       TABLE user_s {
          name usern;
          asset debt;
-
+         
+         // each users collateral or insurances occupies an index within each respective vector
          vector<asset> collateral;
          vector<asset> insurance;
 
@@ -91,8 +92,8 @@ CONTRACT vigor : public eosio::contract {
 
       map <symbol, name> issueracct {
          {symbol("EOS",4),	    name("eosio.token")},
-         //{symbol("VIG",4),	    name("vig111111111")},
-         {symbol("VIG",10),	    name("vig111111111")},
+         {symbol("VIG",4),	    name("vig111111111")},
+         //{symbol("VIG",10),	    name("vig111111111")},
          {symbol("IQ",3),	    name("dummytokensx")},
          {symbol("PEOS",4),	    name("dummytokensx")},
          {symbol("DICE",4),	    name("dummytokensx")},
@@ -101,8 +102,8 @@ CONTRACT vigor : public eosio::contract {
 
       map <symbol, name> issuerfeed {
          {symbol("EOS",4),	    name("eosusd")},
-         //{symbol("VIG",4),	    name("vigeos")},
-         {symbol("VIG",10),	    name("vigeos")},
+         {symbol("VIG",4),	    name("vigeos")},
+         //{symbol("VIG",10),	    name("vigeos")},
          {symbol("IQ",3),	    name("iqeos")},
          {symbol("PEOS",4),	    name("peoseos")},
          {symbol("DICE",4),	    name("diceeos")},

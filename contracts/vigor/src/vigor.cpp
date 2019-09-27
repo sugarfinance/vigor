@@ -265,9 +265,33 @@ void vigor::assetin( name   from,
   if ( from == _self )
     return;
 
+  // assetin comes in with precision 4 and needs to be converted to precision 10
+  // assetin could be eos or vig or vigor or peos
+  
   require_auth( from );
   check(assetin.symbol.is_valid(), "Symbol must be valid.");
   check(assetin.amount > 0, "Amount must be > 0.");
+  
+  // getting the symbol of the assetin token
+  auto _sym = assetin.symbol.code();
+  
+  // --- create an asset with a precision of 10
+  asset amt10 = asset(0, symbol(_sym, 10));
+  
+  // find out the precision of asset amount
+  if(assetin.symbol.precision() == 4 || assetin.symbol.precision() == 3)
+  {
+    int n = assetin.symbol.precision();
+    
+    // converting the asset of precision 4 to precision 10
+    // assiging the value of the asset amount to the internal asset pf precision 10
+    amt10.amount = assetin.amount;
+    
+    // if the precison is four then calculate the difference between 10 and 4
+    amt10.amount = amt10.amount * std::pow(10.0, (10 - n));
+  
+  }
+  
   check( memo.c_str() == string("insurance") ||
                 memo.c_str() == string("collateral"),  
                 "memo must be composed of either word: insurance or collateral"
@@ -278,11 +302,11 @@ void vigor::assetin( name   from,
       new_user.usern = from;
       new_user.creditscore = 500;
       new_user.lastupdate = now();
-      new_user.debt = asset( 0, symbol("VIGOR", 4) );
+      new_user.debt = asset( 0, symbol("VIGOR", 4) ); 
     });
     action( permission_level{ _self, name("active") },
       _self, name("open"), std::make_tuple(
-        from, symbol("VIGOR", 4), _self
+        from, symbol("VIGOR", 4), _self // symbol("VIGOR", 10);
       )).send();
   }
 
@@ -306,38 +330,39 @@ void vigor::assetin( name   from,
   if (memo.c_str() == string("insurance")) {
     auto it = user.insurance.begin();
     while ( !found && it++ != user.insurance.end() )
-      found = (it-1)->symbol == assetin.symbol;//User collateral type found
+      found = (it-1)->symbol == amt10.symbol;//User collateral type found
     _user.modify(user, _self, [&]( auto& modified_user) {
       if (!found)
-        modified_user.insurance.push_back(assetin);
+        modified_user.insurance.push_back(amt10);
       else
-        modified_user.insurance[(it-1) - user.insurance.begin()] += assetin;
+        modified_user.insurance[(it-1) - user.insurance.begin()] += amt10;
     }); found = false;
     it = gstats.insurance.begin();
     while ( !found && it++ != gstats.insurance.end() )
-      found = (it-1)->symbol == assetin.symbol;
+      found = (it-1)->symbol == amt10.symbol;
     if ( !found )
-      gstats.insurance.push_back(assetin);
+      gstats.insurance.push_back(amt10);
     else
-      gstats.insurance[(it-1) - gstats.insurance.begin()] += assetin;
+      gstats.insurance[(it-1) - gstats.insurance.begin()] += amt10;
   }
   else if (memo.c_str() == string("collateral")) {
     auto it = user.collateral.begin();
     while ( !found && it++ != user.collateral.end() )
-      found = (it-1)->symbol == assetin.symbol; //User collateral type found
+      found = (it-1)->symbol == amt10.symbol; //User collateral type found
     _user.modify(user, _self, [&]( auto& modified_user) {
       if (!found)
-        modified_user.collateral.push_back(assetin);
+        modified_user.collateral.push_back(amt10);
       else
-        modified_user.collateral[(it-1) - user.collateral.begin()] += assetin;
+        modified_user.collateral[(it-1) - user.collateral.begin()] += amt10;
     }); found = false;
     it = gstats.collateral.begin();
     while ( !found && it++ != gstats.collateral.end() )
-      found = (it-1)->symbol == assetin.symbol;
+      found = (it-1)->symbol == amt10.symbol;
     if (!found)
-      gstats.collateral.push_back(assetin);
+       gstats.collateral.push_back(amt10); //gstats.collateral.push_back(assetin);
     else
-      gstats.collateral[(it-1) - gstats.collateral.begin()] += assetin;
+      //gstats.collateral[(it-1) - gstats.collateral.begin()] += assetin;
+      gstats.collateral[(it-1) - gstats.collateral.begin()] += amt10;
   } 
   _globals.set(gstats, _self);
   doupdate();
@@ -345,6 +370,7 @@ void vigor::assetin( name   from,
 
 
 // the precisionswap() function is called by this method
+// the asset comes in here with precision 4 
 void vigor::assetout(name usern, asset assetout, string memo) 
 {
   require_auth(usern);
@@ -360,9 +386,10 @@ void vigor::assetout(name usern, asset assetout, string memo)
   check(_globals.exists(), "globals don't exist");
   globalstats gstats = _globals.get();
   bool found = false;
+  
 
   if ( memo.c_str() == string("borrow") ) {
-    check( assetout.symbol == symbol("VIGOR", 4), 
+    check( assetout.symbol == symbol("VIGOR", 4), // VIGOR IS EXCHANGED HERE
                   "Borrow asset type must be VIGOR" 
                 );
     asset debt = user.debt + assetout;
@@ -380,6 +407,7 @@ void vigor::assetout(name usern, asset assetout, string memo)
 
     double totdebt = gstats.totaldebt.amount / std::pow(10.0, 4);
 
+    // assetin comes in with precision 10 and needs to be converted to precision 4
     action( permission_level{_self, name("active")},
       _self, name("issue"), std::make_tuple(
         usern, assetout, std::string("VIGOR issued to ") + usern.to_string()
