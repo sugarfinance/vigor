@@ -29,6 +29,7 @@ namespace eosiosystem {
 CONTRACT vigor : public eosio::contract {
 
    private:
+      
       TABLE user_s {
          name usern;
          asset debt = asset( 0, symbol("VIGOR", 4) );
@@ -56,6 +57,9 @@ CONTRACT vigor : public eosio::contract {
 
          vector<asset> l_collateral;
          vector<asset> l_insurance;
+         vector<asset> l_lrtoken;
+         vector<asset> l_lrpayment;
+         vector<name> l_lrname;
 
          double l_valueofcol = 0.0; // dollar value of user portfolio of collateral crypto assets
          double l_valueofins = 0.0; // dollar value of user portfolio of insurance crypto assets
@@ -73,7 +77,7 @@ CONTRACT vigor : public eosio::contract {
          
          auto primary_key() const { return usern.value; }
 
-         EOSLIB_SERIALIZE(user_s, (usern)(debt)(collateral)(insurance)(valueofcol)(valueofins)(tesprice)(pcts)(volcol)(stresscol)(istresscol)(svalueofcol)(svalueofcole)(feespaid)(creditscore)(lastupdate)(latepays)(recaps)(l_debt)(l_collateral)(l_insurance)(l_valueofcol)(l_valueofins)(l_tesprice)(l_pcts)(l_volcol)(l_stresscol)(l_istresscol)(l_svalueofcol)(l_svalueofcole)(l_latepays)(l_recaps))
+         EOSLIB_SERIALIZE(user_s, (usern)(debt)(collateral)(insurance)(valueofcol)(valueofins)(tesprice)(pcts)(volcol)(stresscol)(istresscol)(svalueofcol)(svalueofcole)(feespaid)(creditscore)(lastupdate)(latepays)(recaps)(l_debt)(l_collateral)(l_insurance)(l_lrtoken)(l_lrpayment)(l_lrname)(l_valueofcol)(l_valueofins)(l_tesprice)(l_pcts)(l_volcol)(l_stresscol)(l_istresscol)(l_svalueofcol)(l_svalueofcole)(l_latepays)(l_recaps))
       }; typedef eosio::multi_index<name("user"), user_s> user_t;
                                                           user_t _user;
 
@@ -103,7 +107,8 @@ CONTRACT vigor : public eosio::contract {
          
          vector<asset> l_insurance;
          vector<asset> l_collateral;
-
+         //vector<tuple<asset,asset,name>> l_locatereceipts;
+             
          EOSLIB_SERIALIZE(globalstats, (solvency)(valueofcol)(valueofins)(scale)(svalueofcole)(svalueofins)(stressins)(totaldebt)(insurance)(collateral)(l_solvency)(l_valueofcol)(l_valueofins)(l_scale)(l_svalueofcole)(l_svalueofins)(l_stressins)(l_totaldebt)(l_insurance)(l_collateral))
       }; typedef eosio::multi_index<name("globals"), globalstats> globalsm;
          typedef eosio::singleton<name("globals"), globalstats> globals;

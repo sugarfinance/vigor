@@ -404,6 +404,18 @@
                     "type": "asset[]"
                 },
                 {
+                    "name": "l_lrtoken",
+                    "type": "asset[]"
+                },
+                {
+                    "name": "l_lrpayment",
+                    "type": "asset[]"
+                },
+                {
+                    "name": "l_lrname",
+                    "type": "name[]"
+                },
+                {
                     "name": "l_valueofcol",
                     "type": "float64"
                 },

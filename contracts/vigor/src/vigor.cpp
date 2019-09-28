@@ -498,10 +498,9 @@ void vigor::assetout(name usern, asset assetout, string memo)
     globalstats gstats = _globals.get();
 
     t_series stats(name("datapreprocx"),name(issuerfeed[assetout.symbol]).value);
-    auto itr = stats.find(1);
+    auto itrp = stats.find(1);
     double valueofassetout = (assetout.amount) / std::pow(10.0, assetout.symbol.precision()) * 
-                  ( (double)itr->price[0] / pricePrecision );
-
+                  ( (double)itrp->price[0] / pricePrecision );
     check( user.l_valueofcol + valueofassetout <= 1.11 * ( user.l_debt.amount / std::pow(10.0, 4) ),
          "Collateral must exceed borrowings by 1.11" );
 
@@ -528,6 +527,8 @@ void vigor::assetout(name usern, asset assetout, string memo)
 
     // locate assetout by searching all users that have assets in their l_insurance
     asset locatesremaining = assetout;
+    asset paymentasset = asset( 0, symbol("VIGOR", 4) );
+    auto &reinvestment = _user.get(name("reinvestment").value, "reinvestment user not found");
     for ( auto itr = _user.begin(); itr != _user.end(); ++itr ) {
       if (locatesremaining.amount==0)
         break;
@@ -542,39 +543,64 @@ void vigor::assetout(name usern, asset assetout, string memo)
         eosio::print( "itr->usern.value : ", itr->usern, "\n");
         eosio::print( "itr->l_insurance[(it-1) - itr->l_insurance.begin()]", itr->l_insurance[(it-1) - itr->l_insurance.begin()], "\n");
         if (found) {
-          amt.amount = std::min(itr->l_insurance[(it-1) - itr->l_insurance.begin()].amount, assetout.amount);
+          // move located asset from lender to borrower
+          // subtract located asset from lender
+          amt.amount = std::min(itr->l_insurance[(it-1) - itr->l_insurance.begin()].amount, locatesremaining.amount);
           locatesremaining -= amt;
           _user.modify(itr, _self, [&]( auto& modified_user) {
             modified_user.l_insurance[(it-1) - itr->l_insurance.begin()] -= amt;
             eosio::print( "lender l_insurance ", modified_user.l_insurance[(it-1) - itr->l_insurance.begin()] ," amt ", amt,"\n");
+            paymentasset.amount = std::pow(10.0, 4)*((amt.amount) / std::pow(10.0, amt.symbol.precision()) * ( (double)itrp->price[0] / pricePrecision ));
+            // give locate receipt to lender
+            modified_user.l_lrtoken.push_back(amt);
+            modified_user.l_lrpayment.push_back(paymentasset);
+            modified_user.l_lrname.push_back(usern);
           });
-        }
+          // add located asset to borrower, and subtract payment asset from borrower
           for ( auto it = user.l_collateral.begin(); it != user.l_collateral.end(); ++it ) {
             if (it->symbol == assetout.symbol) {
               _user.modify(user, _self, [&]( auto& modified_user) {
                 modified_user.l_collateral[it - user.l_collateral.begin()] += amt;
                 eosio::print( "borrower l_collateral incremented", modified_user.l_collateral[it - user.l_collateral.begin()]," amt ", amt,"\n");
+                modified_user.l_debt -= paymentasset;
               });
               amt.amount = 0;
               break;
             }
-        }
+          }
           if (amt.amount > 0) 
             _user.modify(user, _self, [&]( auto& modified_user) {
               eosio::print( "borrower l_collateral push_back ", amt,"\n");
               modified_user.l_collateral.push_back(amt);
+              modified_user.l_debt -= paymentasset;
+            });
+          // add payment asset to reinvestment account as an insurance asset to earn VIG returns by backing the stablecoin
+          for ( auto it = reinvestment.insurance.begin(); it != reinvestment.insurance.end(); ++it ) {
+            if (it->symbol == paymentasset.symbol) {
+              _user.modify(reinvestment, _self, [&]( auto& modified_user) {
+                modified_user.insurance[it - reinvestment.insurance.begin()] += paymentasset;
+              });
+              paymentasset.amount = 0;
+              break;
+            }
+          }
+          if (paymentasset.amount > 0) 
+            _user.modify(reinvestment, _self, [&]( auto& modified_user) {
+              modified_user.insurance.push_back(paymentasset);
             });
 
-        _user.modify(itr, _self, [&]( auto& modified_user) { //removed vector elements with zero amount
-          modified_user.l_insurance.erase(
-              std::remove_if(modified_user.l_insurance.begin(), modified_user.l_insurance.end(),
-                    [](const asset & o) { return o.amount==0; }),
-              modified_user.l_insurance.end());
-        });
+          _user.modify(itr, _self, [&]( auto& modified_user) { //removed vector elements with zero amount
+            modified_user.l_insurance.erase(
+                std::remove_if(modified_user.l_insurance.begin(), modified_user.l_insurance.end(),
+                      [](const asset & o) { return o.amount==0; }),
+                modified_user.l_insurance.end());
+          });
+        }
       }
     }
 
     found = false;
+    eosio::print( "locatesremaining ",locatesremaining, "\n");
     if (locatesremaining.amount==0){
       found = true;
       eosio::print( "transfer borrowed tokens to user ", "\n");

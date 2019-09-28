@@ -114,6 +114,7 @@ cleos --verbose system newaccount eosio testbrw11112 $OWNER_KEY --stake-cpu "50 
 cleos --verbose system newaccount eosio testins11111 $OWNER_KEY --stake-cpu "50 EOS" --stake-net "10 EOS" --buy-ram-kbytes 50000 --transfer
 cleos --verbose system newaccount eosio testins11112 $OWNER_KEY --stake-cpu "50 EOS" --stake-net "10 EOS" --buy-ram-kbytes 50000 --transfer
 cleos --verbose system newaccount eosio finalreserve $OWNER_KEY --stake-cpu "50 EOS" --stake-net "10 EOS" --buy-ram-kbytes 50000 --transfer
+cleos --verbose system newaccount eosio reinvestment $OWNER_KEY --stake-cpu "50 EOS" --stake-net "10 EOS" --buy-ram-kbytes 50000 --transfer
 
 cleos --verbose system newaccount eosio testbrw21111 $OWNER_KEY --stake-cpu "50 EOS" --stake-net "10 EOS" --buy-ram-kbytes 50000 --transfer
 cleos --verbose system newaccount eosio testbrw21112 $OWNER_KEY --stake-cpu "50 EOS" --stake-net "10 EOS" --buy-ram-kbytes 50000 --transfer
@@ -126,6 +127,7 @@ cleos --verbose push action eosio.token transfer '[ "eosio", "testbrw11112", "10
 cleos --verbose push action eosio.token transfer '[ "eosio", "testins11111", "1000000.0000 EOS", "m" ]' -p eosio
 cleos --verbose push action eosio.token transfer '[ "eosio", "testins11112", "1000000.0000 EOS", "m" ]' -p eosio
 cleos --verbose push action eosio.token transfer '[ "eosio", "finalreserve", "1000000.0000 EOS", "m" ]' -p eosio
+cleos --verbose push action eosio.token transfer '[ "eosio", "reinvestment", "1000000.0000 EOS", "m" ]' -p eosio
 
 cleos --verbose push action eosio.token transfer '[ "eosio", "testbrw21111", "1000000.0000 EOS", "m" ]' -p eosio
 cleos --verbose push action eosio.token transfer '[ "eosio", "testbrw21112", "1000000.0000 EOS", "m" ]' -p eosio
@@ -269,6 +271,8 @@ cleos --verbose push action eosio.token transfer '{"from":"finalreserve","to":"v
 cleos --verbose push action dummytokensx transfer '{"from":"finalreserve","to":"vigor1111111","quantity":"3000.000 IQ","memo":"insurance"}' -p finalreserve@active
 cleos --verbose push action vig111111111 transfer '{"from":"finalreserve","to":"vigor1111111","quantity":"3000.0000 VIG","memo":"insurance"}' -p finalreserve@active
 
+cleos --verbose push action eosio.token transfer '{"from":"reinvestment","to":"vigor1111111","quantity":"1.0000 EOS","memo":"insurance"}' -p reinvestment@active
+
 cleos --verbose push action eosio.token transfer '{"from":"testbrw11111","to":"vigor1111111","quantity":"5.0000 EOS","memo":"collateral"}' -p testbrw11111@active
 cleos --verbose push action dummytokensx transfer '{"from":"testbrw11111","to":"vigor1111111","quantity":"3000.000 IQ","memo":"collateral"}' -p testbrw11111@active
 cleos --verbose push action vig111111111 transfer '{"from":"testbrw11111","to":"vigor1111111","quantity":"3000.0000 VIG","memo":"collateral"}' -p testbrw11111@active
@@ -284,8 +288,8 @@ cleos --verbose push action dummytokensx transfer '{"from":"testbrw11111","to":"
 cleos --verbose push action eosio.token transfer '{"from":"testins11112","to":"vigor1111111","quantity":"12.0000 EOS","memo":"insurance"}' -p testins11112@active
 cleos --verbose push action dummytokensx transfer '{"from":"testins11112","to":"vigor1111111","quantity":"3000.000 IQ","memo":"insurance"}' -p testins11112@active
 
-cleos --verbose push action vigor1111111 assetout '{"usern":"testbrw11111","assetout":"24.0000 VIGOR","memo":"borrow"}' -p testbrw11111@active
-cleos --verbose push action vigor1111111 assetout '{"usern":"testbrw11112","assetout":"27.0000 VIGOR","memo":"borrow"}' -p testbrw11112@active
+cleos --verbose push action vigor1111111 assetout '{"usern":"testbrw11111","assetout":"17.0000 VIGOR","memo":"borrow"}' -p testbrw11111@active
+cleos --verbose push action vigor1111111 assetout '{"usern":"testbrw11112","assetout":"21.0000 VIGOR","memo":"borrow"}' -p testbrw11112@active
 
 #cleos --verbose push action vigor1111111 assetout '{"usern":"testbrw11111","assetout":"1.0000 EOS","memo":"collateral"}' -p testbrw11111@active
 #cleos --verbose push action vigor1111111 assetout '{"usern":"testbrw11112","assetout":"1.0000 EOS","memo":"collateral"}' -p testbrw11112@active
@@ -358,10 +362,10 @@ cleos --verbose push action vigor1111111 assetout '{"usern":"testins21112","asse
 # transfers the crypto out of the contract to the borrower external account
 # books the borrowed asset such as 0.5 EOS into the borrowers l_collateral vector
 # moves VIGOR to the rebate user as insurance to start earning VIG based on pcts, the VIG is paid to (and bailout recapped by) all lending pool participants according to l_pcts 
-# record entry into lender l_lent vector: amount, asset, strike, borrower name. ex: 0.5 EOS @ $2 borrowerA
+# record entry into lender l_locatereceipt vector: amount, asset, strike, borrower name. ex: 0.5000 EOS @ 2.0000 VIGOR borrowerA
 # when borrowerA paysback, then loop through lenders to look for and payoff the outstanding records
 # if insurer wants to leave then locate crypto in the lending pool, proportionally from each lender and move l_lent records to other lenders, lendereserve is last in line
-cleos --verbose push action vigor1111111 assetout '{"usern":"testbrw21111","assetout":"0.1000 EOS","memo":"borrow"}' -p testbrw21111@active
+cleos --verbose push action vigor1111111 assetout '{"usern":"testbrw21111","assetout":"0.01000 EOS","memo":"borrow"}' -p testbrw21111@active
 cleos --verbose push action vigor1111111 assetout '{"usern":"testbrw21112","assetout":"1.0000 EOS","memo":"borrow"}' -p testbrw21112@active
 
 #payback cryptos
