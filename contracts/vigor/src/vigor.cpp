@@ -257,7 +257,7 @@ void vigor::close( name owner, const symbol& symbol )
    acnts.erase( it );
 }
 
-// the precisionswap() method is called by this method
+// the asset comes in here with precision 4, unless its VIGOR
 void vigor::assetin( name   from, 
                          name   to,
                          asset  assetin,
@@ -369,8 +369,8 @@ void vigor::assetin( name   from,
 }
 
 
-// the precisionswap() function is called by this method
-// the asset comes in here with precision 4 
+
+// the asset comes in here with precision 10, unless its VIGOR 
 void vigor::assetout(name usern, asset assetout, string memo) 
 {
   require_auth(usern);
@@ -387,6 +387,19 @@ void vigor::assetout(name usern, asset assetout, string memo)
   globalstats gstats = _globals.get();
   bool found = false;
   
+  // getting the symbol of the assetin token
+  auto _sym = assetout.symbol.code();
+    
+  // --- create an asset with a precision of 4
+  asset amt4 = asset(0, symbol(_sym, 4));
+  
+  // check that the precision of assetout is precision 10
+  if(assetout.symbol.precision() == 10){
+    
+    // --- assign the asset amt4 the value ot truncated amt10
+    // --- this truncates asset10 to asset4
+    amt4.amount = int64_t(std::round(assetout.amount));
+  }
 
   if ( memo.c_str() == string("borrow") ) {
     check( assetout.symbol == symbol("VIGOR", 4), // VIGOR IS EXCHANGED HERE
@@ -414,37 +427,37 @@ void vigor::assetout(name usern, asset assetout, string memo)
       )).send();
   }
   else {
-    if ( memo.c_str() == string("insurance") ) {
+    if ( memo.c_str() == string("insurance") ) { // this relates to EOS
       for ( auto it = user.insurance.begin(); it < user.insurance.end(); ++it )
-        if (it->symbol == assetout.symbol) { // User insurance type found
-          check( it->amount >= assetout.amount,
+        if (it->symbol == amt4.symbol) { // User insurance type found
+          check( it->amount >= amt4.amount,
           "Insufficient insurance assets available." );
-          if ( it->amount - assetout.amount == 0 )
+          if ( it->amount - amt4.amount == 0 )
             _user.modify(user, _self, [&]( auto& modified_user) {
               modified_user.insurance.erase(it);
             });
           else 
             _user.modify(user, _self, [&]( auto& modified_user) {
-              modified_user.insurance[it - user.insurance.begin()] -= assetout;
+              modified_user.insurance[it - user.insurance.begin()] -= amt4;
             });
           found = true;
           break;
         }
       for ( auto it = gstats.insurance.begin(); it != gstats.insurance.end(); ++it )
-        if ( it->symbol == assetout.symbol ) {
-          gstats.insurance[it - gstats.insurance.begin()] -= assetout;
+        if ( it->symbol == amt4.symbol ) {
+          gstats.insurance[it - gstats.insurance.begin()] -= amt4;
           break;
         }
     }
     else {
       for ( auto it = user.collateral.begin(); it != user.collateral.end(); ++it )
-        if ( it->symbol == assetout.symbol ) { //User collateral type found
-          check( it->amount >= assetout.amount,
+        if ( it->symbol == amt4.symbol ) { //User collateral type found
+          check( it->amount >= amt4.amount,
           "Insufficient collateral assets available." );
           
-          double valueofasset = assetout.amount / std::pow(10.0, it->symbol.precision());
+          double valueofasset = amt4.amount / std::pow(10.0, it->symbol.precision());
 
-          t_series stats(name("datapreprocx"),name(issuerfeed[assetout.symbol]).value);
+          t_series stats(name("datapreprocx"),name(issuerfeed[amt4.symbol]).value);
           auto itr = stats.find(1);
           valueofasset *= (double)itr->price[0] / pricePrecision;
 
@@ -453,28 +466,28 @@ void vigor::assetout(name usern, asset assetout, string memo)
           check( valueofcol >= 1.01 * ( user.debt.amount / std::pow(10.0, 4) ),
           "Dollar value of collateral would become less than dollar value of debt" );
           
-          if ( it->amount - assetout.amount == 0 )
+          if ( it->amount - amt4.amount == 0 )
             _user.modify(user, _self, [&]( auto& modified_user) {
               modified_user.collateral.erase(it);
             });
           else
             _user.modify(user, _self, [&]( auto& modified_user) {
-              modified_user.collateral[it - user.collateral.begin()] -= assetout;
+              modified_user.collateral[it - user.collateral.begin()] -= amt4;
             });
           found = true;
           break;
         }
       for ( auto it = gstats.collateral.begin(); it != gstats.collateral.end(); ++it ) 
-        if ( it->symbol == assetout.symbol ) {
-          gstats.collateral[it - gstats.collateral.begin()] -= assetout;
+        if ( it->symbol == amt4.symbol ) {
+          gstats.collateral[it - gstats.collateral.begin()] -= amt4;
           break;
         }  
     }
     check(found, "asset not found in user");
     memo += std::string("assets to be transfered out for: ") + usern.to_string();
     action( permission_level{_self, name("active")},
-            issueracct[assetout.symbol], name("transfer"),
-            std::make_tuple(_self, usern, assetout, memo
+            issueracct[amt4.symbol], name("transfer"),
+            std::make_tuple(_self, usern, amt4, memo
           )).send(); 
   } 
   _globals.set(gstats, _self);
