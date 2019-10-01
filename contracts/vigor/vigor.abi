@@ -132,6 +132,34 @@
                     "type": "float64"
                 },
                 {
+                    "name": "svalueofcoleavg",
+                    "type": "float64"
+                },
+                {
+                    "name": "svalueofinsavg",
+                    "type": "float64"
+                },
+                {
+                    "name": "raroc",
+                    "type": "float64"
+                },
+                {
+                    "name": "premiums",
+                    "type": "float64"
+                },
+                {
+                    "name": "scr",
+                    "type": "float64"
+                },
+                {
+                    "name": "earnrate",
+                    "type": "float64"
+                },
+                {
+                    "name": "lastupdate",
+                    "type": "time_point"
+                },
+                {
                     "name": "totaldebt",
                     "type": "asset"
                 },
@@ -348,6 +376,10 @@
                     "type": "float64"
                 },
                 {
+                    "name": "earnrate",
+                    "type": "float64"
+                },
+                {
                     "name": "pcts",
                     "type": "float64"
                 },
@@ -369,6 +401,14 @@
                 },
                 {
                     "name": "svalueofcole",
+                    "type": "float64"
+                },
+                {
+                    "name": "svalueofcoleavg",
+                    "type": "float64"
+                },
+                {
+                    "name": "premiums",
                     "type": "float64"
                 },
                 {
@@ -425,6 +465,10 @@
                 },
                 {
                     "name": "l_tesprice",
+                    "type": "float64"
+                },
+                {
+                    "name": "l_earnrate",
                     "type": "float64"
                 },
                 {
