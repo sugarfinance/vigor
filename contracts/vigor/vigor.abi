@@ -180,10 +180,6 @@
                     "type": "float64"
                 },
                 {
-                    "name": "l_valueofins",
-                    "type": "float64"
-                },
-                {
                     "name": "l_scale",
                     "type": "float64"
                 },
@@ -202,10 +198,6 @@
                 {
                     "name": "l_totaldebt",
                     "type": "asset"
-                },
-                {
-                    "name": "l_insurance",
-                    "type": "asset[]"
                 },
                 {
                     "name": "l_collateral",
@@ -440,10 +432,6 @@
                     "type": "asset[]"
                 },
                 {
-                    "name": "l_insurance",
-                    "type": "asset[]"
-                },
-                {
                     "name": "l_lrtoken",
                     "type": "asset[]"
                 },
@@ -457,10 +445,6 @@
                 },
                 {
                     "name": "l_valueofcol",
-                    "type": "float64"
-                },
-                {
-                    "name": "l_valueofins",
                     "type": "float64"
                 },
                 {

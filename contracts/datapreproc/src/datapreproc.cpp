@@ -33,6 +33,19 @@ ACTION datapreproc::addpair(name newpair) {
             });
         };
    };
+   if ( newpair.value == name("vigorusd").value ) { //pair must exist in the oracle
+            pairtoproctb pairtoproc(_self,_self.value);
+            pairtoproc.emplace(_self, [&](auto& o) {
+            o.aname = newpair;
+            o.base_symbol = symbol("VIGOR",4);
+            o.base_type = asset_type::eosio_token;
+            o.base_contract = name("vigor1111111");
+            o.quote_symbol = symbol("USD",2);
+            o.quote_type = asset_type::fiat;
+            o.quote_contract = name("");
+            o.quoted_precision = 4;
+            });
+   };
 }
 
 //apply a shock to the prices for testing
@@ -110,8 +123,12 @@ void datapreproc::getprices(){
     
     for ( auto it = pairtoproc.begin(); it != pairtoproc.end(); it++ ) {
         auto itr = pairsname.find(it->aname.value);
-        if ( itr != pairsname.end() ) { //pair must exist in the oracle
-        uint64_t lastprice = get_last_price(it->aname, it->quoted_precision);
+        if ( itr != pairsname.end() || it->aname.value==name("vigorusd").value) { //pair must exist in the oracle
+        uint64_t lastprice;
+        if (it->aname.value==name("vigorusd").value)
+          lastprice = 1000000;
+        else
+          lastprice = get_last_price(it->aname, it->quoted_precision);
         eosio::print("pair to process: ", it->aname, "\n");
         store_last_price(it->aname, one_minute, lastprice);
         store_last_price(it->aname, five_minute, lastprice);
@@ -125,8 +142,7 @@ void datapreproc::getprices(){
     
     for ( auto it = pairtoproc.begin(); it != pairtoproc.end(); it++ ) {
         auto itr = pairsname.find(it->aname.value);
-        if ( itr != pairsname.end() ) { //pair must exist in the oracle
-        uint64_t lastprice = get_last_price(it->aname, it->quoted_precision);
+        if ( itr != pairsname.end() || it->aname.value==name("vigorusd").value) { //pair must exist in the oracle
         calcstats(it->aname, one_minute);
         calcstats(it->aname, five_minute);
         calcstats(it->aname, fifteen_minute);
@@ -137,7 +153,7 @@ void datapreproc::getprices(){
     }
     for ( auto it = pairtoproc.begin(); it != pairtoproc.end(); it++ ) {
         auto itr = pairsname.find(it->aname.value);
-        if ( itr != pairsname.end() ) { //pair must exist in the oracle
+        if ( itr != pairsname.end() || it->aname.value==name("vigorusd").value) { //pair must exist in the oracle
         uint64_t lastprice = get_last_price(it->aname, it->quoted_precision);
         averageVol(it->aname);
         averageCor(it->aname);
@@ -165,19 +181,24 @@ void datapreproc::averageVol(name aname){
     uint64_t vol = (uint64_t)(0.1*(double)vol1+0.1*(double)vol2+0.1*(double)vol3+0.1*(double)vol4+0.1*(double)vol5+0.5*(double)vol6);
           time_point ctime = current_time_point();
           shocktable shockt = _shocks.get();
+          double shock = shockt.shock;
+          if (aname.value == name("vigorusd").value) {
+            vol = defaultVol/1000;
+            shock = 1.0;
+          }
           itr = store.find(1);
           if (itr != store.end()){
             store.modify( itr, _self, [&]( auto& s ) {
             s.vol = vol;
             s.timestamp = ctime;
-            s.price[0]=(uint64_t)((((double)(lastprice/pricePrecision))*shockt.shock)*pricePrecision);
+            s.price[0]=(uint64_t)((((double)(lastprice/pricePrecision))*shock)*pricePrecision);
             });
           } else {
             store.emplace(_self, [&](auto& s) {
               s.freq=1;
               s.vol = vol;
               s.timestamp = ctime;
-              s.price.push_front((uint64_t)((((double)(lastprice/pricePrecision))*shockt.shock)*pricePrecision));
+              s.price.push_front((uint64_t)((((double)(lastprice/pricePrecision))*shock)*pricePrecision));
             });
           };
   }
@@ -206,6 +227,8 @@ void datapreproc::averageCor(name aname){
       int64_t c6 = m6[it.first];
       int64_t corr = (int64_t)(0.1*(double)c1+0.1*(double)c2+0.1*(double)c3+0.1*(double)c4+0.1*(double)c5+0.5*(double)c6);
       time_point ctime = current_time_point();
+      if (aname.value == name("vigorusd").value)
+        corr = 0.0;
       auto itr = store.find(1);
           if (itr != store.end()){
             store.modify( itr, _self, [&]( auto& s ) {
@@ -275,11 +298,15 @@ int64_t datapreproc::corrCalc(std::deque<int64_t> X, std::deque<int64_t> Y, uint
         sum_XY = sum_XY + x * y; 
         squareSum_X = squareSum_X + x * x; 
         squareSum_Y = squareSum_Y + y * y; 
-    } 
-    int64_t corr = (int64_t)(returnsPrecision)*(n * sum_XY - sum_X * sum_Y)  
-                  / sqrt((n * squareSum_X - sum_X * sum_X)  
+    }
+    int64_t corr;
+    if ((n * squareSum_X - sum_X * sum_X) * (n * squareSum_Y - sum_Y * sum_Y) == 0.0 )
+      corr = defaultCorr;
+    else
+      corr = (int64_t)(returnsPrecision)*(n * sum_XY - sum_X * sum_Y)
+                  / sqrt((n * squareSum_X - sum_X * sum_X)
                       * (n * squareSum_Y - sum_Y * sum_Y)); 
-    return corr; 
+    return corr;
 } 
 
 double datapreproc::volCalc(std::deque<int64_t> returns, uint64_t n) {
@@ -293,8 +320,12 @@ double datapreproc::volCalc(std::deque<int64_t> returns, uint64_t n) {
          
           variance += (diff * diff) / ((i + 1) *i);
      }
-     //eosio::print("vol: ", (uint64_t)(volPrecision*sqrt(variance / (n - 1))), "\n");
-     return (returnsPrecision*sqrt(variance / (n - 1)));
+     double vol;
+     if ((variance / (n - 1)) == 0.0)
+        vol = defaultVol;
+     else
+        vol = (double)(returnsPrecision*sqrt(variance / (n - 1)));
+     return vol;
 }
 
   
