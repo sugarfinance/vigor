@@ -8,6 +8,10 @@
 #include <string>
 #include <cmath>
 
+#include "../utils/rng.hpp"
+#include "../utils/swap_precision.hpp"
+#include "../utils/timer.hpp"
+
 using namespace std;
 using namespace eosio;
 
