@@ -99,7 +99,7 @@ CONTRACT vigor : public eosio::contract {
          double earnrate = 0.0; // annualized rate of return on total portfolio of insurance crypto assets
          time_point lastupdate = time_point(microseconds(0));;
 
-         asset totaldebt = asset( 0, symbol("VIGOR", 4) ); // VIGOR
+         asset totaldebt = asset( 0, symbol("VIGOR", 4) ); // VIGOR  // CONVERT TO PRECISION 10!!
          
          vector<asset> insurance;
          vector<asset> collateral;
@@ -217,6 +217,7 @@ CONTRACT vigor : public eosio::contract {
                      name   to,
                      asset  assetin,
                      string memo);
+                     
       ACTION assetout(name usern, asset assetout, string memo);
 
       ACTION create( name   issuer,
@@ -251,3 +252,4 @@ CONTRACT vigor : public eosio::contract {
          return ac.balance;
       }
 };
+
