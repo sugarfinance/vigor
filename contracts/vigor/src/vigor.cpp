@@ -1,4 +1,6 @@
 #include <vigor.hpp>
+
+//#include <vigor.hpp>
 #include <boost/math/special_functions/erf.hpp>
 using boost::math::erfc_inv;
 
@@ -193,66 +195,75 @@ void vigor::transfer(name    from,
     sub_balance( from, quantity );
     add_balance( to, quantity, payer );
 
+/*
     if (to == _self && quantity.symbol == symbol("VIGOR", 4) && memo.c_str() == string("collateral")) {
       // Transfer stablecoin into user for use as collateral to borrow crypto
 
-    auto itr = _user.find(from.value);
-    if ( itr == _user.end() ) {
-      itr = _user.emplace(_self, [&](auto& new_user) {
-        new_user.usern = from;
-        new_user.l_debt = quantity; 
-      });
-    } else {
-      auto &user = *itr;
-      _user.modify(user, _self, [&]( auto& modified_user) {
-        modified_user.l_debt += quantity;
-      });
-    }
-      globalstats gstats;
-      if (_globals.exists())
-        gstats = _globals.get();
-      gstats.l_totaldebt += quantity;
-      _globals.set(gstats, _self);
-    
-      doupdate();
+      auto itr = _user.find(from.value);
+      if ( itr == _user.end() ) {
+        itr = _user.emplace(_self, [&](auto& new_user) {
+          new_user.usern = from;
+          new_user.l_debt = quantity; 
+        });
+      } else {
+        auto &user = *itr;
+        _user.modify(user, _self, [&]( auto& modified_user) {
+          modified_user.l_debt += quantity;
+        });
+      }
+        globalstats gstats;
+        if (_globals.exists())
+          gstats = _globals.get();
+        gstats.l_totaldebt += quantity;
+        _globals.set(gstats, _self);
+      
+        doupdate();
 
     } else if (to == _self && quantity.symbol == symbol("VIGOR", 4) && memo.c_str() == string("insurance")) {
       // Transfer stablecoin into user for use as insurance
 
-    auto itr = _user.find(from.value);
-    if ( itr == _user.end() ) {
-      itr = _user.emplace(_self, [&](auto& new_user) {
-        new_user.usern = from;
-        new_user.lastupdate = current_time_point();
+      auto itr = _user.find(from.value);
+      if ( itr == _user.end() ) {
+        itr = _user.emplace(_self, [&](auto& new_user) {
+          new_user.usern = from;
+          new_user.lastupdate = current_time_point();
+        });
+      }
+  
+      auto &user = *itr;
+      bool found = false;
+  
+      globalstats gstats;
+      
+      if (_globals.exists())
+        gstats = _globals.get();
+  
+      auto it = user.insurance.begin();
+      
+      while ( !found && it++ != user.insurance.end() )
+        found = (it-1)->symbol == quantity.symbol;
+        
+      _user.modify(user, _self, [&]( auto& modified_user) {
+        if (!found)
+          modified_user.insurance.push_back(quantity);
+        else
+          modified_user.insurance[(it-1) - user.insurance.begin()] += quantity;
       });
-    }
-
-    auto &user = *itr;
-    bool found = false;
-
-    globalstats gstats;
-    if (_globals.exists())
-      gstats = _globals.get();
-
-    auto it = user.insurance.begin();
-    while ( !found && it++ != user.insurance.end() )
-      found = (it-1)->symbol == quantity.symbol;
-    _user.modify(user, _self, [&]( auto& modified_user) {
-      if (!found)
-        modified_user.insurance.push_back(quantity);
+      
+      found = false;
+      
+      it = gstats.insurance.begin();
+      
+      while ( !found && it++ != gstats.insurance.end() )
+        found = (it-1)->symbol == quantity.symbol;
+        
+      if ( !found )
+        gstats.insurance.push_back(quantity);
       else
-        modified_user.insurance[(it-1) - user.insurance.begin()] += quantity;
-    }); found = false;
-    it = gstats.insurance.begin();
-    while ( !found && it++ != gstats.insurance.end() )
-      found = (it-1)->symbol == quantity.symbol;
-    if ( !found )
-      gstats.insurance.push_back(quantity);
-    else
-      gstats.insurance[(it-1) - gstats.insurance.begin()] += quantity;
-
-    _globals.set(gstats, _self);
-    doupdate();
+        gstats.insurance[(it-1) - gstats.insurance.begin()] += quantity;
+  
+      _globals.set(gstats, _self);
+      doupdate();
 
     } else if (to == _self && quantity.symbol == symbol("VIGOR", 4) && memo.c_str() == string("payoff debt")) {
       // Payoff debt: Transfer stablecoin into user and retire
@@ -279,7 +290,107 @@ void vigor::transfer(name    from,
       
       doupdate();
     }
+*/
 
+    if(to == _self && quantity.symbol == symbol("VIGOR", 4)){
+        
+
+        if(memo.c_str() == string("collateral")){
+               // Transfer stablecoin into user for use as collateral to borrow crypto
+
+                auto itr = _user.find(from.value);
+                if ( itr == _user.end() ) {
+                  itr = _user.emplace(_self, [&](auto& new_user) {
+                    new_user.usern = from;
+                    new_user.l_debt = quantity; 
+                  });
+                } else {
+                  auto &user = *itr;
+                  _user.modify(user, _self, [&]( auto& modified_user) {
+                    modified_user.l_debt += quantity;
+                  });
+                }
+                  globalstats gstats;
+                  if (_globals.exists())
+                    gstats = _globals.get();
+                  gstats.l_totaldebt += quantity;
+                  _globals.set(gstats, _self);
+                
+                  doupdate();
+          
+        }else if(memo.c_str() == string("insurance")){
+            // Transfer stablecoin into user for use as insurance
+
+                auto itr = _user.find(from.value);
+                if ( itr == _user.end() ) {
+                  itr = _user.emplace(_self, [&](auto& new_user) {
+                    new_user.usern = from;
+                    new_user.lastupdate = current_time_point();
+                  });
+                }
+            
+                auto &user = *itr;
+                bool found = false;
+            
+                globalstats gstats;
+                
+                if (_globals.exists())
+                  gstats = _globals.get();
+            
+                auto it = user.insurance.begin();
+                
+                while ( !found && it++ != user.insurance.end() )
+                  found = (it-1)->symbol == quantity.symbol;
+                  
+                _user.modify(user, _self, [&]( auto& modified_user) {
+                  if (!found)
+                    modified_user.insurance.push_back(quantity);
+                  else
+                    modified_user.insurance[(it-1) - user.insurance.begin()] += quantity;
+                });
+                
+                found = false;
+                
+                it = gstats.insurance.begin();
+                
+                while ( !found && it++ != gstats.insurance.end() )
+                  found = (it-1)->symbol == quantity.symbol;
+                  
+                if ( !found )
+                  gstats.insurance.push_back(quantity);
+                else
+                  gstats.insurance[(it-1) - gstats.insurance.begin()] += quantity;
+            
+                _globals.set(gstats, _self);
+                doupdate();
+          
+          
+        }else if(memo.c_str() == string("payoff debt")){
+            // Payoff debt: Transfer stablecoin into user and retire
+            auto &user = _user.get(from.value,"User not found15");
+            
+            check(user.debt.amount >= quantity.amount, "Payment too high");
+            
+            globalstats gstats;
+            if (_globals.exists())
+              gstats = _globals.get();
+      
+            _user.modify(user, _self, [&]( auto& modified_user) {
+              modified_user.debt -= quantity;
+            });
+            
+            gstats.totaldebt -= quantity;
+            
+            _globals.set(gstats, _self);
+      
+            //clear the debt from circulating supply
+            action(permission_level{_self, name("active")}, _self, 
+              name("retire"), std::make_tuple(quantity, memo)
+            ).send();
+            
+            doupdate();
+        }
+    }
 
 }
 
@@ -336,6 +447,7 @@ void vigor::close( name owner, const symbol& symbol )
    acnts.erase( it );
 }
 
+
 void vigor::assetin( name   from, // handler for notification of transfer action
                          name   to,
                          asset  assetin,
@@ -346,7 +458,7 @@ void vigor::assetin( name   from, // handler for notification of transfer action
 
   require_auth( from );
   check( from != to, "cannot transfer to self" );
-  require_auth( from );
+  //require_auth( from );
   check(assetin.symbol.is_valid(), "Symbol must be valid.");
   check( is_account( to ), "to account does not exist");
   check(issueracct.find(assetin.symbol) != issueracct.end(),"assetin symbol precision mismatch7");
@@ -362,10 +474,12 @@ void vigor::assetin( name   from, // handler for notification of transfer action
   // create new users
   auto itr = _user.find(from.value);
   if ( itr == _user.end() ) {
+    
     itr = _user.emplace(_self, [&](auto& new_user) {
       new_user.usern = from;
       new_user.lastupdate = current_time_point();
     });
+    
     action( permission_level{ _self, name("active") },
       _self, name("open"), std::make_tuple(
         from, symbol("VIGOR", 4), _self
