@@ -1,6 +1,6 @@
 #include <vigor.hpp>
 
-//#include <vigor.hpp>
+
 #include <boost/math/special_functions/erf.hpp>
 using boost::math::erfc_inv;
 
