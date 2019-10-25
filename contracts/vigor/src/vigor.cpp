@@ -1,6 +1,4 @@
 #include <vigor.hpp>
-#include <boost/math/special_functions/erf.hpp>
-using boost::math::erfc_inv;
 
 //#include <vigor.hpp>
 #include <boost/math/special_functions/erf.hpp>
@@ -197,192 +195,32 @@ void vigor::transfer(name    from,
     sub_balance( from, quantity );
     add_balance( to, quantity, payer );
 
-<<<<<<< HEAD
-/*
-    if (to == _self && quantity.symbol == symbol("VIGOR", 4) && memo.c_str() == string("collateral")) {
-      // Transfer stablecoin into user for use as collateral to borrow crypto
-
-      auto itr = _user.find(from.value);
-      if ( itr == _user.end() ) {
-        itr = _user.emplace(_self, [&](auto& new_user) {
-          new_user.usern = from;
-          new_user.l_debt = quantity; 
-        });
-      } else {
-        auto &user = *itr;
-        _user.modify(user, _self, [&]( auto& modified_user) {
-          modified_user.l_debt += quantity;
-        });
-      }
-        globalstats gstats;
-        if (_globals.exists())
-          gstats = _globals.get();
-        gstats.l_totaldebt += quantity;
-        _globals.set(gstats, _self);
-      
-        doupdate();
-
-    } else if (to == _self && quantity.symbol == symbol("VIGOR", 4) && memo.c_str() == string("insurance")) {
-      // Transfer stablecoin into user for use as insurance
-
-      auto itr = _user.find(from.value);
-      if ( itr == _user.end() ) {
-        itr = _user.emplace(_self, [&](auto& new_user) {
-          new_user.usern = from;
-          new_user.lastupdate = current_time_point();
-        });
-      }
-  
-      auto &user = *itr;
-      bool found = false;
-  
-      globalstats gstats;
-      
-      if (_globals.exists())
-        gstats = _globals.get();
-  
-      auto it = user.insurance.begin();
-      
-      while ( !found && it++ != user.insurance.end() )
-        found = (it-1)->symbol == quantity.symbol;
-        
-      _user.modify(user, _self, [&]( auto& modified_user) {
-        if (!found)
-          modified_user.insurance.push_back(quantity);
-        else
-          modified_user.insurance[(it-1) - user.insurance.begin()] += quantity;
-      });
-      
-      found = false;
-      
-      it = gstats.insurance.begin();
-      
-      while ( !found && it++ != gstats.insurance.end() )
-        found = (it-1)->symbol == quantity.symbol;
-        
-      if ( !found )
-        gstats.insurance.push_back(quantity);
-      else
-        gstats.insurance[(it-1) - gstats.insurance.begin()] += quantity;
-  
-      _globals.set(gstats, _self);
-      doupdate();
-
-=======
-    if (to == _self && quantity.symbol == symbol("VIGOR", 4) && memo.c_str() == string("collateral")) {
-      // Transfer stablecoin into user for use as collateral to borrow crypto
-
-    auto itr = _user.find(from.value);
-    if ( itr == _user.end() ) {
-      itr = _user.emplace(_self, [&](auto& new_user) {
-        new_user.usern = from;
-        new_user.l_debt = quantity; 
-      });
-    } else {
-      auto &user = *itr;
-      _user.modify(user, _self, [&]( auto& modified_user) {
-        modified_user.l_debt += quantity;
-      });
-    }
-      globalstats gstats;
-      if (_globals.exists())
-        gstats = _globals.get();
-      gstats.l_totaldebt += quantity;
-      _globals.set(gstats, _self);
-    
-      doupdate();
-
-    } else if (to == _self && quantity.symbol == symbol("VIGOR", 4) && memo.c_str() == string("insurance")) {
-      // Transfer stablecoin into user for use as insurance
-
-    auto itr = _user.find(from.value);
-    if ( itr == _user.end() ) {
-      itr = _user.emplace(_self, [&](auto& new_user) {
-        new_user.usern = from;
-        new_user.lastupdate = current_time_point();
-      });
-    }
-
-    auto &user = *itr;
-    bool found = false;
-
-    globalstats gstats;
-    if (_globals.exists())
-      gstats = _globals.get();
-
-    auto it = user.insurance.begin();
-    while ( !found && it++ != user.insurance.end() )
-      found = (it-1)->symbol == quantity.symbol;
-    _user.modify(user, _self, [&]( auto& modified_user) {
-      if (!found)
-        modified_user.insurance.push_back(quantity);
-      else
-        modified_user.insurance[(it-1) - user.insurance.begin()] += quantity;
-    }); found = false;
-    it = gstats.insurance.begin();
-    while ( !found && it++ != gstats.insurance.end() )
-      found = (it-1)->symbol == quantity.symbol;
-    if ( !found )
-      gstats.insurance.push_back(quantity);
-    else
-      gstats.insurance[(it-1) - gstats.insurance.begin()] += quantity;
-
-    _globals.set(gstats, _self);
-    doupdate();
-
->>>>>>> 3bd2a3ec5be68fcdfb6b72510c04812ae23672c3
-    } else if (to == _self && quantity.symbol == symbol("VIGOR", 4) && memo.c_str() == string("payoff debt")) {
-      // Payoff debt: Transfer stablecoin into user and retire
-      auto &user = _user.get(from.value,"User not found15");
-      
-      check(user.debt.amount >= quantity.amount, "Payment too high");
-      
-      globalstats gstats;
-      if (_globals.exists())
-        gstats = _globals.get();
-
-      _user.modify(user, _self, [&]( auto& modified_user) {
-        modified_user.debt -= quantity;
-      });
-      
-      gstats.totaldebt -= quantity;
-      
-      _globals.set(gstats, _self);
-
-      //clear the debt from circulating supply
-      action(permission_level{_self, name("active")}, _self, 
-        name("retire"), std::make_tuple(quantity, memo)
-      ).send();
-      
-      doupdate();
-    }
-<<<<<<< HEAD
-*/
-
     if(to == _self && quantity.symbol == symbol("VIGOR", 4)){
-        
+
+        auto amt10 = swap_precision::swapprecision(quantity);
 
         if(memo.c_str() == string("collateral")){
-               // Transfer stablecoin into user for use as collateral to borrow crypto
+                // Transfer stablecoin into user for use as collateral to borrow crypto
 
                 auto itr = _user.find(from.value);
                 if ( itr == _user.end() ) {
                   itr = _user.emplace(_self, [&](auto& new_user) {
                     new_user.usern = from;
-                    new_user.l_debt = quantity; 
+                    new_user.l_debt = amt10;
                   });
                 } else {
                   auto &user = *itr;
                   _user.modify(user, _self, [&]( auto& modified_user) {
-                    modified_user.l_debt += quantity;
+                    modified_user.l_debt =amt10;
                   });
                 }
+
                   globalstats gstats;
+
                   if (_globals.exists())
                     gstats = _globals.get();
-                  gstats.l_totaldebt += quantity;
+                  gstats.l_totaldebt += amt10;
                   _globals.set(gstats, _self);
-                
                   doupdate();
           
         }else if(memo.c_str() == string("insurance")){
@@ -395,58 +233,58 @@ void vigor::transfer(name    from,
                     new_user.lastupdate = current_time_point();
                   });
                 }
-            
+
                 auto &user = *itr;
                 bool found = false;
-            
+  
                 globalstats gstats;
                 
                 if (_globals.exists())
                   gstats = _globals.get();
-            
+
                 auto it = user.insurance.begin();
-                
+
                 while ( !found && it++ != user.insurance.end() )
-                  found = (it-1)->symbol == quantity.symbol;
-                  
+                  found = (it-1)->symbol == amt10.symbol;
+
                 _user.modify(user, _self, [&]( auto& modified_user) {
                   if (!found)
-                    modified_user.insurance.push_back(quantity);
+                    modified_user.insurance.push_back(amt10);
                   else
-                    modified_user.insurance[(it-1) - user.insurance.begin()] += quantity;
+                    modified_user.insurance[(it-1) - user.insurance.begin()] += amt10;
                 });
                 
                 found = false;
                 
                 it = gstats.insurance.begin();
-                
+
                 while ( !found && it++ != gstats.insurance.end() )
-                  found = (it-1)->symbol == quantity.symbol;
-                  
+                  found = (it-1)->symbol == amt10.symbol;
+
                 if ( !found )
-                  gstats.insurance.push_back(quantity);
+                  gstats.insurance.push_back(amt10);
                 else
-                  gstats.insurance[(it-1) - gstats.insurance.begin()] += quantity;
-            
+                gstats.insurance[(it-1) - gstats.insurance.begin()] += amt10;
+
                 _globals.set(gstats, _self);
                 doupdate();
           
           
         }else if(memo.c_str() == string("payoff debt")){
             // Payoff debt: Transfer stablecoin into user and retire
-            auto &user = _user.get(from.value,"User not found15");
-            
-            check(user.debt.amount >= quantity.amount, "Payment too high");
+            auto &user = _user.get(from.value,"User not found");
+
+            check(user.debt.amount >= amt10.amount, "Payment too high");
             
             globalstats gstats;
             if (_globals.exists())
               gstats = _globals.get();
       
             _user.modify(user, _self, [&]( auto& modified_user) {
-              modified_user.debt -= quantity;
+              modified_user.debt -= amt10;
             });
             
-            gstats.totaldebt -= quantity;
+            gstats.totaldebt -= amt10;
             
             _globals.set(gstats, _self);
       
@@ -458,9 +296,6 @@ void vigor::transfer(name    from,
             doupdate();
         }
     }
-=======
-
->>>>>>> 3bd2a3ec5be68fcdfb6b72510c04812ae23672c3
 
 }
 
@@ -517,10 +352,7 @@ void vigor::close( name owner, const symbol& symbol )
    acnts.erase( it );
 }
 
-<<<<<<< HEAD
 
-=======
->>>>>>> 3bd2a3ec5be68fcdfb6b72510c04812ae23672c3
 void vigor::assetin( name   from, // handler for notification of transfer action
                          name   to,
                          asset  assetin,
@@ -531,11 +363,7 @@ void vigor::assetin( name   from, // handler for notification of transfer action
 
   require_auth( from );
   check( from != to, "cannot transfer to self" );
-<<<<<<< HEAD
   //require_auth( from );
-=======
-  require_auth( from );
->>>>>>> 3bd2a3ec5be68fcdfb6b72510c04812ae23672c3
   check(assetin.symbol.is_valid(), "Symbol must be valid.");
   check( is_account( to ), "to account does not exist");
   check(issueracct.find(assetin.symbol) != issueracct.end(),"assetin symbol precision mismatch7");
@@ -895,7 +723,6 @@ void vigor::assetout(name usern, asset assetout, string memo)
           break;
         }
       _globals.set(gstats, _self);
-<<<<<<< HEAD
     }
     else if ( memo.c_str() == string("borrow") && assetout.symbol != symbol("VIGOR", 4) ) {
       // borrow tokens against stablecoin as collateral
@@ -1081,193 +908,6 @@ void vigor::assetout(name usern, asset assetout, string memo)
     //TODO
 
     }
-=======
-    }
-    else if ( memo.c_str() == string("borrow") && assetout.symbol != symbol("VIGOR", 4) ) {
-      // borrow tokens against stablecoin as collateral
-    
-    auto &user = _user.get(usern.value, "User not found");
-    globalstats gstats = _globals.get();
-
-    t_series stats(name("datapreprocx"),name(issuerfeed[assetout.symbol]).value);
-    auto itrp = stats.find(1);
-    check(itrp != stats.end(),"asset not found in the datapreprocessor, or precision invalid");
-    double valueofassetout = (assetout.amount) / std::pow(10.0, assetout.symbol.precision()) * 
-                  ( (double)itrp->price[0] / pricePrecision );
-
-    eosio::print( "valueofassetout : ", valueofassetout, "\n");
-    eosio::print( "user.l_valueofcol : ", user.l_valueofcol, "\n");
-    eosio::print( "1.11 * ( user.l_debt.amount / std::pow(10.0, 4) ) : ", ( user.l_debt.amount / std::pow(10.0, 4) ) / 1.11, "\n");
-
-    check( user.l_valueofcol + valueofassetout <= ( user.l_debt.amount / std::pow(10.0, 4) ) / 1.11,
-         "Collateral must exceed borrowings by 1.111" );
-
-    // can't borrow from the finalreserve for new borrows, so remove it from gstats.insurance
-    auto &finalreserve = _user.get(name("finalreserve").value, "finalreserve not found");
-    auto it = finalreserve.insurance.begin();
-    asset lr = assetout;
-    while ( !found && it++ != finalreserve.insurance.end() )
-       found = (it-1)->symbol == assetout.symbol;
-    if (found)
-      lr.amount = (it-1)->amount;
-    else
-      lr.amount = 0;
-
-    // can't borrow from the reinvestment for new borrows, so remove it from gstats.insurance
-    found = false;
-    auto &reinvestment = _user.get(name("reinvestment").value, "reinvestment not found");
-    it = reinvestment.insurance.begin();
-    asset ri = assetout;
-    while ( !found && it++ != reinvestment.insurance.end() )
-       found = (it-1)->symbol == assetout.symbol;
-    if (found)
-      ri.amount = (it-1)->amount;
-    else
-      ri.amount = 0;
-
-    found = false;
-    bool locatesavailable = false;
-    it = gstats.insurance.begin();
-    asset amt = assetout;
-    while ( !found && it++ != gstats.insurance.end() )
-      found = (it-1)->symbol == assetout.symbol;
-    if (found)
-      if (gstats.insurance[(it-1) - gstats.insurance.begin()].amount - lr.amount -ri.amount >= assetout.amount)
-        locatesavailable = true;
-    check(locatesavailable,"Can't locate enough to borrow");
-
-    // locate assetout by searching all users that have assets in their insurance
-    asset locatesremaining = assetout;
-    asset paymentasset = asset( 0, symbol("VIGOR", 4) );
-    for ( auto itr = _user.begin(); itr != _user.end(); ++itr ) {
-      if (locatesremaining.amount==0)
-        break;
-      if (itr->usern.value == name("finalreserve").value || itr->usern.value == name("reinvestment").value)
-        continue;
-      if (itr->valueofins>0.0) {
-        auto it = itr->insurance.begin();
-        found = false;
-        while ( !found && it++ != itr->insurance.end() )
-          found = (it-1)->symbol == assetout.symbol;
-        eosio::print( "itr->usern.value : ", itr->usern, "\n");
-        eosio::print( "itr->insurance[(it-1) - itr->insurance.begin()]", itr->insurance[(it-1) - itr->insurance.begin()], "\n");
-        if (found) {
-          // move located asset from lender to borrower
-          // subtract located asset from lender insurance
-          amt.amount = std::min(itr->insurance[(it-1) - itr->insurance.begin()].amount, locatesremaining.amount);
-          locatesremaining -= amt;
-          _user.modify(itr, _self, [&]( auto& modified_user) {
-            modified_user.insurance[(it-1) - itr->insurance.begin()] -= amt;
-            eosio::print( "lender insurance ", modified_user.insurance[(it-1) - itr->insurance.begin()] ," amt ", amt,"\n");
-            paymentasset.amount = std::pow(10.0, 4)*((amt.amount) / std::pow(10.0, amt.symbol.precision()) * ( (double)itrp->price[0] / pricePrecision ));
-            // give locate receipt to lender
-            modified_user.l_lrtoken.push_back(amt);
-            modified_user.l_lrpayment.push_back(paymentasset);
-            modified_user.l_lrname.push_back(usern);
-          });
-          // subtract located asset from global insurance
-          for ( auto itg = gstats.insurance.begin(); itg != gstats.insurance.end(); ++itg )
-            if ( itg->symbol == assetout.symbol ) {
-              if ( itg->amount - amt.amount == 0 )
-                gstats.insurance.erase(itg);
-              else
-                gstats.insurance[itg - gstats.insurance.begin()] -= amt;
-            }          
-          //add located asset to global l_collateral
-          found = false;
-          auto itg = gstats.l_collateral.begin();
-          while ( !found && itg++ != gstats.l_collateral.end() )
-            found = (itg-1)->symbol == amt.symbol;
-          eosio::print( "found", found,"\n");
-          if ( !found ) {
-            gstats.l_collateral.push_back(amt);
-            eosio::print( "push_back", amt,"\n");
-          }
-          else {
-            gstats.l_collateral[(itg-1) - gstats.l_collateral.begin()] += amt;
-            eosio::print( "gstats.l_collateral[(itg-1) - gstats.l_collateral.begin()]", gstats.l_collateral[(itg-1) - gstats.l_collateral.begin()],"\n");
-          }
-          // add located asset to borrower l_collateral, and subtract payment asset from borrower
-          for ( auto it = user.l_collateral.begin(); it != user.l_collateral.end(); ++it ) {
-            if (it->symbol == assetout.symbol) {
-              _user.modify(user, _self, [&]( auto& modified_user) {
-                modified_user.l_collateral[it - user.l_collateral.begin()] += amt; //previous borrowings of type assetout exist already, so add to it
-                eosio::print( "borrower l_collateral incremented", modified_user.l_collateral[it - user.l_collateral.begin()]," amt ", amt,"\n");
-                //modified_user.l_debt -= paymentasset;
-              });
-              amt.amount = 0;
-              break;
-            }
-          }
-          if (amt.amount > 0) 
-            _user.modify(user, _self, [&]( auto& modified_user) {
-              eosio::print( "borrower l_collateral push_back ", amt,"\n");
-              modified_user.l_collateral.push_back(amt); //previous borrowings of type assetout do not exist, so create one
-              //modified_user.l_debt -= paymentasset;
-            });
-          // add payment asset to reinvestment account as an insurance asset to earn VIG
-          eosio::print( "add payment asset to reinvestment account paymentasset ", paymentasset,"\n");
-          found = false;
-          auto it = reinvestment.insurance.begin();
-          while ( !found && it++ != reinvestment.insurance.end() )
-            found = (it-1)->symbol == paymentasset.symbol;
-          _user.modify(reinvestment, _self, [&]( auto& modified_user) {
-            if (!found)
-              modified_user.insurance.push_back(paymentasset);
-            else
-              modified_user.insurance[(it-1) - reinvestment.insurance.begin()] += paymentasset;
-          }); found = false;
-          it = gstats.insurance.begin();
-          while ( !found && it++ != gstats.insurance.end() )
-            found = (it-1)->symbol == paymentasset.symbol;
-          eosio::print( "found", found,"\n");
-          if ( !found ) {
-            gstats.insurance.push_back(paymentasset);
-            eosio::print( "push_back", paymentasset,"\n");
-          }
-          else {
-            gstats.insurance[(it-1) - gstats.insurance.begin()] += paymentasset;
-            eosio::print( "gstats.insurance[(it-1) - gstats.insurance.begin()]", gstats.insurance[(it-1) - gstats.insurance.begin()],"\n");
-          }
-          _globals.set(gstats, _self);
-
-          _user.modify(itr, _self, [&]( auto& modified_user) { //removed vector elements with zero amount
-            modified_user.insurance.erase(
-                std::remove_if(modified_user.insurance.begin(), modified_user.insurance.end(),
-                      [](const asset & o) { return o.amount==0; }),
-                modified_user.insurance.end());
-          });
-        }
-      }
-    }
-
-    check(locatesremaining.amount==0,"Not enough locates to borrow");
-    found = true;
-    
-  } else if ( memo.c_str() == string("collateral") && assetout.symbol == symbol("VIGOR", 4) ) {
-    // withdraw stablecoins from collateral 
-
-    asset l_debt = user.l_debt - assetout;
-
-    // if overcollateralization is C then leverage L = 1 / ( 1 - ( 1 / C ) )
-    check( user.l_valueofcol * 1.11 <= ( l_debt.amount / std::pow(10.0, 4) ),
-    "Collateral must exceed borrowings by 1.11"  );
-    found = true;
-    
-    _user.modify(user, _self, [&]( auto& modified_user) {
-      modified_user.l_debt = l_debt;
-    });
-    gstats.l_totaldebt -= assetout;
-
-    _globals.set(gstats, _self);
-
-    } else if ( memo.c_str() == string("insurance") && assetout.symbol == symbol("VIGOR", 4) ) {
-    // withdraw stablecoins from insurance
-
-    //TODO
-
-    }
->>>>>>> 3bd2a3ec5be68fcdfb6b72510c04812ae23672c3
     
     check(found, "asset not found in user");
     eosio::print( "transfer borrowed tokens to user ", "\n");
@@ -1795,42 +1435,7 @@ void vigor::updateglobal()
 
   gstats.lastupdate = current_time_point();
 
-<<<<<<< HEAD
   _globals.set(gstats, _self);
-}
-
-void vigor::performance(name usern) 
-{
-  auto &user = _user.get(usern.value, "User not found1");
-  globalstats gstats = _globals.get();
-
-  double cut = user.pcts*(1.0-reservecut);
-  if (usern.value==name("finalreserve").value)
-    cut = reservecut;
-
-  double earnrate = 0.0;
-  if (user.valueofins!=0.0)
-    earnrate = (cut*gstats.premiums)/user.valueofins; // annualized rate of return on user portfolio of insurance crypto assets
-
-  _user.modify( user, _self, [&]( auto& modified_user ) { // Update value of collateral
-    modified_user.earnrate = earnrate;
-  });
-}
-
-void vigor::performanceglobal() 
-{
-  globalstats gstats = _globals.get();
-
-  gstats.raroc = (gstats.premiums - gstats.svalueofcoleavg)/gstats.scr; // RAROC risk adjusted return on capital. expected return on capital employed. (Revenues - Expected Loss) / SCR
-  
-  gstats.earnrate = 0.0;
-  if (gstats.valueofins!=0.0)
-    gstats.earnrate = gstats.premiums/gstats.valueofins; // annualized rate of return on total portfolio of insurance crypto assets
-
-=======
->>>>>>> 3bd2a3ec5be68fcdfb6b72510c04812ae23672c3
-  _globals.set(gstats, _self);
-
 }
 
 void vigor::performance(name usern) 
