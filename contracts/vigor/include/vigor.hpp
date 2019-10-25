@@ -36,7 +36,8 @@ CONTRACT vigor : public eosio::contract {
       
       TABLE user_s {
          name usern;
-         asset debt = asset( 0, symbol("VIGOR", 4) );
+         //asset debt = asset( 0, symbol("VIGOR", 4) );
+         asset debt = asset(0, symbol("VIGOR", 10));
 
          vector<asset> collateral;
          vector<asset> insurance;
@@ -60,7 +61,8 @@ CONTRACT vigor : public eosio::contract {
          uint32_t latepays = 0;
          uint32_t recaps = 0;
 
-         asset l_debt = asset( 0, symbol("VIGOR", 4) );
+         //asset l_debt = asset( 0, symbol("VIGOR", 4) );
+         asset l_debt = asset(0, symbol("VIGOR", 10));
 
          vector<asset> l_collateral;
          vector<asset> l_lrtoken;
@@ -102,8 +104,9 @@ CONTRACT vigor : public eosio::contract {
          double scr = 0.0; // solvency capial requirement is the dollar amount of insurance assets required to survive a sress event
          double earnrate = 0.0; // annualized rate of return on total portfolio of insurance crypto assets
          time_point lastupdate = time_point(microseconds(0));;
-
-         asset totaldebt = asset( 0, symbol("VIGOR", 4) ); // VIGOR  // CONVERT TO PRECISION 10!!
+         
+         asset totaldebt = asset(0, symbol("VIGOR", 10));
+         //asset totaldebt = asset( 0, symbol("VIGOR", 4) ); // VIGOR  // CONVERT TO PRECISION 10!!
          
          vector<asset> insurance;
          vector<asset> collateral;
@@ -115,7 +118,8 @@ CONTRACT vigor : public eosio::contract {
          double l_svalueofins = 0.0; // model suggested dollar value of the total insurance asset portfolio in a stress event. [ (1 - stressins ) * INS ]
          double l_stressins = 0.0; // model suggested percentage loss that the total insurance asset portfolio would experience in a stress event.
 
-         asset l_totaldebt = asset( 0, symbol("VIGOR", 4) ); // VIGOR
+         asset l_totaldebt = asset(0, symbol("VIGOR", 10)); 
+         //asset l_totaldebt = asset( 0, symbol("VIGOR", 4) ); // VIGOR
          
          vector<asset> l_collateral;
          //vector<tuple<asset,asset,name>> l_locatereceipts;
