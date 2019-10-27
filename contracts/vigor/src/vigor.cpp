@@ -352,7 +352,7 @@ void vigor::close( name owner, const symbol& symbol )
    acnts.erase( it );
 }
 
-
+// the asset comes in here with a precision of n
 void vigor::assetin( name   from, // handler for notification of transfer action
                          name   to,
                          asset  assetin,
@@ -361,6 +361,9 @@ void vigor::assetin( name   from, // handler for notification of transfer action
   if ( from == _self || to != _self)
     return;
 
+  // the precision of the asset is converted here
+  auto amt10 = swap_precision::swapprecision(assetin);
+  
   require_auth( from );
   check( from != to, "cannot transfer to self" );
   //require_auth( from );
@@ -376,7 +379,6 @@ void vigor::assetin( name   from, // handler for notification of transfer action
             "memo must be composed of either word: insurance or collateral or payback borrowed token"
           );
 
-  // create new users
   auto itr = _user.find(from.value);
   if ( itr == _user.end() ) {
     
@@ -384,10 +386,13 @@ void vigor::assetin( name   from, // handler for notification of transfer action
       new_user.usern = from;
       new_user.lastupdate = current_time_point();
     });
-    
     action( permission_level{ _self, name("active") },
-      _self, name("open"), std::make_tuple(
-        from, symbol("VIGOR", 4), _self
+      _self,
+      name("open"), 
+      std::make_tuple(
+        from,
+        symbol("VIGOR", 10), //symbol("VIGOR", 4), VIGOR is created with precision 10 internally
+        _self
       )).send();
   }
 
@@ -395,110 +400,124 @@ void vigor::assetin( name   from, // handler for notification of transfer action
   bool found = false;
 
   globalstats gstats;
+
   if (_globals.exists())
     gstats = _globals.get();
 
 
   if (memo.c_str() == string("insurance")) {
-    // transfer tokens into insurance (not stablecoin)
+
     auto it = user.insurance.begin();
+
     while ( !found && it++ != user.insurance.end() )
-      found = (it-1)->symbol == assetin.symbol;
+        found = (it-1)->symbol == amt10.symbol; // user insurance type found 
+
     _user.modify(user, _self, [&]( auto& modified_user) {
       if (!found)
-        modified_user.insurance.push_back(assetin);
+        modified_user.insurance.push_back(amt10);
       else
-        modified_user.insurance[(it-1) - user.insurance.begin()] += assetin;
+        modified_user.insurance[(it-1) - user.insurance.begin()] += amt10;
     }); found = false;
     it = gstats.insurance.begin();
     while ( !found && it++ != gstats.insurance.end() )
-      found = (it-1)->symbol == assetin.symbol;
+      found = (it-1)->symbol == amt10.symbol;
     if ( !found )
-      gstats.insurance.push_back(assetin);
+      gstats.insurance.push_back(amt10);
     else
-      gstats.insurance[(it-1) - gstats.insurance.begin()] += assetin;
+      gstats.insurance[(it-1) - gstats.insurance.begin()] += amt10;
   }
   else if (memo.c_str() == string("collateral")) {
-    // transfer tokens into collateral (not stablecoin)
     auto it = user.collateral.begin();
     while ( !found && it++ != user.collateral.end() )
-      found = (it-1)->symbol == assetin.symbol; 
+      found = (it-1)->symbol == amt10.symbol; 
+
     _user.modify(user, _self, [&]( auto& modified_user) {
       if (!found)
-        modified_user.collateral.push_back(assetin);
+        modified_user.collateral.push_back(amt10);
       else
-        modified_user.collateral[(it-1) - user.collateral.begin()] += assetin;
+        modified_user.collateral[(it-1) - user.collateral.begin()] += amt10;
     }); found = false;
     it = gstats.collateral.begin();
     while ( !found && it++ != gstats.collateral.end() )
-      found = (it-1)->symbol == assetin.symbol;
+      found = (it-1)->symbol == amt10.symbol;
     if (!found)
-      gstats.collateral.push_back(assetin);
+      gstats.collateral.push_back(amt10);
     else
-      gstats.collateral[(it-1) - gstats.collateral.begin()] += assetin;
+      gstats.collateral[(it-1) - gstats.collateral.begin()] += amt10;
   } 
   else if (memo.c_str() == string("payback borrowed token")) {
     //payback borrowed token into user l_collateral (not stablecoin)
+
     auto itc = user.l_collateral.begin();
+    
+
     while ( !found && itc++ != user.l_collateral.end() )
-      found = (itc-1)->symbol == assetin.symbol;
+      found = (itc-1)->symbol == amt10.symbol;
     if (!found)
       check(false,"Can't payback that asset; not found in user borrows");
     else
-      check(user.l_collateral[(itc-1) - user.l_collateral.begin()] >= assetin,"Payback amount too high.");
+       check(user.l_collateral[(itc-1) - user.l_collateral.begin()] >= amt10,"Payback amount too high."); 
     found = false;
-    // searching all users that have assets in their l_lrtoken looking for locate receipts containing assetin
-    asset locatesremaining = assetin;
-    asset paymentasset = asset( 0, symbol("VIGOR", 4) );
-    asset amt = assetin;
+
+    asset locatesremaining = amt10;
+
+    asset paymentasset = asset(0, symbol("VIGOR", 10));
+ 
+    asset amt = amt10;
     double pct;
+
     for ( auto itr = _user.begin(); itr != _user.end(); ++itr ) {
       if (locatesremaining.amount==0)
           break;
       if (itr->usern.value == name("finalreserve").value || itr->usern.value == name("reinvestment").value)
         continue;
       eosio::print( "itr->usern ", itr->usern, "\n");  
+    
+    
     //  eosio::print( "itr->l_lrtoken.size() ", itr->l_lrtoken.size(), "\n");  
       if (!itr->l_lrtoken.empty()) {
-          //loop through the user l_lrtoken looking for locate receipts of assetin
+ 
           for ( auto it = itr->l_lrtoken.begin(); it != itr->l_lrtoken.end(); ++it ) {
             if (locatesremaining.amount==0)
               break;
             eosio::print( "it->symbol ", it->symbol, "\n"); 
-            eosio::print( "assetin.symbol ", assetin.symbol, "\n"); 
+            eosio::print("assetin.symbol ", amt10.symbol, "\n");
             eosio::print( "itr->l_lrname[it - itr->l_lrtoken.begin()] ", itr->l_lrname[it - itr->l_lrtoken.begin()], "\n"); 
             eosio::print( "user.usern ", user.usern, "\n"); 
-            if (it->symbol == assetin.symbol && itr->l_lrname[it - itr->l_lrtoken.begin()].value == user.usern.value) {
+            if(it->symbol == amt10.symbol && itr->l_lrname[it - itr->l_lrtoken.begin()].value == user.usern.value){
           //    eosio::print( "test","\n");
               amt.amount = std::min(itr->l_lrtoken[it - itr->l_lrtoken.begin()].amount, locatesremaining.amount);
               pct = (double)amt.amount/(double)itr->l_lrtoken[it - itr->l_lrtoken.begin()].amount;
               eosio::print( "pct ", pct,"\n");
               locatesremaining -= amt;
               eosio::print( "locatesremaining ", locatesremaining,"\n");
+
               _user.modify(itr, _self, [&]( auto& modified_user) { 
-              // subtract located asset from lender l_lrtoken
-              if (modified_user.l_lrtoken[it - itr->l_lrtoken.begin()].amount - amt.amount == 0.0){
-                paymentasset = modified_user.l_lrpayment[it - itr->l_lrtoken.begin()];
-                modified_user.l_lrtoken[it - itr->l_lrtoken.begin()].amount = 0;
-                modified_user.l_lrpayment[it - itr->l_lrtoken.begin()].amount = 0;
-                modified_user.l_lrname[it - itr->l_lrtoken.begin()] = name("delete");
-                eosio::print( "erase l_lrtoken", amt,"\n");
-                eosio::print( "erase paymentasset ", paymentasset,"\n");
-              } else {
-                modified_user.l_lrtoken[it - itr->l_lrtoken.begin()] -= amt;
-                paymentasset.amount = pct*modified_user.l_lrpayment[it - itr->l_lrtoken.begin()].amount;
-                modified_user.l_lrpayment[it - itr->l_lrtoken.begin()] -= paymentasset;
-                eosio::print( "paymentasset ", paymentasset,"\n");
-                eosio::print( "pct ", pct,"\n");
-                eosio::print( "lender l_lrpayment ", modified_user.l_lrpayment[it - itr->l_lrtoken.begin()]  ," amt ", paymentasset,"\n");
-                eosio::print( "lender l_lrtoken ", modified_user.l_lrtoken[it - itr->l_lrtoken.begin()] ," amt ", amt,"\n");
-              }
+                if (modified_user.l_lrtoken[it - itr->l_lrtoken.begin()].amount - amt.amount == 0.0){
+                    paymentasset = modified_user.l_lrpayment[it - itr->l_lrtoken.begin()];
+                    modified_user.l_lrtoken[it - itr->l_lrtoken.begin()].amount = 0;
+                    modified_user.l_lrpayment[it - itr->l_lrtoken.begin()].amount = 0;
+                    modified_user.l_lrname[it - itr->l_lrtoken.begin()] = name("delete");
+                    eosio::print( "erase l_lrtoken", amt,"\n");
+                    eosio::print( "erase paymentasset ", paymentasset,"\n");
+                } else {
+                    modified_user.l_lrtoken[it - itr->l_lrtoken.begin()] -= amt;
+                    paymentasset.amount = pct*modified_user.l_lrpayment[it - itr->l_lrtoken.begin()].amount;
+                    modified_user.l_lrpayment[it - itr->l_lrtoken.begin()] -= paymentasset;
+                    eosio::print( "paymentasset ", paymentasset,"\n");
+                    eosio::print( "pct ", pct,"\n");
+                    eosio::print( "lender l_lrpayment ", modified_user.l_lrpayment[it - itr->l_lrtoken.begin()]  ," amt ", paymentasset,"\n");
+                    eosio::print( "lender l_lrtoken ", modified_user.l_lrtoken[it - itr->l_lrtoken.begin()] ," amt ", amt,"\n");
+                }
               });
+
               // add located asset to lender insurance
               found = false;
               auto iti = itr->insurance.begin();
               while ( !found && iti++ != itr->insurance.end() )
-                found = (iti-1)->symbol == assetin.symbol;
+                found = (iti-1)->symbol == amt10.symbol;
+              
+
               _user.modify(itr, _self, [&]( auto& modified_user) {
                 if (!found)
                   modified_user.insurance.push_back(amt);
