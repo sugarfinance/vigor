@@ -192,7 +192,27 @@
                     "type": "float64"
                 },
                 {
-                    "name": "l_stressins",
+                    "name": "l_svalueofcoleavg",
+                    "type": "float64"
+                },
+                {
+                    "name": "l_svalueofinsavg",
+                    "type": "float64"
+                },
+                {
+                    "name": "l_raroc",
+                    "type": "float64"
+                },
+                {
+                    "name": "l_premiums",
+                    "type": "float64"
+                },
+                {
+                    "name": "l_scr",
+                    "type": "float64"
+                },
+                {
+                    "name": "l_earnrate",
                     "type": "float64"
                 },
                 {
@@ -477,6 +497,14 @@
                 },
                 {
                     "name": "l_svalueofcole",
+                    "type": "float64"
+                },
+                {
+                    "name": "l_svalueofcoleavg",
+                    "type": "float64"
+                },
+                {
+                    "name": "l_premiums",
                     "type": "float64"
                 },
                 {
