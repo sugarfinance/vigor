@@ -37,7 +37,7 @@ CONTRACT vigor : public eosio::contract {
       TABLE user_s {
          name usern;
          //asset debt = asset( 0, symbol("VIGOR", 4) );
-         asset debt = asset(0, symbol("VIGOR", 10));
+         asset debt = asset(0, symbol("VIGOR", 4));
 
          vector<asset> collateral;
          vector<asset> insurance;
@@ -140,8 +140,8 @@ CONTRACT vigor : public eosio::contract {
          double l_scr = 0.0; // solvency capial requirement is the dollar amount of insurance assets required to survive a sress event
          double l_earnrate = 0.0; // annualized rate of return on total portfolio of insurance crypto assets
 
-         asset l_totaldebt = asset(0, symbol("VIGOR", 10)); 
-         //asset l_totaldebt = asset( 0, symbol("VIGOR", 4) ); // VIGOR
+         //asset l_totaldebt = asset(0, symbol("VIGOR", 10)); 
+         asset l_totaldebt = asset( 0, symbol("VIGOR", 4) ); // VIGOR
          
          vector<asset> l_collateral;
          //vector<tuple<asset,asset,name>> l_locatereceipts;
