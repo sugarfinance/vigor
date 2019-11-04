@@ -53,24 +53,41 @@ for (int i=1; i<11; i++){
   
   for ( auto it = _user.begin(); it != _user.end(); it++ )
     stresscol(it->usern);
+  
+  for ( auto it = _user.begin(); it != _user.end(); it++ )
+    l_stresscol(it->usern);
 
   stressins();
 
   risk();
+  l_risk();
 
   for ( auto it = _user.begin(); it != _user.end(); it++ ) 
     pricing(it->usern);
 
+  for ( auto it = _user.begin(); it != _user.end(); it++ ) 
+    l_pricing(it->usern);
+
   double rm = RM();
   for ( auto it = _user.begin(); it != _user.end(); it++ )
     pcts(it->usern,rm);
+
+  double l_rm = l_RM();
+  for ( auto it = _user.begin(); it != _user.end(); it++ )
+    l_pcts(it->usern,l_rm);
+
+    eosio::print( "l_pcts ", "\n"); 
 
   reserve();
 
   for ( auto it = _user.begin(); it != _user.end(); it++ ) 
     performance(it->usern);
 
+  for ( auto it = _user.begin(); it != _user.end(); it++ ) 
+    l_performance(it->usern);
+
   performanceglobal();
+  l_performanceglobal();
 
   if (exitbailout)
     break;
@@ -793,7 +810,9 @@ void vigor::assetout(name usern, asset assetout, string memo)
               if ( itg->amount - amt.amount == 0 )
                 gstats.insurance.erase(itg);
               else
+                eosio::print( "!!gstats.insurance[itg - gstats.insurance.begin()] ", gstats.insurance[itg - gstats.insurance.begin()] ,"\n");
                 gstats.insurance[itg - gstats.insurance.begin()] -= amt;
+                eosio::print( "!!gstats.insurance[itg - gstats.insurance.begin()] ", gstats.insurance[itg - gstats.insurance.begin()] ,"\n");
             }          
           //add located asset to global l_collateral
           found = false;
@@ -909,20 +928,21 @@ void vigor::stresscol(name usern) {
   globalstats gstats = _globals.get();
 
   double portVariance = portVarianceCol(usern);
-  // Expected Shortfall, CVaR
-  double stresscol = -1.0*(std::exp(-1.0*((std::exp(-1.0*(std::pow(-1.0*std::sqrt(2.0)*erfc_inv(2.0*alphatest),2.0))/2.0)/(std::sqrt(2.0*M_PI)))/(1.0-alphatest)) * std::sqrt(portVariance))-1.0);
+
+  double stresscol = std::log(1.0 + (((std::exp(-1.0*(std::pow(-1.0*std::sqrt(2.0)*erfc_inv(2.0*alphatest),2.0))/2.0)/(std::sqrt(2.0*M_PI)))/(1.0-alphatest)) * std::sqrt(portVariance)));
+                         
   double svalueofcol = ((1.0 - stresscol) * user.valueofcol);
   double svalueofcole = std::max( 0.0,
     user.debt.amount / std::pow(10.0, 4) - ((1.0 - stresscol) * user.valueofcol)
   );
   gstats.svalueofcole += svalueofcole - user.svalueofcole; // model suggested dollar value of the sum of all insufficient collateral in a stressed market
 
-  double stresscolavg = -1.0*(std::exp(-1.0*((std::exp(-1.0*(std::pow(-1.0*std::sqrt(2.0)*erfc_inv(2.0*0.5),2.0))/2.0)/(std::sqrt(2.0*M_PI)))/(1.0-0.5)) * std::sqrt(portVariance))-1.0); //expected shortf
+  double stresscolavg = std::log(1.0 + (((std::exp(-1.0*(std::pow(-1.0*std::sqrt(2.0)*erfc_inv(2.0*0.5),2.0))/2.0)/(std::sqrt(2.0*M_PI)))/(1.0-0.5)) * std::sqrt(portVariance)));
   double svalueofcoleavg = std::max( 0.0,
     user.debt.amount / std::pow(10.0, 4) - ((1.0 - stresscolavg) * user.valueofcol)
   );
 
-  gstats.svalueofcoleavg += svalueofcoleavg - user.svalueofcoleavg; // model suggested dollar value of the sum of all insufficient collateral on average in down markets, expected loss
+  gstats.svalueofcoleavg += svalueofcoleavg - user.svalueofcoleavg; // model suggested dollar value of the sum of all insufficient collateral on average in stressed markets, expected loss
   
   _globals.set(gstats, _self);
 
@@ -931,7 +951,42 @@ void vigor::stresscol(name usern) {
     modified_user.stresscol = stresscol; // model suggested percentage loss that the user collateral portfolio would experience in a stress event.
     modified_user.svalueofcol = svalueofcol; // model suggested dollar value of the user collateral portfolio in a stress event.
     modified_user.svalueofcole = svalueofcole; // model suggested dollar amount of insufficient collateral of a user loan in a stressed market.
-    modified_user.svalueofcoleavg = svalueofcoleavg; // model suggested dollar amount of insufficient collateral of a user loan on average in down markets, expected loss
+    modified_user.svalueofcoleavg = svalueofcoleavg; // model suggested dollar amount of insufficient collateral of a user loan on average in stressed markets, expected loss
+  });
+
+}
+
+void vigor::l_stresscol(name usern) {
+
+  const auto& user = _user.get( usern.value, "User not foundl_17" );
+  
+  check(_globals.exists(), "globals not found");
+  globalstats gstats = _globals.get();
+
+  double l_portVariance = l_portVarianceCol(usern);
+ 
+  double l_stresscol = std::log(1.0 + (((std::exp(-1.0*(std::pow(-1.0*std::sqrt(2.0)*erfc_inv(2.0*alphatest),2.0))/2.0)/(std::sqrt(2.0*M_PI)))/(1.0-alphatest)) * std::sqrt(l_portVariance)));
+  double l_svalueofcol = ((1.0 + l_stresscol) * user.l_valueofcol);
+  double l_svalueofcole = std::max( 0.0,
+    ((1.0 + l_stresscol) * user.l_valueofcol) - user.l_debt.amount / std::pow(10.0, 4)
+  );
+  gstats.l_svalueofcole += l_svalueofcole - user.l_svalueofcole; // model suggested dollar value of the sum of all insufficient collateral in a stressed market
+
+  double l_stresscolavg = std::log(1.0 + (((std::exp(-1.0*(std::pow(-1.0*std::sqrt(2.0)*erfc_inv(2.0*0.5),2.0))/2.0)/(std::sqrt(2.0*M_PI)))/(1.0-0.5)) * std::sqrt(l_portVariance)));
+  double l_svalueofcoleavg = std::max( 0.0,
+    ((1.0 + l_stresscolavg) * user.l_valueofcol) - user.l_debt.amount / std::pow(10.0, 4)
+  );
+
+  gstats.l_svalueofcoleavg += l_svalueofcoleavg - user.l_svalueofcoleavg; // model suggested dollar value of the sum of all insufficient collateral on average in stressed markets, expected loss
+  
+  _globals.set(gstats, _self);
+
+  _user.modify(user, _self, [&]( auto& modified_user) { 
+    modified_user.l_volcol = std::sqrt(l_portVariance); // volatility of the user collateral portfolio
+    modified_user.l_stresscol = l_stresscol; // model suggested percentage loss that the user collateral portfolio would experience in a stress event.
+    modified_user.l_svalueofcol = l_svalueofcol; // model suggested dollar value of the user collateral portfolio in a stress event.
+    modified_user.l_svalueofcole = l_svalueofcole; // model suggested dollar amount of insufficient collateral of a user loan in a stressed market.
+    modified_user.l_svalueofcoleavg = l_svalueofcoleavg; // model suggested dollar amount of insufficient collateral of a user loan on average in stressed markets, expected loss
   });
 
 }
@@ -960,6 +1015,38 @@ double vigor::portVarianceCol(name usern)
     double jW = (double)itr->price[0] / pricePrecision;
     jW *= j->amount / std::pow(10.0, j->symbol.precision());
     jW /= user.valueofcol;
+
+    portVariance += 2.0 * iW * jW * c * iVvol * jVvol;
+  }
+  portVariance += std::pow(iW, 2) * std::pow(iVvol, 2);
+}
+return portVariance;
+}
+
+double vigor::l_portVarianceCol(name usern)
+{
+
+  const auto& user = _user.get( usern.value, "User not found18" );  
+
+  double portVariance = 0.0;
+  for ( auto i = user.l_collateral.begin(); i != user.l_collateral.end(); ++i ) {
+    
+    t_series stats(name("datapreprocx"),name(issuerfeed[i->symbol]).value);
+    auto itr = stats.find(1);
+    double iVvol = (double)itr->vol/volPrecision;
+    double iW = (double)itr->price[0] / pricePrecision;
+    iW *= i->amount / std::pow(10.0, i->symbol.precision()); 
+    iW /= user.l_valueofcol;
+
+  for (auto j = i + 1; j != user.l_collateral.end(); ++j ) {
+    double c = (double)itr->correlation_matrix.at(j->symbol)/corrPrecision;
+
+    t_series statsj(name("datapreprocx"),name(issuerfeed[j->symbol]).value);
+    auto itr = statsj.find(1);
+    double jVvol = (double)itr->vol/volPrecision;
+    double jW = (double)itr->price[0] / pricePrecision;
+    jW *= j->amount / std::pow(10.0, j->symbol.precision());
+    jW /= user.l_valueofcol;
 
     portVariance += 2.0 * iW * jW * c * iVvol * jVvol;
   }
@@ -1040,13 +1127,15 @@ void vigor::stressins()
 
   double portVariance = portVarianceIns();
 
-  // Expected Shortfall, CVaR
-  double stressins = -1.0*(std::exp(-1.0*((std::exp(-1.0*(std::pow(-1.0*std::sqrt(2.0)*erfc_inv(2.0*alphatest),2.0))/2.0)/(std::sqrt(2.0*M_PI)))/(1.0-alphatest)) * std::sqrt(portVariance))-1.0); // model suggested percentage loss that the total insurance asset portfolio would experience in a stress event.
+  double stressins = std::log(1.0 + (((std::exp(-1.0*(std::pow(-1.0*std::sqrt(2.0)*erfc_inv(2.0*alphatest),2.0))/2.0)/(std::sqrt(2.0*M_PI)))/(1.0-alphatest)) * std::sqrt(portVariance)));// model suggested percentage loss that the total insurance asset portfolio would experience in a stress event.
   gstats.stressins = stressins;
   gstats.svalueofins = (1.0 - stressins) * gstats.valueofins; // model suggested dollar value of the total insurance asset portfolio in a stress event.
 
-  double stressinsavg = -1.0*(std::exp(-1.0*((std::exp(-1.0*(std::pow(-1.0*std::sqrt(2.0)*erfc_inv(2.0*0.5),2.0))/2.0)/(std::sqrt(2.0*M_PI)))/(1.0-0.5)) * std::sqrt(portVariance))-1.0); // model suggested percentage loss that the total insurance asset portfolio would experience in a stress event.
-  gstats.svalueofinsavg = (1.0 - stressinsavg) * gstats.valueofins; // model suggested dollar value of the total insurance asset portfolio on average in down markets
+  double stressinsavg = std::log(1.0 + (((std::exp(-1.0*(std::pow(-1.0*std::sqrt(2.0)*erfc_inv(2.0*0.5),2.0))/2.0)/(std::sqrt(2.0*M_PI)))/(1.0-0.5)) * std::sqrt(portVariance))); // model suggested percentage loss that the total insurance asset portfolio would experience in a stress event.
+  gstats.svalueofinsavg = (1.0 - stressinsavg) * gstats.valueofins; // model suggested dollar value of the total insurance asset portfolio on average in stressed markets
+
+  gstats.l_svalueofins = (1.0 + stressins) * gstats.valueofins; // model suggested dollar value of the total insurance asset portfolio in a stress event.
+  gstats.l_svalueofinsavg = (1.0 + stressinsavg) * gstats.valueofins; // model suggested dollar value of the total insurance asset portfolio on average in stressed markets
 
   _globals.set(gstats, _self);
 }
@@ -1080,6 +1169,38 @@ void vigor::risk()
   _globals.set(gstats, _self);
 }
 
+void vigor::l_risk()
+{
+  check( _globals.exists(), "no global table exists yet" );
+  globalstats gstats = _globals.get();
+
+  // market value of assets and liabilities from the perspective of insurers
+
+  // normal markets
+  double mva_n = gstats.valueofins; //market value of insurance assets in normal markets, includes the reserve which is implemented as an insurer, collateral is not an asset of the insurers
+  double mvl_n = 0; // no upfront is paid for tes, and insurers can walk away at any time, debt is not a liability of the insurers
+  eosio::print( "gstats.valueofins : ", gstats.valueofins, "\n");
+  //stressed markets
+  double mva_s = gstats.l_svalueofins;
+  double mvl_s = gstats.l_svalueofcole;
+  eosio::print( "gstats.l_svalueofins: ", gstats.l_svalueofins, "\n");
+  eosio::print( "gstats.l_svalueofcole : ", gstats.l_svalueofcole, "\n");
+  double own_n = mva_n - mvl_n; // own funds normal markets
+  double own_s = mva_s - mvl_s; // own funds stressed markets
+  
+  double l_scr = std::max(own_n - own_s,20.0); // solvency capial requirement is the amount of insurance assets required to survive a sress event
+  
+  eosio::print( "l_scr: ",l_scr, "\n");
+  double l_solvency = own_n / l_scr; // solvency, represents capital adequacy to back the stablecoin
+
+  gstats.l_solvency = l_solvency;
+  gstats.l_scr = l_scr;
+  gstats.l_scale = std::max(std::min(l_solvencyTarget/l_solvency,maxtesscale),mintesscale);
+
+  _globals.set(gstats, _self);
+}
+
+
 void vigor::pricing(name usern) {
 /* premium payments in exchange for contingient payoff in 
  * the event that a price threshhold is breached
@@ -1090,7 +1211,8 @@ void vigor::pricing(name usern) {
   globalstats gstats = _globals.get();
 
   double ivol = user.volcol * gstats.scale; // market determined implied volaility
-  double istresscol = -1.0*(std::exp((std::log((user.stresscol/-1.0)+1.0)) * gstats.scale)-1.0);
+                      
+  double istresscol = std::log(((std::exp(user.stresscol)-1.0) * gstats.scale) + 1.0);
 
   double payoff = std::max(  0.0,
     1.0 * (user.debt.amount / std::pow(10.0,4)) - user.valueofcol * (1.0 - istresscol)
@@ -1117,6 +1239,46 @@ void vigor::pricing(name usern) {
     modified_user.istresscol = istresscol; // market determined implied percentage loss that the user collateral portfolio would experience in a stress event.
     modified_user.lastupdate = current_time_point();
     modified_user.premiums = premiums; // dollar amount of premiums borrowers would pay in one year to insure their collateral
+  });
+}
+
+void vigor::l_pricing(name usern) {
+/* premium payments in exchange for contingient payoff in 
+ * the event that a price threshhold is breached
+*/
+  const auto& user = _user.get( usern.value, "User not found21" );  
+  
+  check(_globals.exists(), "globals not found");
+  globalstats gstats = _globals.get();
+
+  double l_ivol = user.l_volcol * gstats.l_scale; // market determined implied volaility
+  double l_istresscol = std::log(((std::exp(user.l_stresscol)-1.0) * gstats.l_scale) + 1.0);
+
+  double payoff = std::max(  0.0,
+    1.0 * user.l_valueofcol * (1.0 + l_istresscol) - (user.l_debt.amount / std::pow(10.0,4))
+  );
+  double T = 1.0;
+  double d = ((std::log(user.l_valueofcol / (user.l_debt.amount/std::pow(10.0,4)))) + (-std::pow(l_ivol,2)/2.0) * T)/ (l_ivol * std::sqrt(T));
+
+  double l_tesprice = std::min(std::max( mintesprice * gstats.l_scale,
+    ((payoff * std::erfc((-1.0 * d) / std::sqrt(2.0)) / 2.0) / (user.l_debt.amount / std::pow(10.0, 4))))*calibrate,maxtesprice);
+
+  if (user.l_debt.amount == 0)
+    l_tesprice = 0.0;
+
+  l_tesprice /= 1.6 * (user.creditscore / 800.0); // credit score of 500 means no discount or penalty.
+
+  double l_premiums = l_tesprice * (user.l_debt.amount / std::pow(10.0,4)); 
+
+  gstats.l_premiums += l_premiums - user.l_premiums; // total dollar amount of premiums all borrowers would pay in one year to insure their collateral
+  
+  _globals.set(gstats, _self);
+
+  _user.modify(user, _self, [&]( auto& modified_user) { 
+    modified_user.l_tesprice = l_tesprice; // annualized rate borrowers pay in periodic premiums to insure their collateral
+    modified_user.l_istresscol = l_istresscol; // market determined implied percentage loss that the user collateral portfolio would experience in a stress event.
+    modified_user.lastupdate = current_time_point();
+    modified_user.l_premiums = l_premiums; // dollar amount of premiums borrowers would pay in one year to insure their collateral
   });
 }
 
@@ -1168,9 +1330,8 @@ double vigor::stressinsx(name usern) { // same as stressins, but remove the spec
     }
     portVariancex += std::pow(iW, 2) * std::pow(iVvol, 2);
   }
-  
-  // Expected Shortfall, CVaR
-  double stressinsx = -1.0*(std::exp(-1.0*((std::exp(-1.0*(std::pow(-1.0*std::sqrt(2.0)*erfc_inv(2.0*alphatest),2.0))/2.0)/(std::sqrt(2.0*M_PI)))/(1.0-alphatest)) * std::sqrt(portVariancex))-1.0); // model suggested percentage loss that the total insurance asset portfolio (ex the specified user) would experience in a stress event.
+
+  double stressinsx = std::log(1.0 + (((std::exp(-1.0*(std::pow(-1.0*std::sqrt(2.0)*erfc_inv(2.0*alphatest),2.0))/2.0)/(std::sqrt(2.0*M_PI)))/(1.0-alphatest)) * std::sqrt(portVariancex))); // model suggested percentage loss that the total insurance asset portfolio (ex the specified user) would experience in a stress event.
   double svalueofinsx = (1.0 - stressinsx) * (gstats.valueofins  - user.valueofins); // model suggested dollar value of the total insurance asset portfolio (ex the specified user) in a stress event.
   
   return svalueofinsx;
@@ -1188,7 +1349,8 @@ double vigor::riskx(name usern)
   double mvl_n = 0; // no upfront is paid for tes, and insurers can walk away at any time, debt is not a liability of the insurers
   
   //stressed markets
-  double mva_s = stressinsx(usern);
+  double svalueofinsx = stressinsx(usern);
+  double mva_s = svalueofinsx;
   double mvl_s = gstats.svalueofcole;
 
   double own_n = mva_n - mvl_n;
@@ -1201,6 +1363,34 @@ double vigor::riskx(name usern)
   return solvencyx; // solvency without the specified insurer
 }
 
+double vigor::l_riskx(name usern)
+{ // same as risk, but remove remove the specified user
+  check( _globals.exists(), "no global table exists yet" );
+  globalstats gstats = _globals.get();
+
+  // market value of assets and liabilities from the perspective of insurers
+
+  // normal markets
+  double mva_n = gstats.valueofins; //market value of insurance assets in normal markets, collateral is not an asset of the insurers
+  double mvl_n = 0; // no upfront is paid for tes, and insurers can walk away at any time, debt is not a liability of the insurers
+  
+  //stressed markets
+  const auto& user = _user.get( usern.value, "User not foundl_31" );  
+  double svalueofinsx = stressinsx(usern);
+  double stressinsx = 1.0 - (svalueofinsx / (gstats.valueofins  - user.valueofins)); // model suggested dollar value of the total insurance asset portfolio (ex the specified user) in a stress event.
+  double l_svalueofinsx = (1.0 + stressinsx) * (gstats.valueofins  - user.valueofins); // model suggested dollar value of the total insurance asset portfolio in a stress event.
+  double mva_s = l_svalueofinsx;
+  double mvl_s = gstats.l_svalueofcole;
+
+  double own_n = mva_n - mvl_n;
+  double own_s = mva_s - mvl_s;
+ 
+  double scr = std::max(own_n - own_s,20.0);
+  
+  double solvencyx = own_n / scr;
+
+  return solvencyx; // solvency without the specified insurer
+}
 
 double vigor::RM() {
 // sum of weighted marginal contribution to risk (solvency), used for rescaling
@@ -1217,6 +1407,47 @@ double vigor::RM() {
     smctr +=  w * dRMdw;
   }
   return smctr;
+}
+
+double vigor::l_RM() {
+// sum of weighted marginal contribution to risk (solvency), used for rescaling
+  check( _globals.exists(), "no global table exists yet" );
+  globalstats gstats = _globals.get();
+
+  double smctr = 0;
+  for ( auto it = _user.begin(); it != _user.end(); it++ ) {
+    if (it->usern.value == name("finalreserve").value) // exclude the reserve because it only absorbs bailout after all insurers are wiped out, handled in reserve() method
+      continue;
+    double solvencyx = l_riskx(it->usern);
+    double dRMdw =  (gstats.l_solvency - solvencyx);
+    double w =  it->valueofins / gstats.valueofins;
+    smctr +=  w * dRMdw;
+  }
+  return smctr;
+}
+
+void vigor::l_pcts(name usern, double RM) { // percent contribution to solvency
+
+  if (usern.value == name("finalreserve").value) // exclude the reserve because it only absorbs bailout after all insurers are wiped out, handled in reserve() method
+    return;
+  const auto& user = _user.get( usern.value, "User not foundl_22" );
+  check( _globals.exists(), "no global table exists yet" );
+  globalstats gstats = _globals.get();
+
+  double solvencyx = l_riskx(usern);
+  double w =  user.valueofins / gstats.valueofins;
+  double dRMdw =  (gstats.l_solvency - solvencyx);
+
+  double pcts;
+  if (RM==0.0)
+    pcts =  0.0;
+  else
+    pcts =  w * dRMdw / RM;
+
+  _user.modify(user, _self, [&]( auto& modified_user) { 
+    modified_user.l_pcts = pcts; // percent contribution to solvency (weighted marginal contribution to risk (solvency) rescaled by sum of that
+    });
+    
 }
 
 void vigor::pcts(name usern, double RM) { // percent contribution to solvency
@@ -1437,6 +1668,25 @@ void vigor::performance(name usern)
   });
 }
 
+
+void vigor::l_performance(name usern) 
+{
+  auto &user = _user.get(usern.value, "User not found1");
+  globalstats gstats = _globals.get();
+
+  double cut = user.l_pcts*(1.0-reservecut);
+  if (usern.value==name("finalreserve").value)
+    cut = reservecut;
+
+  double earnrate = 0.0;
+  if (user.valueofins!=0.0)
+    earnrate = (cut*gstats.l_premiums)/user.valueofins; // annualized rate of return on user portfolio of insurance crypto assets
+
+  _user.modify( user, _self, [&]( auto& modified_user ) { // Update value of collateral
+    modified_user.l_earnrate = earnrate;
+  });
+}
+
 void vigor::performanceglobal() 
 {
   globalstats gstats = _globals.get();
@@ -1446,6 +1696,20 @@ void vigor::performanceglobal()
   gstats.earnrate = 0.0;
   if (gstats.valueofins!=0.0)
     gstats.earnrate = gstats.premiums/gstats.valueofins; // annualized rate of return on total portfolio of insurance crypto assets
+
+  _globals.set(gstats, _self);
+
+}
+
+void vigor::l_performanceglobal() 
+{
+  globalstats gstats = _globals.get();
+
+  gstats.l_raroc = (gstats.l_premiums - gstats.l_svalueofcoleavg)/gstats.l_scr; // RAROC risk adjusted return on capital. expected return on capital employed. (Revenues - Expected Loss) / SCR
+  
+  gstats.l_earnrate = 0.0;
+  if (gstats.valueofins!=0.0)
+    gstats.l_earnrate = gstats.l_premiums/gstats.valueofins; // annualized rate of return on total portfolio of insurance crypto assets
 
   _globals.set(gstats, _self);
 

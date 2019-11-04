@@ -73,13 +73,30 @@ CONTRACT vigor : public eosio::contract {
          double l_istresscol = 0.0; // market determined implied percentage loss that the user collateral portfolio would experience in a stress event.
          double l_svalueofcol = 0.0; // model suggested dollar value of the user collateral portfolio in a stress event.
          double l_svalueofcole = 0.0; // model suggested dollar amount of insufficient collateral of a user loan in a stressed market.   min((1 - svalueofcol ) * valueofcol - debt,0) 
+         double l_svalueofcoleavg = 0.0; // model suggested dollar amount of insufficient collateral of a user loan on average in down markets, expected loss
+         double l_premiums = 0.0; // dollar amount of premiums borrowers would pay in one year to insure their collateral
 
          uint32_t l_latepays = 0;
          uint32_t l_recaps = 0;
+
+         // nomenclature note: 
+         // this contract has two major features that are mirror images of each other:
+         // 1 token repo: (borrow VIGOR stablecoin against collateral (EOS tokens)
+         // 2 token lend: (borrow EOS tokens against collateral (VIGOR tablecoin)
+         // 'collateral' or 'debt' to one user could mean stablecoin, but to another user could mean EOS tokens
+         // so prefix l_ is introduced to implement feature 2 by re-rusing the same code written initially for feature 1
+         // any variable with prefix l_ is for 2 token lend. prefix l_ indicates 'reverse' (swap the word debt <-> collateral) in your mind
+         // examples:
+         // consider a token repo: when user locks EOS to borrow VIGOR, the VIGOR borrow is stored in debt and EOS is collateral
+         // consider a token lend: when user locks VIGOR to borrow EOS, the VIGOR is stored in l_debt and EOS borrow is l_collateral
+         // the variable 'debt' means user is borrowing VIGOR in a token repo
+         // the variable "l_debt" means users is locking VIGOR as collateral in a token lend
+         // the variable 'collateral' means user is locking EOS as collateral in a token repo
+         // the vriable "l_collateral" means user is borrowing EOS in a token lend
          
          auto primary_key() const { return usern.value; }
 
-         EOSLIB_SERIALIZE(user_s, (usern)(debt)(collateral)(insurance)(valueofcol)(valueofins)(tesprice)(earnrate)(pcts)(volcol)(stresscol)(istresscol)(svalueofcol)(svalueofcole)(svalueofcoleavg)(premiums)(feespaid)(creditscore)(lastupdate)(latepays)(recaps)(l_debt)(l_collateral)(l_lrtoken)(l_lrpayment)(l_lrname)(l_valueofcol)(l_tesprice)(l_earnrate)(l_pcts)(l_volcol)(l_stresscol)(l_istresscol)(l_svalueofcol)(l_svalueofcole)(l_latepays)(l_recaps))
+         EOSLIB_SERIALIZE(user_s, (usern)(debt)(collateral)(insurance)(valueofcol)(valueofins)(tesprice)(earnrate)(pcts)(volcol)(stresscol)(istresscol)(svalueofcol)(svalueofcole)(svalueofcoleavg)(premiums)(feespaid)(creditscore)(lastupdate)(latepays)(recaps)(l_debt)(l_collateral)(l_lrtoken)(l_lrpayment)(l_lrname)(l_valueofcol)(l_tesprice)(l_earnrate)(l_pcts)(l_volcol)(l_stresscol)(l_istresscol)(l_svalueofcol)(l_svalueofcole)(l_svalueofcoleavg)(l_premiums)(l_latepays)(l_recaps))
       }; typedef eosio::multi_index<name("user"), user_s> user_t;
                                                           user_t _user;
 
@@ -109,25 +126,34 @@ CONTRACT vigor : public eosio::contract {
          double l_scale = 1.0; // TES pricing model parameters are scaled to drive risk (solvency) to a target set by custodians.
          double l_svalueofcole = 0.0; // model suggested dollar value of the sum of all insufficient collateral in a stressed market SUM_i [ min((1 - svalueofcoli ) * valueofcoli - debti,0) ]
          double l_svalueofins = 0.0; // model suggested dollar value of the total insurance asset portfolio in a stress event. [ (1 - stressins ) * INS ]
-         double l_stressins = 0.0; // model suggested percentage loss that the total insurance asset portfolio would experience in a stress event.
+         double l_svalueofcoleavg = 0.0; // model suggested dollar value of the sum of all insufficient collateral on average in down markets, expected loss
+         double l_svalueofinsavg = 0.0; // model suggested dollar value of the total insurance asset portfolio on average in down market
+         double l_raroc = 0.0; // RAROC risk adjusted return on capital. expected return on capital employed. (Revenues - Expected Losses)/ Economic Capital
+         double l_premiums = 0.0; // total dollar amount of premiums all borrowers would pay in one year to insure their collateral
+         double l_scr = 0.0; // solvency capial requirement is the dollar amount of insurance assets required to survive a sress event
+         double l_earnrate = 0.0; // annualized rate of return on total portfolio of insurance crypto assets
 
          asset l_totaldebt = asset( 0, symbol("VIGOR", 4) ); // VIGOR
          
          vector<asset> l_collateral;
          //vector<tuple<asset,asset,name>> l_locatereceipts;
              
-         EOSLIB_SERIALIZE(globalstats, (solvency)(valueofcol)(valueofins)(scale)(svalueofcole)(svalueofins)(stressins)(svalueofcoleavg)(svalueofinsavg)(raroc)(premiums)(scr)(earnrate)(lastupdate)(totaldebt)(insurance)(collateral)(l_solvency)(l_valueofcol)(l_scale)(l_svalueofcole)(l_svalueofins)(l_stressins)(l_totaldebt)(l_collateral))
+         EOSLIB_SERIALIZE(globalstats, (solvency)(valueofcol)(valueofins)(scale)(svalueofcole)(svalueofins)(stressins)(svalueofcoleavg)(svalueofinsavg)(raroc)(premiums)(scr)(earnrate)(lastupdate)(totaldebt)(insurance)(collateral)(l_solvency)(l_valueofcol)(l_scale)(l_svalueofcole)(l_svalueofins)(l_svalueofcoleavg)(l_svalueofinsavg)(l_raroc)(l_premiums)(l_scr)(l_earnrate)(l_totaldebt)(l_collateral))
       }; typedef eosio::multi_index<name("globals"), globalstats> globalsm;
          typedef eosio::singleton<name("globals"), globalstats> globals;
                                                             globals _globals;
                                                             
       void doupdate();                                                      
-      void risk();
+      void risk();                                                      
+      void l_risk();
       double riskx(name usern);
+      double l_riskx(name usern);
       void stresscol(name usern);
+      void l_stresscol(name usern);
       void stressins();
       double stressinsx(name usern);
       double portVarianceCol(name usern);
+      double l_portVarianceCol(name usern);
       double portVarianceIns(name usern);
       double portVarianceIns();
       void update(name usern);
@@ -135,10 +161,15 @@ CONTRACT vigor : public eosio::contract {
       void payfee(name usern);
       void bailout(name usern);
       void pricing(name usern);
+      void l_pricing(name usern);
       void performance(name usern);
+      void l_performance(name usern);
       void performanceglobal();
+      void l_performanceglobal();
       void pcts(name usern, double RM);
+      void l_pcts(name usern, double RM);
       double RM();
+      double l_RM();
       void reserve();
 
       map <symbol, name> issueracct {
@@ -163,13 +194,14 @@ CONTRACT vigor : public eosio::contract {
 
       double alphatest = 0.90;
       double solvencyTarget = 1.0;
+      double l_solvencyTarget = 1.0;
       double maxtesprice = 0.5;
       double mintesprice = 0.005;
       double calibrate = 1.0;
       double maxtesscale = 2.0;
       double mintesscale = 0.1;
       double reservecut = 0.25;
-
+      
       TABLE account {
          asset    balance;
          uint64_t primary_key()const { return balance.symbol.code().raw(); }
