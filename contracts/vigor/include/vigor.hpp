@@ -61,8 +61,8 @@ CONTRACT vigor : public eosio::contract {
          uint32_t latepays = 0;
          uint32_t recaps = 0;
 
-         //asset l_debt = asset( 0, symbol("VIGOR", 4) );
-         asset l_debt = asset(0, symbol("VIGOR", 10));
+         asset l_debt = asset( 0, symbol("VIGOR", 4) );
+         //asset l_debt = asset(0, symbol("VIGOR", 10));
 
          vector<asset> l_collateral;
          vector<asset> l_lrtoken;
