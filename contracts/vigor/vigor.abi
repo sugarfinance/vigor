@@ -514,6 +514,14 @@
                 {
                     "name": "l_recaps",
                     "type": "uint32"
+                },
+                {
+                    "name": "timer",
+                    "type": "time_point_sec"
+                },
+                {
+                    "name": "expiration",
+                    "type": "time_point_sec"
                 }
             ]
         }

@@ -1945,6 +1945,72 @@ void vigor::bailout(name usern)
   }
 }
 
+// timer functions definitions
+// 1. calculate the expiration that will occur in 7 days
+void vigor::starttimer(name usern){
+  require_auth(usern);
+  print("start the timer, ", name{usern});
+  
+
+    //user _user(_self, usern.value);
+    
+    
+    auto it = _user.find(usern.value);
+    
+    if(it == _user.end()){
+      it = _user.emplace(usern, [&](auto& modified_user){
+        modified_user.usern = usern;
+        modified_user.timer = current_time_point();
+        modified_user.expiration = current_time_point();
+    });
+  }
+}
+
+void vigor::expiration(name usern){
+  require_auth(usern);
+  static const uint32_t now = current_time_point().sec_since_epoch();
+  static const uint32_t r = now % hours(24).to_seconds();
+  static const time_point_sec expire_date = (time_point_sec)(now - r + (7 * hours(24).to_seconds()));
+  
+  //user _user(_self, usern.value);
+  
+  // start the clock
+  auto it = _user.find(usern.value);
+     _user.modify(it, get_self(), [&]( auto& modified_user){
+        modified_user.expiration = expire_date;
+  });
+}
+
+
+void vigor::elapsedtime(name usern){
+    require_auth(usern);
+  
+ 
+  auto itr = _user.find(usern.value);
+  
+  if(itr->expiration > current_time_point()){
+    print("the deadline has passed");
+    // reset the clock
+   
+  }else{
+    print("the deadline has not yet passed");
+    // missed payments are accummulated
+  }
+}
+
+// reset the clock
+void vigor::resttimer(name usern){
+   require_auth(usern);
+  
+   //user _user(_self, usern.value);
+  auto itr = _user.find(usern.value);
+  
+  _user.modify(itr, get_self(), [&]( auto& modified_user){
+        modified_user.timer = current_time_point(); 
+        modified_user.expiration = current_time_point();
+  });
+}
+
 
   
 

@@ -4,13 +4,14 @@
 #include <eosio/eosio.hpp>
 #include <eosio/print.hpp>
 #include <eosio/system.hpp>
+#include <eosio/time.hpp>
 
 #include <string>
 #include <cmath>
 
 #include "../utils/rng.hpp"
 #include "../utils/swap_precision.hpp"
-#include "../utils/timer.hpp"
+
 
 using namespace std;
 using namespace eosio;
@@ -84,6 +85,10 @@ CONTRACT vigor : public eosio::contract {
 
          uint32_t l_latepays = 0;
          uint32_t l_recaps = 0;
+         
+         // data members to be used for the timer methods
+         eosio::time_point_sec timer;        
+         eosio::time_point_sec expiration;
 
          // nomenclature note: 
          // this contract has two major features that are mirror images of each other:
@@ -102,7 +107,7 @@ CONTRACT vigor : public eosio::contract {
          
          auto primary_key() const { return usern.value; }
 
-         EOSLIB_SERIALIZE(user_s, (usern)(debt)(collateral)(insurance)(valueofcol)(valueofins)(tesprice)(earnrate)(pcts)(volcol)(stresscol)(istresscol)(svalueofcol)(svalueofcole)(svalueofcoleavg)(premiums)(feespaid)(creditscore)(lastupdate)(latepays)(recaps)(l_debt)(l_collateral)(l_lrtoken)(l_lrpayment)(l_lrname)(l_valueofcol)(l_tesprice)(l_earnrate)(l_pcts)(l_volcol)(l_stresscol)(l_istresscol)(l_svalueofcol)(l_svalueofcole)(l_svalueofcoleavg)(l_premiums)(l_latepays)(l_recaps))
+         EOSLIB_SERIALIZE(user_s, (usern)(debt)(collateral)(insurance)(valueofcol)(valueofins)(tesprice)(earnrate)(pcts)(volcol)(stresscol)(istresscol)(svalueofcol)(svalueofcole)(svalueofcoleavg)(premiums)(feespaid)(creditscore)(lastupdate)(latepays)(recaps)(l_debt)(l_collateral)(l_lrtoken)(l_lrpayment)(l_lrname)(l_valueofcol)(l_tesprice)(l_earnrate)(l_pcts)(l_volcol)(l_stresscol)(l_istresscol)(l_svalueofcol)(l_svalueofcole)(l_svalueofcoleavg)(l_premiums)(l_latepays)(l_recaps)(timer)(expiration))
       }; typedef eosio::multi_index<name("user"), user_s> user_t;
                                                           user_t _user;
 
@@ -179,6 +184,12 @@ CONTRACT vigor : public eosio::contract {
       double RM();
       double l_RM();
       void reserve();
+      
+      // timer functions definitions
+      void starttimer(name usern);
+      void expiration(name usern);
+      void elapsedtime(name usern);
+      void resttimer(name usern);
 
       map <symbol, name> issueracct {
          {symbol("EOS",4),	    name("eosio.token")},
