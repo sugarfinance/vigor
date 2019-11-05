@@ -370,7 +370,7 @@ cleos --verbose push action vigor1111111 assetout '{"usern":"testbrw21111","asse
 # record entry into lender l_lrtoken, l_lrpayment, l_lrname vectors: amount, asset, strike, borrower name. ex: 0.5000 EOS @ 2.0000 VIGOR borrowerA
 
 cleos --verbose push action vigor1111111 assetout '{"usern":"testbrw21111","assetout":"2.0000 EOS","memo":"borrow"}' -p testbrw21111@active
-cleos --verbose push action vigor1111111 assetout '{"usern":"testbrw21111","assetout":"6.0000 EOS","memo":"borrow"}' -p testbrw21111@active
+cleos --verbose push action vigor1111111 assetout '{"usern":"testbrw21111","assetout":"7.0000 EOS","memo":"borrow"}' -p testbrw21111@active
 cleos --verbose push action vigor1111111 assetout '{"usern":"testbrw21111","assetout":"100.000 IQ","memo":"borrow"}' -p testbrw21111@active
 cleos --verbose push action vigor1111111 assetout '{"usern":"testbrw21112","assetout":"1.0000 EOS","memo":"borrow"}' -p testbrw21112@active
 
