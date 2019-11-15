@@ -428,6 +428,10 @@
                     "type": "asset"
                 },
                 {
+                    "name": "totallatepay",
+                    "type": "asset"
+                },
+                {
                     "name": "creditscore",
                     "type": "uint64"
                 },
@@ -516,12 +520,16 @@
                     "type": "uint32"
                 },
                 {
-                    "name": "timer",
+                    "name": "starttime",
                     "type": "time_point_sec"
                 },
                 {
-                    "name": "expiration",
+                    "name": "expiry_time",
                     "type": "time_point_sec"
+                },
+                {
+                    "name": "accumulatepays",
+                    "type": "asset"
                 }
             ]
         }

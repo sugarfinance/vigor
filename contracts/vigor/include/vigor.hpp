@@ -11,6 +11,7 @@
 
 #include "../utils/rng.hpp"
 #include "../utils/swap_precision.hpp"
+#include "../utils/timer.hpp"
 
 
 using namespace std;
@@ -30,6 +31,9 @@ namespace eosiosystem {
       const double corrPrecision = 1000000;
       const double pricePrecision = 1000000;
       const uint64_t defaultVol = 600000;
+      
+      // default value for the clock
+      eosio::time_point_sec DEFAULT_TIME = (time_point_sec)(current_time_point().sec_since_epoch() - current_time_point().sec_since_epoch());
 
 CONTRACT vigor : public eosio::contract {
 
@@ -56,7 +60,9 @@ CONTRACT vigor : public eosio::contract {
          double svalueofcole = 0.0; // model suggested dollar amount of insufficient collateral of a user loan in a stressed market.   min((1 - svalueofcol ) * valueofcol - debt,0) 
          double svalueofcoleavg = 0.0; // model suggested dollar amount of insufficient collateral of a user loan on average in down markets, expected loss
          double premiums = 0.0; // dollar amount of premiums borrowers would pay in one year to insure their collateral
-         asset feespaid = asset( 0, symbol("VIG", 4) ); // VIG
+         //asset feespaid = asset( 0, symbol("VIG", 4) ); // VIG
+         asset feespaid = asset(0, symbol("VIG", 10)); //VIG with precision 10
+         asset totallatepay = asset(0, symbol("VIG", 10)); // VIG with precision 10
          uint64_t creditscore = 500; //out of 800
          time_point lastupdate = time_point(microseconds(0));;
          uint32_t latepays = 0;
@@ -87,8 +93,12 @@ CONTRACT vigor : public eosio::contract {
          uint32_t l_recaps = 0;
          
          // data members to be used for the timer methods
-         eosio::time_point_sec timer;        
-         eosio::time_point_sec expiration;
+         eosio::time_point_sec starttime;
+         eosio::time_point_sec expiry_time;
+         
+         // late pays gets accumulated here
+         asset accumulatepays = asset(0, symbol("VIG", 10));
+        
 
          // nomenclature note: 
          // this contract has two major features that are mirror images of each other:
@@ -107,7 +117,7 @@ CONTRACT vigor : public eosio::contract {
          
          auto primary_key() const { return usern.value; }
 
-         EOSLIB_SERIALIZE(user_s, (usern)(debt)(collateral)(insurance)(valueofcol)(valueofins)(tesprice)(earnrate)(pcts)(volcol)(stresscol)(istresscol)(svalueofcol)(svalueofcole)(svalueofcoleavg)(premiums)(feespaid)(creditscore)(lastupdate)(latepays)(recaps)(l_debt)(l_collateral)(l_lrtoken)(l_lrpayment)(l_lrname)(l_valueofcol)(l_tesprice)(l_earnrate)(l_pcts)(l_volcol)(l_stresscol)(l_istresscol)(l_svalueofcol)(l_svalueofcole)(l_svalueofcoleavg)(l_premiums)(l_latepays)(l_recaps)(timer)(expiration))
+         EOSLIB_SERIALIZE(user_s, (usern)(debt)(collateral)(insurance)(valueofcol)(valueofins)(tesprice)(earnrate)(pcts)(volcol)(stresscol)(istresscol)(svalueofcol)(svalueofcole)(svalueofcoleavg)(premiums)(feespaid)(creditscore)(lastupdate)(latepays)(recaps)(l_debt)(l_collateral)(l_lrtoken)(l_lrpayment)(l_lrname)(l_valueofcol)(l_tesprice)(l_earnrate)(l_pcts)(l_volcol)(l_stresscol)(l_istresscol)(l_svalueofcol)(l_svalueofcole)(l_svalueofcoleavg)(l_premiums)(l_latepays)(l_recaps)(starttime)(expiry_time))
       }; typedef eosio::multi_index<name("user"), user_s> user_t;
                                                           user_t _user;
 

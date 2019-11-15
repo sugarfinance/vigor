@@ -1531,44 +1531,108 @@ void vigor::pcts(name usern, double RM) { // percent contribution to solvency
 }
 
 void vigor::payfee(name usern) {
-  auto &user = _user.get( usern.value, "User not found23" );
-  check(_globals.exists(), "no global table exists yet");
-  globalstats gstats = _globals.get();
 
+  auto &user = _user.get( usern.value, "User not found23" );
+
+  check(_globals.exists(), "no global table exists yet");
+
+  globalstats gstats = _globals.get();
+  
   bool late = true;
+
   uint64_t amt = 0;
-  symbol vig = symbol("VIG", 4);
+
+  symbol vig =symbol("VIG", 10);
+
   asset amta = asset(amt, vig);
+  
+
   uint32_t dsec = current_time_point().sec_since_epoch() - user.lastupdate.sec_since_epoch() + 1; //+1 to protect against 0
+
   uint32_t T = (uint32_t)(360.0 * 24.0 * 60.0 * (60.0 / (double)dsec));
+
+  // calculating token swap pay
   double tespay = (user.debt.amount / std::pow(10.0, 4)) * (std::pow((1 + user.tesprice), (1.0 / T)) - 1); // $ amount user must pay over time T
   
+  
+  timer::feeclock _clock;
+  eosio::time_point_sec st;  // start time
+  eosio::time_point_sec et;  // expiry time
+    
     auto it = user.collateral.begin();
+
+
     bool found = false;
-    while ( !found && it++ != user.collateral.end() ) 
+  
+    while ( !found && it++ != user.collateral.end() )
       found = (it-1)->symbol == vig; //User collateral type found
+  
     t_series stats(name("datapreprocx"),name(issuerfeed[vig]).value);
+
+
     auto itr = stats.find(1);
-    amta.amount = uint64_t(( tespay * std::pow(10.0, 4) ) / // number of VIG*10e4 user must pay over time T
-          ((double)itr->price[0] / pricePrecision));
-      if (!found)
-          _user.modify(user, _self, [&]( auto& modified_user) { // withdraw fee
-            modified_user.latepays += 1;
-          });
+
+     // number of VIG*10e4 user must pay over time T
+    amta.amount = uint64_t(( tespay * std::pow(10.0, 4) ) / ((double)itr->price[0] / pricePrecision));
+
+      if (!found){
+
+                auto function = [&] (auto user, auto st, auto rt, auto _clock, auto _user, auto _self){
+                
+                    if(user.starttime == DEFAULT_TIME && user.expiry_time == DEFAULT_TIME)
+                    {
+                      //set clock time 
+                      _clock.set_time(current_time_point().sec_since_epoch());
+                      //set the starttimer 
+                      st = _clock.get_time();
+                      //set the expiry_timer
+                      et = timer::expirydate(_clock);
+                      
+                      
+                      _user.modify(user, _self, [&]( auto& modified_user) { 
+                           // modify the user starttime
+                           user.starttime = st;
+                           // modify the user expiry_time
+                           user.expiry_time = et;
+                           // late pays gets accumulated here
+                       }); 
+                      
+                    }
+                    else if(user.starttime < user.expiry_time)
+                    {
+                   
+                   
+                    }
+                    else if(user.starttime >= user.expiry_time)
+                    {
+                     
+                     
+                    }
+               };
+        
+      }
       else {
         if (amta.amount > (it-1)->amount)
-          _user.modify(user, _self, [&]( auto& modified_user) { // withdraw fee
+        {     
+
+          /*_user.modify(user, _self, [&]( auto& modified_user) { // withdraw fee
             modified_user.latepays += 1;
-          });
-        else if (amta.amount > 0) {
+          });*/
+          
+        }
+        else if (amta.amount > 0){ 
+         
+
           _user.modify(user, _self, [&]( auto& modified_user) { // withdraw fee
             modified_user.feespaid.amount += amta.amount;
-            if (amta.amount == (it-1)->amount)
-              modified_user.collateral.erase(it-1);
+            if (amta.amount == (it-1)->amount)  
+              modified_user.collateral.erase(it-1); 
             else {
             modified_user.collateral[(it-1) - user.collateral.begin()] -= amta;
             }
           });
+
+           // the global table is updated
           for ( auto itr = gstats.collateral.begin(); itr != gstats.collateral.end(); ++itr )
             if ( itr->symbol == vig ) {
               if (gstats.collateral[itr - gstats.collateral.begin()].amount - amta.amount > 0) {
@@ -1585,7 +1649,7 @@ void vigor::payfee(name usern) {
         }
       }
   
-  if (!late) {
+  if (!late) {  // this block of code concerns the insurers
     uint64_t res = (uint64_t)(std::pow(10.0, 4)*(amta.amount/std::pow(10.0, 4) * reservecut));
     
     amta.amount = (uint64_t)(std::pow(10.0, 4)*(amta.amount/std::pow(10.0, 4) * (1.0-reservecut)));
@@ -1625,6 +1689,7 @@ void vigor::payfee(name usern) {
   }
   
 }
+
 
 void vigor::update(name usern) 
 {
@@ -1944,75 +2009,6 @@ void vigor::bailout(name usern)
     }
   }
 }
-
-// timer functions definitions
-// 1. calculate the expiration that will occur in 7 days
-void vigor::starttimer(name usern){
-  require_auth(usern);
-  print("start the timer, ", name{usern});
-  
-
-    //user _user(_self, usern.value);
-    
-    
-    auto it = _user.find(usern.value);
-    
-    if(it == _user.end()){
-      it = _user.emplace(usern, [&](auto& modified_user){
-        modified_user.usern = usern;
-        modified_user.timer = current_time_point();
-        modified_user.expiration = current_time_point();
-    });
-  }
-}
-
-void vigor::expiration(name usern){
-  require_auth(usern);
-  static const uint32_t now = current_time_point().sec_since_epoch();
-  static const uint32_t r = now % hours(24).to_seconds();
-  static const time_point_sec expire_date = (time_point_sec)(now - r + (7 * hours(24).to_seconds()));
-  
-  //user _user(_self, usern.value);
-  
-  // start the clock
-  auto it = _user.find(usern.value);
-     _user.modify(it, get_self(), [&]( auto& modified_user){
-        modified_user.expiration = expire_date;
-  });
-}
-
-
-void vigor::elapsedtime(name usern){
-    require_auth(usern);
-  
- 
-  auto itr = _user.find(usern.value);
-  
-  if(itr->expiration > current_time_point()){
-    print("the deadline has passed");
-    // reset the clock
-   
-  }else{
-    print("the deadline has not yet passed");
-    // missed payments are accummulated
-  }
-}
-
-// reset the clock
-void vigor::resttimer(name usern){
-   require_auth(usern);
-  
-   //user _user(_self, usern.value);
-  auto itr = _user.find(usern.value);
-  
-  _user.modify(itr, get_self(), [&]( auto& modified_user){
-        modified_user.timer = current_time_point(); 
-        modified_user.expiration = current_time_point();
-  });
-}
-
-
-  
 
 
 
