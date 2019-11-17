@@ -1530,244 +1530,52 @@ void vigor::pcts(name usern, double RM) { // percent contribution to solvency
     
 }
 
-/*void vigor::payfee(name usern) {
-  auto &user = _user.get( usern.value, "User not found23" );
-  check(_globals.exists(), "no global table exists yet");
-  globalstats gstats = _globals.get();
-
-  bool late = true;
-  uint64_t amt = 0;
-  symbol vig = symbol("VIG", 4);
-  asset amta = asset(amt, vig);
-  uint32_t dsec = current_time_point().sec_since_epoch() - user.lastupdate.sec_since_epoch() + 1; //+1 to protect against 0
-  uint32_t T = (uint32_t)(360.0 * 24.0 * 60.0 * (60.0 / (double)dsec));
-  double tespay = (user.debt.amount / std::pow(10.0, 4)) * (std::pow((1 + user.tesprice), (1.0 / T)) - 1); // $ amount user must pay over time T
-  
-    auto it = user.collateral.begin();
-    bool found = false;
-    while ( !found && it++ != user.collateral.end() ) 
-      found = (it-1)->symbol == vig; //User collateral type found
-    t_series stats(name("datapreprocx"),name(issuerfeed[vig]).value);
-    auto itr = stats.find(1);
-    amta.amount = uint64_t(( tespay * std::pow(10.0, 4) ) / // number of VIG*10e4 user must pay over time T
-          ((double)itr->price[0] / pricePrecision));
-      if (!found)
-          _user.modify(user, _self, [&]( auto& modified_user) { // withdraw fee
-            modified_user.latepays += 1;
-          });
-      else {
-        if (amta.amount > (it-1)->amount)
-          _user.modify(user, _self, [&]( auto& modified_user) { // withdraw fee
-            modified_user.latepays += 1;
-          });
-        else if (amta.amount > 0) {
-          _user.modify(user, _self, [&]( auto& modified_user) { // withdraw fee
-            modified_user.feespaid.amount += amta.amount;
-            if (amta.amount == (it-1)->amount)
-              modified_user.collateral.erase(it-1);
-            else {
-            modified_user.collateral[(it-1) - user.collateral.begin()] -= amta;
-            }
-          });
-          for ( auto itr = gstats.collateral.begin(); itr != gstats.collateral.end(); ++itr )
-            if ( itr->symbol == vig ) {
-              if (gstats.collateral[itr - gstats.collateral.begin()].amount - amta.amount > 0) {
-                gstats.collateral[itr - gstats.collateral.begin()].amount -= amta.amount;
-                gstats.valueofcol -= tespay;
-              }
-              else {
-                gstats.collateral.erase(itr-1);
-                gstats.valueofcol = 0.0;
-              }
-              break;
-            }
-          late = false;
-        }
-      }
-  
-  if (!late) {
-    uint64_t res = (uint64_t)(std::pow(10.0, 4)*(amta.amount/std::pow(10.0, 4) * reservecut));
-    
-    amta.amount = (uint64_t)(std::pow(10.0, 4)*(amta.amount/std::pow(10.0, 4) * (1.0-reservecut)));
-    for ( auto itr = _user.begin(); itr != _user.end(); ++itr ) {
-    double weight = itr->pcts; //eosio::print( "percent contribution to risk : ", weight, "\n");
-      if ( weight > 0.0 ) {
-        asset viga = asset(amta.amount * weight, vig);
-        found = false;
-        auto it = itr->insurance.begin();
-        while ( !found && it++ != itr->insurance.end() )
-          found = (it-1)->symbol == vig;
-        if (!found && amta.amount > 0)
-            _user.modify(itr, _self, [&]( auto& modified_user) { // deposit fee
-              modified_user.insurance.push_back(viga);
-              });
-        else
-            if (amta.amount > 0) {
-              _user.modify( itr, _self, [&]( auto& modified_user ) { // deposit fee
-              modified_user.insurance[(it-1) - itr->insurance.begin()] += viga;
-              });
-            }
-        found = false;
-        auto itg = gstats.insurance.begin();   
-        while ( !found && itg++ != gstats.insurance.end() )
-          found = (itg-1)->symbol == vig;  
-        if (!found && amta.amount > 0) {
-          gstats.insurance.push_back(viga);
-          gstats.valueofins += tespay;
-        }
-        else if (amta.amount > 0){
-          gstats.insurance[(itg-1) - gstats.insurance.begin()] += viga;
-          gstats.valueofins += tespay;
-        }       
-      }
-    }
-  _globals.set(gstats, _self);
-  }
-  
-}*/
-
-
 void vigor::payfee(name usern) {
-  // _user - this a variable for the multi_index object of type user_t
-  // auto &user references the name of the table called user in the multi_index configuration
-  // it allows us to make changes to the table "user"
-  // get() searches for an existing object in a table using its primary key
-  // get() returns an iterator to the found object which has a primary key equal to primary OR the 
-  // end iterator of the referenced table if an object with primary key 'primary' is not found
-  // the table contains a number of different singular "users", hence the table name user
-  // so the referenced table is searched for the scope usern.value
+
   auto &user = _user.get( usern.value, "User not found23" );
 
-  // exists() - checks if a singleton table exists, true if exists, false if otherwise
-  // _globals is the variable of type globals, which is the name of the multi_index table ctor
-  // so a check is made to see if the singleton table exists, and if not the string is returned
   check(_globals.exists(), "no global table exists yet");
 
-  // gstats is an object of the data structure globalstats
-  // get() gets the value stored inside the singleton table and assigns it to the object gstats
   globalstats gstats = _globals.get();
-  
-  // a boolean variable late is set to true
+ 
   bool late = true;
  
-
-  // a variable amt of type uint64_t is set to 0
   uint64_t amt = 0;
 
-   // a variable vig of type symbol is assigned the contents of the symbol ctor
-  // symbol vig = symbol("VIG", 4);
   symbol vig =symbol("VIG", 10);
 
-    // the amount in vig that gets paid back
   asset amta = asset(amt, vig);
-  
-    // user.lastupdate - this refers to the time that the user's data was last updated
-  // dsec is assigned the value that marks the duration between the time now, and the time that the user's data was lastupdated
+
   uint32_t dsec = current_time_point().sec_since_epoch() - user.lastupdate.sec_since_epoch() + 1; //+1 to protect against 0
 
-  // T is a converted time value
+
   uint32_t T = (uint32_t)(360.0 * 24.0 * 60.0 * (60.0 / (double)dsec));
 
-  // calculating token swap pay
   double tespay = (user.debt.amount / std::pow(10.0, 4)) * (std::pow((1 + user.tesprice), (1.0 / T)) - 1); // $ amount user must pay over time T
   
-  
-  // create an instance of the feeclock()
   timer::feeclock _clock;
   eosio::time_point_sec st;  // start time
   eosio::time_point_sec et;  // expiry time
-    
-    // an iterator that traverses the user collateral vector within user object
-    // the iterator is first made to point at the beginning of the collateral vector
+
     auto it = user.collateral.begin();
 
 
     bool found = false;
-    //bool clockstarted = true;
-     
-    // TIMER LOGIC!!!!
-    // the logic here is that when found is false that clock will not start
-    // and the found is true the clock is started
-    // this will prevent the clock from starting out of sync with found
 
-
-    // a while loop
-    // !false == true - so while !found == true and it++ post-increment is not equal to user.collateral.end()
-    // here the while loop works through the collateral vector
-    // as soon as it finds an element where (it -1)->symbol == vig is true
-    // then found is assigned the value true
-    // and within the while loop !found == !true == false
-    // != user.collateral.end() == !end() == !false = true
-    // and so the while loop stopped and the rest of the program continues executing
-    // so when !found is true and !user.collateral.end() is true
-    // the found is assiged the boolean value of found = (it-1)->symbol == vig
-    // if (it-1)->symbol is not equivalent to vig the found is false
-    // if (it-1)->symbol is equivalent to vig the found is true
-    // if (it-1)->symbol == vig is false, the found == false,
-    // then the !found in the while-loop is also !false == true  
-    // the it++ is incremented 
-    // then if both condition are true then the line found = (it-1)->symbol == vig is executed
-    // *******************************************************************************************
-    // if (it-1)->symbol IS equivalent to vig, then found = true
-    // then in the while loop !found = !true = false
-    // then the while loop stops executing
-    // if found is true the while loop stops with the iterator at position it++
-    // 
     while ( !found && it++ != user.collateral.end() )
-      // end() refers to one offset outside the vector container - the element after the last element
       found = (it-1)->symbol == vig; //User collateral type found
-  
-    
-    
-    // the while loop only stops when !found == !true == false which happens when 
-    // found = (it-1)->symbol == vig => true
-    // || itr = user.collateral.end()
 
-    // reads data from the code which is datapreprocx, 
-    // the scope - the 'account' is from (issuerfeed[vig].value
     t_series stats(name("datapreprocx"),name(issuerfeed[vig]).value);
 
-
-    // the itr searches for an existing object in a table using its primary key.
     auto itr = stats.find(1);
 
      // number of VIG*10e4 user must pay over time T
     amta.amount = uint64_t(( tespay * std::pow(10.0, 4) ) / ((double)itr->price[0] / pricePrecision));
 
-      // A. this if-condition only gets executed if !found == !false == true 
-      // && it++ IS EQUAL to user.collateral.end()
-      // if while(false && true) then !found = !false = true and the if(!found) = if(1) 
-      // if while(true && false) then !found = !true = false and then if(!found) = if(0)
-      // if the user has got vig in his collateral then the if condition is not executed
-      // and the user makes a payment 
-      // if the user has no vig in his collateral then the if condition is executed
-      // and the clock is started on the user
-      // and late payements are accrued
       if (!found){
         
-                // (it-1)->amount this means that the iterator never gets to one outside the container
-                /*
-                 
-                  // as soon as the user misses a payment the clock gets started
-                  // step 1. the expiration time is calculate here
-                  // step 2. a check is made to see if expiration time has fully elapsed
-                  //       - if not then missed payments are added to the late_payments variable
-                  //       - missed payements are then accumulated because of tesprice changes
-                  //       - create a user data variable to hold accumulated latefees
-                  // step 3. if the expiration time has expired
-                  //       - bailout(late_payment); is issued
-                  //       - delinquenceyfee() is charged on the user
-                  //       - expiration time is reset
-                  //       - late_payments is reset
-                */
-                
-                //auto function = [&] (auto user, auto st, auto _clock){
                 auto function = [&] (auto user, auto st, auto rt, auto _clock, auto _user, auto _self){
-                    // if the clock and expiry time is not at this default value, then
-                    // this would mean that the clock has been already started and will not be set again 
-                    // until theres a change in late-payment circumstances
-                    // if the starttime and endtime ARE both the same default time 
-                    // then the clock can be set, and the expiry time can also be set
+  
                     if(user.starttime == DEFAULT_TIME && user.expiry_time == DEFAULT_TIME)
                     {
                       //set clock time 
@@ -1791,74 +1599,17 @@ void vigor::payfee(name usern) {
                     }
                     else if(user.starttime < user.expiry_time)
                     {
-                      // data has to be taken from the users table here - because it isn't saved in the object 
-                      // the clock has started because we have checked the start time in the users row
-                      // check whether 24 hours have elapsed
-                      // elapsedtime returns an int 
-                      // and that int is assigned to a value within user
-                      // 
-                      // do not reset here
+                 
                     }
                     else if(user.starttime >= user.expiry_time)
                     {
-                      // the grace peroid has expiried
-                      // bailout 
-                      // delinquency_fee()
-                      // reset the clock
+       
                     }
                };
-          
-                /*
-                  // when the clock approaches 24 hr then late pays is incremented - 24:00:00
-                  // if latepays exceeds 7 then - (7)*(24:00:00)
-                  // bailout() -  1. insurers take ownership and they get debt so bailout gets called
-                  // deliquencyfee() - 2. borrower gets a deliquency fee - this comes from excess collateral in their account.
-                  // -  The rest the user can withdraw or use to draw new debt against it
-                  // 3. borrower retains excess collateral and can borrow again or withdraw
-                  // 4. borrower gets a re-capp on their user data and this affects their credit score
-                  // late payment accumulator is reset
-                  // remember to reset the bool startTimer back to false
-                  // the timer is reset
-                  // payments can proceed as normal until another payment is missed
-               */
-              
       }
       else {
-        // B. this if-condition gets executed if !found == !true == false 
-        // && it++ IS NOT EQUAL to user.collateral.end()
         if (amta.amount > (it-1)->amount)
-        {     // if amta.amount is greater than collateral amount
-              // HERE IS WHERE DUSTING OCCURS!!!!!!!
-              // FROM THIS IF-CONDITION, THE PROGRAM SHOULD BE REDIRECTED TO THE IF-CONDITION IN A.
-
-              // step 1. the user makes a payment. The remaining money owed is added to late payment
-              // step 2. check that amta.amount == 0.0000 VIG
-              // step 3. erase the vector elements that have zero value
-              
-              
-              /* _user.modify(user, _self, [&]( auto& modified_user) { // withdraw fee
-                  modified_user.latepays += 1;
-                  // as soon as the user misses a payment the clock get started
-                  // - 00:00:00
-                  // missed payements are then accumulated because of tesprice changes
-                  // when the clock approaches 24 hr then late pays is incremented - 24:00:00
-                  // if latepays exceeds 7 then - (7)*(24:00:00)
-                  // bailout() -  1. insurers take ownership and they get debt so bailout gets called
-                  // deliquencyfee() - 2. borrower gets a deliquency fee - this comes from excess collateral in their account.
-                  // -  The rest the user can withdraw or use to draw new debt against it
-                  // 3. borrower retains excess collateral and can borrow again or withdraw
-                  // 4. borrower gets a re-capp on their user data and this affects their credit score
-                  // late payment accumulator is reset
-                  // the timer is reset
-                  // payments can proceed as normal until another payment is missed
-
-                  // if user makes payment before 7 days,
-                  // he pays the late-payments accumulation
-                  // and clock is stopped and reset
-                  // late-payments accumulation is reset
-                  // payments can proceed as normal until another payment is missed
-                });*/
-
+        {     
 
           _user.modify(user, _self, [&]( auto& modified_user) { // withdraw fee
             modified_user.latepays += 1;
@@ -1866,34 +1617,20 @@ void vigor::payfee(name usern) {
           
         }
         else if (amta.amount > 0){ 
-              // if amta.amount is less than (it-1)->amount and greater than zero
-
-              /* // step 1. check that there are any outstanding late_payements to be paid
-              // step 2. if so repay these and then reset late_payments to 0
-              // step 3. check whether a deliquencyfee() has been paid
-              // step 4. if so repay deliquencyfee() and reset to 0
-              // step 5. check that expiration time is equivalent to start_time */
-
-              /*
-                // if user makes payment before 7 days,
-                // he pays the late-payments accumulation
-                // and clock is stopped and reset
-                // late-payments accumulation is reset
-                // payments can proceed as normal until another payment is missed
-              */
+           
 
               // here is where the fees are paid
 
           _user.modify(user, _self, [&]( auto& modified_user) { // withdraw fee
             modified_user.feespaid.amount += amta.amount;
-            if (amta.amount == (it-1)->amount)  // if amta.amount == (user.collateral.begin() - 1)->amount
-              modified_user.collateral.erase(it-1); // then users collateral at (it - 1) is erased because has made all his payments
+            if (amta.amount == (it-1)->amount)  
+              modified_user.collateral.erase(it-1); 
             else {
-            modified_user.collateral[(it-1) - user.collateral.begin()] -= amta; // if not, another deduction is made thereby reducing the 
+            modified_user.collateral[(it-1) - user.collateral.begin()] -= amta; 
             }
           });
 
-           // the global table is updated
+          
           for ( auto itr = gstats.collateral.begin(); itr != gstats.collateral.end(); ++itr )
             if ( itr->symbol == vig ) {
               if (gstats.collateral[itr - gstats.collateral.begin()].amount - amta.amount > 0) {
@@ -1910,7 +1647,7 @@ void vigor::payfee(name usern) {
         }
       }
   
-  if (!late) {  // this block of code concerns the insurers
+  if (!late) { 
     uint64_t res = (uint64_t)(std::pow(10.0, 4)*(amta.amount/std::pow(10.0, 4) * reservecut));
     
     amta.amount = (uint64_t)(std::pow(10.0, 4)*(amta.amount/std::pow(10.0, 4) * (1.0-reservecut)));
