@@ -2,6 +2,8 @@
 
 using namespace eosio;
 
+
+
 namespace timer {
 
   
@@ -29,7 +31,7 @@ namespace timer {
     eosio::time_point_sec startclock;        
     eosio::time_point_sec clockexpiry;
     
-    EOSLIB_SERIALIZE(feeclock, (startclock)(clockexpiry));
+    EOSLIB_SERIALIZE(feeclock, (timerstate)(startclock)(clockexpiry));
     
   };
   

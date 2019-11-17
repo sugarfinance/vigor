@@ -66,13 +66,13 @@ namespace timer {
   
   // function that gets the start time of the late-pay peroid
   eosio::time_point_sec startclock(feeclock const& clock_){
-    return clock.get_time();
+    return clock_.get_time();
   }
   
   // function that gets the expiry date of the late-pay time
   eosio::time_point_sec expirydate(feeclock const& clock_){
     //static const uint32_t now = current_time_point().sec_since_epoch();
-    static const uint32_t now = _clock.get_time();
+    static const uint32_t now = clock_.get_time();
     static const uint32_t r = now % hours(24).to_seconds();
     static const time_point_sec expire_date = (time_point_sec)(now - r + (7 * hours(24).to_seconds()));
     return expiry_date;
