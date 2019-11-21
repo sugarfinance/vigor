@@ -59,8 +59,10 @@ namespace timer {
   }
   
   // set the time of the clock
-  void feeclock::set_time(eosio::time_point _time){
-    uint32_t now = _time;  // _time == current_time_point().sec_since_epoch();
+  //void feeclock::set_time(eosio::time_point _time){
+  void feeclock::set_time(){
+    //uint32_t now = _time;  // _time == current_time_point().sec_since_epoch();
+    uint32_t now == current_time_point().sec_since_epoch();
     clockstart = (time_point_sec)(_time);
   }
   

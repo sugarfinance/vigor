@@ -96,6 +96,9 @@ CONTRACT vigor : public eosio::contract {
          eosio::time_point_sec starttime;
          eosio::time_point_sec expiry_time;
          
+         // a variable that counts the number of days that payments have been missed
+         int elapsed_days = 0;
+         
          // late pays gets accumulated here
          asset accumulatepays = asset(0, symbol("VIG", 10));
         

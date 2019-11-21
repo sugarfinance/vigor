@@ -23,7 +23,8 @@ namespace timer {
     // getter
     eosio::time_point_sec get_time();
     // setter
-    void set_time(eosio::time_point_sec _time);
+    //void set_time(eosio::time_point_sec _time);
+    void set_time();
     
   private:
     // data members to be used for the timer methods
