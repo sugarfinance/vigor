@@ -1857,18 +1857,18 @@ void vigor::update(name usern)
     modified_user.valueofins = valueofins;
     modified_user.valueofcol = valueofcol;
 
-  double l_valueofcol = 0.0;
-  
-  for ( auto it = user.l_collateral.begin(); it != user.l_collateral.end(); ++it ){
-    t_series statsj(name("datapreprocx"),name(issuerfeed[it->symbol]).value);
-    auto itr = statsj.find(1);
-    l_valueofcol += (it->amount) / std::pow(10.0, it->symbol.precision()) * 
-                  ( (double)itr->price[0] / pricePrecision );
-  }
+    double l_valueofcol = 0.0;
+    
+    for ( auto it = user.l_collateral.begin(); it != user.l_collateral.end(); ++it ){
+      t_series statsj(name("datapreprocx"),name(issuerfeed[it->symbol]).value);
+      auto itr = statsj.find(1);
+      l_valueofcol += (it->amount) / std::pow(10.0, it->symbol.precision()) * 
+                    ( (double)itr->price[0] / pricePrecision );
+    }
 
-  _user.modify( user, _self, [&]( auto& modified_user ) { // Update value of collateral
-    modified_user.l_valueofcol = l_valueofcol;
-  });
+    _user.modify( user, _self, [&]( auto& modified_user ) { // Update value of collateral
+      modified_user.l_valueofcol = l_valueofcol;
+    });
   });
 }
 
@@ -2016,23 +2016,23 @@ void vigor::bailout(name usern)
       if (itr->pcts > 0.0) {
         n += 1;
         // all insurers participate to recap bad debt, each insurer taking ownership of a fraction of the imparied collateral and debt; insurer participation is based on their percent contribution to solvency
-        uint64_t debtime_of_starthare = debt.amount * itr->pcts; // insurer share of failed loan debt, in stablecoin
-        eosio::print( "debtime_of_starthare : ", debtime_of_starthare, "\n");
+        uint64_t debtshare = debt.amount * itr->pcts; // insurer share of failed loan debt, in stablecoin
+        eosio::print( "debtshare : ", debtshare, "\n");
         eosio::print( "itr->valueofins : ", itr->valueofins, "\n");
         eosio::print( "user.valueofcol : ", user.valueofcol, "\n");
-        double W1 = std::min(user.valueofcol*itr->pcts,debtime_of_starthare/std::pow(10.0, 4)); // insurer share of impaired collateral, in dollars
+        double W1 = std::min(user.valueofcol*itr->pcts,debtshare/std::pow(10.0, 4)); // insurer share of impaired collateral, in dollars
         eosio::print( "W1 : ", W1, "\n");
         double s1 = user.volcol/std::sqrt(52); // volatility of the impaired collateral portfolio, weekly
         eosio::print( "s1 : ", s1, "\n");
         double s2 = std::sqrt(portVarianceIns(itr->usern)/52.0); // volatility of the particular insurers insurance portfolio, weekly
         eosio::print( "s2 : ", s2, "\n");
-        double w1 = W1/((debtime_of_starthare/std::pow(10.0, 4))*(1.0+std::max(s1,s2))); // estimated percentage weight of recapped loan collateral covered by impaired collateral
+        double w1 = W1/((debtshare/std::pow(10.0, 4))*(1.0+std::max(s1,s2))); // estimated percentage weight of recapped loan collateral covered by impaired collateral
         eosio::print( "w1 : ", w1, "\n");
         double sp = std::sqrt(std::pow(w1,2)*std::pow(s1,2) + std::pow(1.0-w1,2)*std::pow(s2,2) + 2.0*w1*(1.0-w1)*s1*s2); // estimated volatility of recapped loan collateral portfolio including a minimum amount of insurance assetime_of_start
         // insurers auotmatically convert some of their insurance assetime_of_start into collateral, and combined with the impaired collateral recapitalizes the bad debt
         // recapReq: required amount of insurance assetime_of_start to be converted to collateral to recap the failed loan such that the overcollateralization amount becomes equivalent to a 1 standard deviation weekly move of the new recapped collateral portfolio
         eosio::print( "sp : ", sp, "\n");
-        double recapReq = std::min((((debtime_of_starthare/std::pow(10.0, 4))*(1.0+sp)) - W1)/itr->valueofins,1.0); // recapReq as a percentage of the insurers insurance assetime_of_start
+        double recapReq = std::min((((debtshare/std::pow(10.0, 4))*(1.0+sp)) - W1)/itr->valueofins,1.0); // recapReq as a percentage of the insurers insurance assetime_of_start
         eosio::print( "recapReq : ", recapReq, "\n");
         eosio::print( "itr->usern : ", itr->usern, "\n");
         eosio::print( "itr->pcts : ", itr->pcts, "\n");
@@ -2077,13 +2077,13 @@ void vigor::bailout(name usern)
 
         _user.modify(user, _self, [&]( auto& modified_user) {
                 if (n==numinsurers)
-                  debtime_of_starthare += modified_user.debt.amount - debtime_of_starthare; // the amount allocated to last insurer should bring the debt to zero otherwise it is dust leftover
-                modified_user.debt.amount -= debtime_of_starthare;
-                eosio::print( "modified_user.debt.amount ", modified_user.debt.amount, " debtime_of_starthare", debtime_of_starthare,"\n");
+                  debtshare += modified_user.debt.amount - debtshare; // the amount allocated to last insurer should bring the debt to zero otherwise it is dust leftover
+                modified_user.debt.amount -= debtshare;
+                eosio::print( "modified_user.debt.amount ", modified_user.debt.amount, " debtshare", debtshare,"\n");
         });
 
         _user.modify(itr, _self, [&]( auto& modified_user) {
-          modified_user.debt.amount += debtime_of_starthare;
+          modified_user.debt.amount += debtshare;
         });
 
         //convert some insurance into collateral, recapitalizing the bad debt
