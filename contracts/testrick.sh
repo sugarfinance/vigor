@@ -99,6 +99,9 @@ CONTRACT_WASM="$CONTRACT.wasm"
 CONTRACT_ABI="$CONTRACT.abi"
 CONTRACT_CPP="$CONTRACT.cpp"
 eosio-cpp -contract=$CONTRACT -o="$CONTRACT_OUT/$CONTRACT_WASM" -I="$CONTRACT_INCLUDE" -I="$CONTRACT_INCLUDE_BOOST" -abigen "$CONTRACT_ROOT/$CONTRACT_CPP"
+#eosio-cpp -contract=$CONTRACT -o="$CONTRACT_OUT/$CONTRACT_WASM" -I="$CONTRACT_INCLUDE" -I="$CONTRACT_INCLUDE_BOOST" -I="/home/gg/Var_/eigen-eigen-323c052e1731" -I="/home/gg/Var_/eigen-eigen-323c052e1731/src" -abigen "$CONTRACT_ROOT/$CONTRACT_CPP"
+
+
 cleos set contract vigor1111111 $CONTRACT_OUT $CONTRACT_WASM $CONTRACT_ABI -p vigor1111111@active
 cleos push action vigor1111111 create '[ "vigor1111111", "1000000000.0000 VIGOR"]' -p vigor1111111@active
 cleos push action vigor1111111 setsupply '[ "vigor1111111", "1000000000.0000 VIGOR"]' -p vigor1111111@active
@@ -287,7 +290,7 @@ cleos --verbose push action eosio.token transfer '{"from":"testins11112","to":"v
 cleos --verbose push action dummytokensx transfer '{"from":"testins11112","to":"vigor1111111","quantity":"3000.000 IQ","memo":"insurance"}' -p testins11112@active
 
 cleos --verbose push action vigor1111111 assetout '{"usern":"testbrw11111","assetout":"42.0001 VIGOR","memo":"borrow"}' -p testbrw11111@active
-cleos --verbose push action vigor1111111 assetout '{"usern":"testbrw11112","assetout":"21.0000 VIGOR","memo":"borrow"}' -p testbrw11112@active
+cleos --verbose push action vigor1111111 assetout '{"usern":"testbrw11112","assetout":"20.0000 VIGOR","memo":"borrow"}' -p testbrw11112@active
 
 #cleos --verbose push action vigor1111111 assetout '{"usern":"finalreserve","assetout":"1.0000 EOS","memo":"insurance"}' -p finalreserve@active
 #cleos --verbose push action vigor1111111 assetout '{"usern":"testbrw11111","assetout":"1.0000 EOS","memo":"collateral"}' -p testbrw11111@active
@@ -399,15 +402,3 @@ cleos --verbose get table vigor1111111 vigor1111111 user -Ltestins21112 -Utestin
 cleos --verbose get table vigor1111111 vigor1111111 user -Lfinalreserve -Ufinalreserve
 cleos --verbose get table vigor1111111 vigor1111111 user -Lreinvestment -Ureinvestment
 cleos --verbose get table vigor1111111 vigor1111111 globals
-
-VIG airdrop 5% to eosDAC community. VIGOR thanks eosDAC !
-
-VIG. a token. a utility for community supported financial dapps
-
-VIGOR. a decentralized finance project enabled by eosDAC
-
-VIGOR. stablecoin. a borrow & earn community. go long, go short, hedge. bull, bear, banker.
-
-don't get it? visit vigor.ai
-
-vote for eosdacserve
