@@ -1,4 +1,7 @@
 ##############################################
+eosio-cpp 1.6.2
+eosio 1.8.3
+
 #eosio install package method
 sudo apt remove eosio
 wget https://github.com/eosio/eos/releases/download/v1.7.4/eosio_1.7.4-1-ubuntu-18.04_amd64.deb

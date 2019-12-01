@@ -99,6 +99,9 @@ CONTRACT_WASM="$CONTRACT.wasm"
 CONTRACT_ABI="$CONTRACT.abi"
 CONTRACT_CPP="$CONTRACT.cpp"
 eosio-cpp -contract=$CONTRACT -o="$CONTRACT_OUT/$CONTRACT_WASM" -I="$CONTRACT_INCLUDE" -I="$CONTRACT_INCLUDE_BOOST" -abigen "$CONTRACT_ROOT/$CONTRACT_CPP"
+#eosio-cpp -contract=$CONTRACT -o="$CONTRACT_OUT/$CONTRACT_WASM" -I="$CONTRACT_INCLUDE" -I="$CONTRACT_INCLUDE_BOOST" -I="/home/gg/Var_/eigen-eigen-323c052e1731" -I="/home/gg/Var_/eigen-eigen-323c052e1731/src" -abigen "$CONTRACT_ROOT/$CONTRACT_CPP"
+
+
 cleos set contract vigor1111111 $CONTRACT_OUT $CONTRACT_WASM $CONTRACT_ABI -p vigor1111111@active
 cleos push action vigor1111111 create '[ "vigor1111111", "1000000000.0000 VIGOR"]' -p vigor1111111@active
 cleos push action vigor1111111 setsupply '[ "vigor1111111", "1000000000.0000 VIGOR"]' -p vigor1111111@active
@@ -287,7 +290,7 @@ cleos --verbose push action eosio.token transfer '{"from":"testins11112","to":"v
 cleos --verbose push action dummytokensx transfer '{"from":"testins11112","to":"vigor1111111","quantity":"3000.000 IQ","memo":"insurance"}' -p testins11112@active
 
 cleos --verbose push action vigor1111111 assetout '{"usern":"testbrw11111","assetout":"42.0001 VIGOR","memo":"borrow"}' -p testbrw11111@active
-cleos --verbose push action vigor1111111 assetout '{"usern":"testbrw11112","assetout":"21.0000 VIGOR","memo":"borrow"}' -p testbrw11112@active
+cleos --verbose push action vigor1111111 assetout '{"usern":"testbrw11112","assetout":"20.0000 VIGOR","memo":"borrow"}' -p testbrw11112@active
 
 #cleos --verbose push action vigor1111111 assetout '{"usern":"finalreserve","assetout":"1.0000 EOS","memo":"insurance"}' -p finalreserve@active
 #cleos --verbose push action vigor1111111 assetout '{"usern":"testbrw11111","assetout":"1.0000 EOS","memo":"collateral"}' -p testbrw11111@active
@@ -363,11 +366,11 @@ cleos --verbose push action vigor1111111 assetout '{"usern":"testins21112","asse
 cleos --verbose push action vigor1111111 assetout '{"usern":"testbrw21111","assetout":"0.0001 VIGOR","memo":"insurance"}' -p testbrw21111@active
 
 # borrow cryptos against stablecoin collateral
-# locates crypto in the insurance pool, locating accross one insurer at a time until fully located
-# transfers the borrowed crypto out of the contract to the borrower external account
-# books the borrowed asset such as 0.5 EOS into the borrowers l_collateral vector
-# moves VIGOR to the reinvestment user as insurance to start earning VIG based on pcts, the earbed VIG is paid to (and bailout recapped by) all insurance pool participants according to l_pcts 
-# record entry into lender l_lrtoken, l_lrpayment, l_lrname vectors: amount, asset, strike, borrower name. ex: 0.5000 EOS @ 2.0000 VIGOR borrowerA
+# Example: user has 50 VIGOR in l_debt as collateral against which user requests borrow 10 EOS transfered out
+# locate crypto for borrow in the insurance pool
+# a lending receipt is created into reinvestment account: ex: 10 EOS @ 30 VIGOR to user: l_lrtoken @ l_lrpayment to l_lrname
+# 10 EOS booked into user (and global) l_collateral as a borrow, and 10 EOS subtracted from global insurance
+# 30 VIGOR booked into reinvestment (and global) insurance to earn VIG, the earned VIG is paid to (and bailout recapped by) all insurance pool participants according to l_pcts
 
 cleos --verbose push action vigor1111111 assetout '{"usern":"testbrw21111","assetout":"2.0000 EOS","memo":"borrow"}' -p testbrw21111@active
 cleos --verbose push action vigor1111111 assetout '{"usern":"testbrw21111","assetout":"7.0000 EOS","memo":"borrow"}' -p testbrw21111@active
@@ -375,15 +378,15 @@ cleos --verbose push action vigor1111111 assetout '{"usern":"testbrw21111","asse
 cleos --verbose push action vigor1111111 assetout '{"usern":"testbrw21112","assetout":"1.0000 EOS","memo":"borrow"}' -p testbrw21112@active
 
 #payback cryptos
-# when borrowerA paysback, then loop through lenders to look for and payoff the outstanding records
+# when user paysback borrowed crypto, loop through and payoff the outstanding locate receipts booked into the reinvestment account
 cleos --verbose push action eosio.token transfer '{"from":"testbrw21111","to":"vigor1111111","quantity":"3.0000 EOS","memo":"payback borrowed token"}' -p testbrw21111@active
 cleos --verbose push action eosio.token transfer '{"from":"testbrw21111","to":"vigor1111111","quantity":"3.0000 EOS","memo":"payback borrowed token"}' -p testbrw21111@active
 cleos --verbose push action eosio.token transfer '{"from":"testbrw21111","to":"vigor1111111","quantity":"1.5000 EOS","memo":"payback borrowed token"}' -p testbrw21111@active
 cleos --verbose push action dummytokensx transfer '{"from":"testbrw11111","to":"vigor1111111","quantity":"3000.000 IQ","memo":"payback borrowed token"}' -p testbrw11111@active
+cleos --verbose push action dummytokensx transfer '{"from":"testbrw21111","to":"vigor1111111","quantity":"100.000 IQ","memo":"payback borrowed token"}' -p testbrw21111@active
 cleos --verbose push action vig111111111 transfer '{"from":"testbrw11111","to":"vigor1111111","quantity":"3000.0000 VIG","memo":"payback borrowed token"}' -p testbrw11111@active
-
-
-# if insurer wants to leave then locate crypto in the insurance pool, proportionally from each lender and move lending receipts records to other lenders, finalreserve is last in line
+cleos --verbose push action eosio.token transfer '{"from":"testbrw21111","to":"vigor1111111","quantity":"1.5000 EOS","memo":"payback borrowed token"}' -p testbrw21111@active
+cleos --verbose push action eosio.token transfer '{"from":"testbrw21112","to":"vigor1111111","quantity":"1.0000 EOS","memo":"payback borrowed token"}' -p testbrw21112@active
 
 
 #reserve should not pay VIG for loan insurance because nobody backs the reserve except itself, reserve needs to have a self bailout function which basically re-ups the reserve collateral
@@ -399,15 +402,3 @@ cleos --verbose get table vigor1111111 vigor1111111 user -Ltestins21112 -Utestin
 cleos --verbose get table vigor1111111 vigor1111111 user -Lfinalreserve -Ufinalreserve
 cleos --verbose get table vigor1111111 vigor1111111 user -Lreinvestment -Ureinvestment
 cleos --verbose get table vigor1111111 vigor1111111 globals
-
-VIG airdrop 5% to eosDAC community. VIGOR thanks eosDAC !
-
-VIG. a token. a utility for community supported financial dapps
-
-VIGOR. a decentralized finance project enabled by eosDAC
-
-VIGOR. stablecoin. a borrow & earn community. go long, go short, hedge. bull, bear, banker.
-
-don't get it? visit vigor.ai
-
-vote for eosdacserve

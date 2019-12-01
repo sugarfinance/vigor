@@ -68,10 +68,14 @@ CONTRACT vigor : public eosio::contract {
          uint32_t latepays = 0;
          uint32_t recaps = 0;
 
+<<<<<<< HEAD
          asset l_debt = asset( 0, symbol("VIGOR", 4) );
          //asset l_debt = asset(0, symbol("VIGOR", 10));
+=======
+         asset l_debt = asset( 0, symbol("VIGOR", 4) ); // VIGOR stablecoin locked as collateral
+>>>>>>> dev
 
-         vector<asset> l_collateral;
+         vector<asset> l_collateral; //EOSIO native tokens borrowed
          vector<asset> l_lrtoken;
          vector<asset> l_lrpayment;
          vector<name> l_lrname;
@@ -158,11 +162,14 @@ CONTRACT vigor : public eosio::contract {
          double l_scr = 0.0; // solvency capial requirement is the dollar amount of insurance assets required to survive a sress event
          double l_earnrate = 0.0; // annualized rate of return on total portfolio of insurance crypto assets
 
+<<<<<<< HEAD
          //asset l_totaldebt = asset(0, symbol("VIGOR", 10)); 
          asset l_totaldebt = asset( 0, symbol("VIGOR", 4) ); // VIGOR
+=======
+         asset l_totaldebt = asset( 0, symbol("VIGOR", 4) ); // VIGOR stablecoin locked as collateral
+>>>>>>> dev
          
-         vector<asset> l_collateral;
-         //vector<tuple<asset,asset,name>> l_locatereceipts;
+         vector<asset> l_collateral; //EOSIO native tokens borrowed
              
          EOSLIB_SERIALIZE(globalstats, (solvency)(valueofcol)(valueofins)(scale)(svalueofcole)(svalueofins)(stressins)(svalueofcoleavg)(svalueofinsavg)(raroc)(premiums)(scr)(earnrate)(lastupdate)(totaldebt)(insurance)(collateral)(l_solvency)(l_valueofcol)(l_scale)(l_svalueofcole)(l_svalueofins)(l_svalueofcoleavg)(l_svalueofinsavg)(l_raroc)(l_premiums)(l_scr)(l_earnrate)(l_totaldebt)(l_collateral))
       }; typedef eosio::multi_index<name("globals"), globalstats> globalsm;
@@ -226,14 +233,16 @@ CONTRACT vigor : public eosio::contract {
 
       double alphatest = 0.90;
       double solvencyTarget = 1.0;
-      double l_solvencyTarget = 1.0;
+      double l_solvencyTarget = 2.5;
       double maxtesprice = 0.5;
       double mintesprice = 0.005;
       double calibrate = 1.0;
       double maxtesscale = 2.0;
       double mintesscale = 0.1;
       double reservecut = 0.25;
+      double maxlends = 0.5; // max percentage of insurance tokens allowable to lend out
       
+            
       TABLE account {
          asset    balance;
          uint64_t primary_key()const { return balance.symbol.code().raw(); }
