@@ -1884,6 +1884,7 @@ void vigor::payfee(name usern) {
     auto itr = stats.find(1);
 
      // number of VIG*10e4 user must pay over time T
+     // CORRECTION: number of VIG*10e10 user must pay over time T
     amta.amount = uint64_t(( tespay * std::pow(10.0, 4) ) / ((double)itr->price[0] / pricePrecision));
 
     
