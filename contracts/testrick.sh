@@ -292,6 +292,8 @@ cleos --verbose push action dummytokensx transfer '{"from":"testins11112","to":"
 cleos --verbose push action vigor1111111 assetout '{"usern":"testbrw11111","assetout":"42.0001 VIGOR","memo":"borrow"}' -p testbrw11111@active
 cleos --verbose push action vigor1111111 assetout '{"usern":"testbrw11112","assetout":"20.0000 VIGOR","memo":"borrow"}' -p testbrw11112@active
 
+# withdraw VIG specified as precision 4 (internally it treat VIG as precision 10)
+cleos --verbose push action vigor1111111 assetout '{"usern":"testbrw11111","assetout":"0.0001 VIG","memo":"collateral"}' -p testbrw11111@active 
 #cleos --verbose push action vigor1111111 assetout '{"usern":"finalreserve","assetout":"1.0000 EOS","memo":"insurance"}' -p finalreserve@active
 #cleos --verbose push action vigor1111111 assetout '{"usern":"testbrw11111","assetout":"1.0000 EOS","memo":"collateral"}' -p testbrw11111@active
 #cleos --verbose push action vigor1111111 assetout '{"usern":"testbrw11112","assetout":"1.0000 EOS","memo":"collateral"}' -p testbrw11112@active

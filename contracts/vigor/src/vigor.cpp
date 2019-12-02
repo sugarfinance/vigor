@@ -375,8 +375,9 @@ void vigor::assetin( name   from, // handler for notification of transfer action
   if ( from == _self || to != _self)
     return;
 
-  // the precision of the asset is converted here
-  auto amt10 = swap_precision::swapprecision(assetin);
+  // VIG precision swapped from 4 to 10
+  if (assetin.symbol == symbol("VIG", 4))
+    assetin = swap_precision::swapprecision(assetin);
   
   require_auth( from );
   check( from != to, "cannot transfer to self" );
@@ -648,8 +649,9 @@ void vigor::assetout(name usern, asset assetout, string memo)
   globalstats gstats = _globals.get();
   bool found = false;
 
-  // the precision of the asset is converted here
-  auto amt4 = swap_precision::swapprecision(assetout);
+  // VIG precision swapped from 4 to 10
+  if (assetout.symbol == symbol("VIG", 4))
+  assetout = swap_precision::swapprecision(assetout);
 
   auto &user = _user.get( usern.value,"User not found16" );
 
@@ -941,6 +943,9 @@ void vigor::assetout(name usern, asset assetout, string memo)
     
     check(found, "asset not found in user");
     eosio::print( "transfer borrowed tokens to user: ", assetout, " ", usern, "\n");
+    // VIG precision swapped from 10 to 14
+    if (assetout.symbol == symbol("VIG", 10))
+      assetout = swap_precision::swapprecision(assetout);
     action( permission_level{_self, name("active")},
             issueracct[assetout.symbol], name("transfer"),
             std::make_tuple(_self, usern, assetout, memo

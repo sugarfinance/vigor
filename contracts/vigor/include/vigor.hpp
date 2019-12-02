@@ -59,7 +59,7 @@ CONTRACT vigor : public eosio::contract {
          double svalueofcole = 0.0; // model suggested dollar amount of insufficient collateral of a user loan in a stressed market.   min((1 - svalueofcol ) * valueofcol - debt,0) 
          double svalueofcoleavg = 0.0; // model suggested dollar amount of insufficient collateral of a user loan on average in down markets, expected loss
          double premiums = 0.0; // dollar amount of premiums borrowers would pay in one year to insure their collateral
-         asset feespaid = asset(0, symbol("VIG", 4)); //VIG
+         asset feespaid = asset(0, symbol("VIG", 10)); //VIG
          asset totallatepay = asset(0, symbol("VIG", 10)); // VIG with precision 10
          uint64_t creditscore = 500; //out of 800
          time_point lastupdate = time_point(microseconds(0));;
@@ -201,6 +201,7 @@ CONTRACT vigor : public eosio::contract {
       map <symbol, name> issueracct {
          {symbol("EOS",4),	    name("eosio.token")},
          {symbol("VIG",4),	    name("vig111111111")},
+         {symbol("VIG",10),	    name("vig111111111")},
          {symbol("IQ",3),	    name("dummytokensx")},
          {symbol("PEOS",4),	    name("dummytokensx")},
          {symbol("DICE",4),	    name("dummytokensx")},
@@ -210,7 +211,7 @@ CONTRACT vigor : public eosio::contract {
 
       map <symbol, name> issuerfeed {
          {symbol("EOS",4),	    name("eosusd")},
-         {symbol("VIG",4),	    name("vigeos")},
+         {symbol("VIG",10),	    name("vigeos")},
          {symbol("IQ",3),	    name("iqeos")},
          {symbol("PEOS",4),	    name("peoseos")},
          {symbol("DICE",4),	    name("diceeos")},

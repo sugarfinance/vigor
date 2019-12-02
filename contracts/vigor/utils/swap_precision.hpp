@@ -35,12 +35,18 @@ namespace swap_precision {
         amt = amt10;
     
     }else if(asset_.symbol.precision() == 10){
+
+        int n = 4;
+
         // --- create an asset with a precision of 4
         eosio::asset amt4 = eosio::asset(0, eosio::symbol(_sym, 4));
         
-        // --- assign the asset amt4 the value ot truncated amt10
-        // --- this truncates asset10 to asset4
-        amt4.amount = int64_t(std::round(asset_.amount));
+        // converting the asset of precision 10 to precision 4
+        // assiging the value of the asset amount to the internal asset pf precision 10
+        amt4.amount = asset_.amount;
+        
+        // calculate the difference between 10 and n
+        amt4.amount = amt4.amount / std::pow(10.0, (10 - n));
         
         amt = amt4;
     }
