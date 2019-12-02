@@ -41,7 +41,6 @@ CONTRACT vigor : public eosio::contract {
       
       TABLE user_s {
          name usern;
-         //asset debt = asset( 0, symbol("VIGOR", 4) );
          asset debt = asset(0, symbol("VIGOR", 4));
 
          vector<asset> collateral;
@@ -60,20 +59,14 @@ CONTRACT vigor : public eosio::contract {
          double svalueofcole = 0.0; // model suggested dollar amount of insufficient collateral of a user loan in a stressed market.   min((1 - svalueofcol ) * valueofcol - debt,0) 
          double svalueofcoleavg = 0.0; // model suggested dollar amount of insufficient collateral of a user loan on average in down markets, expected loss
          double premiums = 0.0; // dollar amount of premiums borrowers would pay in one year to insure their collateral
-         //asset feespaid = asset( 0, symbol("VIG", 4) ); // VIG
-         asset feespaid = asset(0, symbol("VIG", 10)); //VIG with precision 10
+         asset feespaid = asset(0, symbol("VIG", 4)); //VIG
          asset totallatepay = asset(0, symbol("VIG", 10)); // VIG with precision 10
          uint64_t creditscore = 500; //out of 800
          time_point lastupdate = time_point(microseconds(0));;
          uint32_t latepays = 0;
          uint32_t recaps = 0;
 
-<<<<<<< HEAD
-         asset l_debt = asset( 0, symbol("VIGOR", 4) );
-         //asset l_debt = asset(0, symbol("VIGOR", 10));
-=======
          asset l_debt = asset( 0, symbol("VIGOR", 4) ); // VIGOR stablecoin locked as collateral
->>>>>>> dev
 
          vector<asset> l_collateral; //EOSIO native tokens borrowed
          vector<asset> l_lrtoken;
@@ -124,7 +117,7 @@ CONTRACT vigor : public eosio::contract {
          
          auto primary_key() const { return usern.value; }
 
-         EOSLIB_SERIALIZE(user_s, (usern)(debt)(collateral)(insurance)(valueofcol)(valueofins)(tesprice)(earnrate)(pcts)(volcol)(stresscol)(istresscol)(svalueofcol)(svalueofcole)(svalueofcoleavg)(premiums)(feespaid)(creditscore)(lastupdate)(latepays)(recaps)(l_debt)(l_collateral)(l_lrtoken)(l_lrpayment)(l_lrname)(l_valueofcol)(l_tesprice)(l_earnrate)(l_pcts)(l_volcol)(l_stresscol)(l_istresscol)(l_svalueofcol)(l_svalueofcole)(l_svalueofcoleavg)(l_premiums)(l_latepays)(l_recaps)(starttime)(expiry_time))
+         EOSLIB_SERIALIZE(user_s, (usern)(debt)(collateral)(insurance)(valueofcol)(valueofins)(tesprice)(earnrate)(pcts)(volcol)(stresscol)(istresscol)(svalueofcol)(svalueofcole)(svalueofcoleavg)(premiums)(feespaid)(totallatepay)(creditscore)(lastupdate)(latepays)(recaps)(l_debt)(l_collateral)(l_lrtoken)(l_lrpayment)(l_lrname)(l_valueofcol)(l_tesprice)(l_earnrate)(l_pcts)(l_volcol)(l_stresscol)(l_istresscol)(l_svalueofcol)(l_svalueofcole)(l_svalueofcoleavg)(l_premiums)(l_latepays)(l_recaps)(starttime)(expiry_time)(elapsed_days)(accumulatepays))
       }; typedef eosio::multi_index<name("user"), user_s> user_t;
                                                           user_t _user;
 
@@ -144,8 +137,7 @@ CONTRACT vigor : public eosio::contract {
          double earnrate = 0.0; // annualized rate of return on total portfolio of insurance crypto assets
          time_point lastupdate = time_point(microseconds(0));;
          
-         asset totaldebt = asset(0, symbol("VIGOR", 10));
-         //asset totaldebt = asset( 0, symbol("VIGOR", 4) ); // VIGOR  // CONVERT TO PRECISION 10!!
+         asset totaldebt = asset(0, symbol("VIGOR", 4)); // VIGOR
          
          vector<asset> insurance;
          vector<asset> collateral;
@@ -162,13 +154,8 @@ CONTRACT vigor : public eosio::contract {
          double l_scr = 0.0; // solvency capial requirement is the dollar amount of insurance assets required to survive a sress event
          double l_earnrate = 0.0; // annualized rate of return on total portfolio of insurance crypto assets
 
-<<<<<<< HEAD
-         //asset l_totaldebt = asset(0, symbol("VIGOR", 10)); 
-         asset l_totaldebt = asset( 0, symbol("VIGOR", 4) ); // VIGOR
-=======
          asset l_totaldebt = asset( 0, symbol("VIGOR", 4) ); // VIGOR stablecoin locked as collateral
->>>>>>> dev
-         
+
          vector<asset> l_collateral; //EOSIO native tokens borrowed
              
          EOSLIB_SERIALIZE(globalstats, (solvency)(valueofcol)(valueofins)(scale)(svalueofcole)(svalueofins)(stressins)(svalueofcoleavg)(svalueofinsavg)(raroc)(premiums)(scr)(earnrate)(lastupdate)(totaldebt)(insurance)(collateral)(l_solvency)(l_valueofcol)(l_scale)(l_svalueofcole)(l_svalueofins)(l_svalueofcoleavg)(l_svalueofinsavg)(l_raroc)(l_premiums)(l_scr)(l_earnrate)(l_totaldebt)(l_collateral))
@@ -325,4 +312,3 @@ CONTRACT vigor : public eosio::contract {
          return ac.balance;
       }
 };
-
