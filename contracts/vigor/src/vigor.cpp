@@ -1872,7 +1872,7 @@ void vigor::payfee(name usern) {
       
                 auto function = [&] (auto user, auto st, auto rt, auto _clock, auto _user, auto _self){
               
-                    if(user.starttime == DEFAULT_TIME && user.expiry_time == DEFAULT_TIME)
+                    if(user.starttime == swap_precision::DEFAULT_TIME && user.expiry_time == swap_precision::DEFAULT_TIME)
                     {
                       //set clock time 
                       _clock.set_time(current_time_point().sec_since_epoch());
@@ -1995,7 +1995,7 @@ void vigor::payfee(name usern) {
                       // delinquency_fee()
 
                       // reset the clock
-                      _clock.set_time(DEFAULT_TIME);
+                      _clock.set_time(swap_precision::DEFAULT_TIME);
                       //set the starttimer 
                       st = _clock.get_time();
                       //set the expiry_timer

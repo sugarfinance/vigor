@@ -32,8 +32,7 @@ namespace eosiosystem {
       const double pricePrecision = 1000000;
       const uint64_t defaultVol = 600000;
       
-      // default value for the clock
-      eosio::time_point_sec DEFAULT_TIME = (time_point_sec)(current_time_point().sec_since_epoch() - current_time_point().sec_since_epoch());
+      
 
 CONTRACT vigor : public eosio::contract {
 
