@@ -275,7 +275,7 @@ cleos --verbose push action eosio.token transfer '{"from":"finalreserve","to":"v
 cleos --verbose push action dummytokensx transfer '{"from":"finalreserve","to":"vigor1111111","quantity":"3000.000 IQ","memo":"insurance"}' -p finalreserve@active
 cleos --verbose push action vig111111111 transfer '{"from":"finalreserve","to":"vigor1111111","quantity":"3000.0000 VIG","memo":"insurance"}' -p finalreserve@active
 
-cleos --verbose push action eosio.token transfer '{"from":"reinvestment","to":"vigor1111111","quantity":"1.0000 EOS","memo":"insurance"}' -p reinvestment@active
+cleos --verbose push action eosio.token transfer '{"from":"reinvestment","to":"vigor1111111","quantity":"1.0000 EOS","memo":"collateral"}' -p reinvestment@active
 
 cleos --verbose push action eosio.token transfer '{"from":"testbrw11111","to":"vigor1111111","quantity":"15.0000 EOS","memo":"collateral"}' -p testbrw11111@active
 cleos --verbose push action dummytokensx transfer '{"from":"testbrw11111","to":"vigor1111111","quantity":"3000.000 IQ","memo":"collateral"}' -p testbrw11111@active

@@ -180,6 +180,7 @@ CONTRACT vigor : public eosio::contract {
       void updateglobal();
       void payfee(name usern);
       void bailout(name usern);
+      void bailoutup(name usern);
       void pricing(name usern);
       void l_pricing(name usern);
       void performance(name usern);
@@ -191,6 +192,8 @@ CONTRACT vigor : public eosio::contract {
       double RM();
       double l_RM();
       void reserve();
+      void payback_borrowed_token(name from, asset  assetin);
+      
       
       // timer functions definitions
       void starttimer(name usern);
