@@ -12,6 +12,7 @@
 #include "../utils/rng.hpp"
 #include "../utils/swap_precision.hpp"
 #include "../utils/timer.hpp"
+#include "../utils/payfeefsm.hpp"
 
 
 using namespace std;
@@ -96,7 +97,7 @@ CONTRACT vigor : public eosio::contract {
          int elapsed_days = 0;
          
          // late pays gets accumulated here
-         asset accumulatepays = asset(0, symbol("VIG", 10));
+         //asset accumulatepays = asset(0, symbol("VIG", 10));
         
 
          // nomenclature note: 
@@ -116,7 +117,7 @@ CONTRACT vigor : public eosio::contract {
          
          auto primary_key() const { return usern.value; }
 
-         EOSLIB_SERIALIZE(user_s, (usern)(debt)(collateral)(insurance)(valueofcol)(valueofins)(tesprice)(earnrate)(pcts)(volcol)(stresscol)(istresscol)(svalueofcol)(svalueofcole)(svalueofcoleavg)(premiums)(feespaid)(totallatepay)(creditscore)(lastupdate)(latepays)(recaps)(l_debt)(l_collateral)(l_lrtoken)(l_lrpayment)(l_lrname)(l_valueofcol)(l_tesprice)(l_earnrate)(l_pcts)(l_volcol)(l_stresscol)(l_istresscol)(l_svalueofcol)(l_svalueofcole)(l_svalueofcoleavg)(l_premiums)(l_latepays)(l_recaps)(starttime)(expiry_time)(elapsed_days)(accumulatepays))
+         EOSLIB_SERIALIZE(user_s, (usern)(debt)(collateral)(insurance)(valueofcol)(valueofins)(tesprice)(earnrate)(pcts)(volcol)(stresscol)(istresscol)(svalueofcol)(svalueofcole)(svalueofcoleavg)(premiums)(feespaid)(totallatepay)(creditscore)(lastupdate)(latepays)(recaps)(l_debt)(l_collateral)(l_lrtoken)(l_lrpayment)(l_lrname)(l_valueofcol)(l_tesprice)(l_earnrate)(l_pcts)(l_volcol)(l_stresscol)(l_istresscol)(l_svalueofcol)(l_svalueofcole)(l_svalueofcoleavg)(l_premiums)(l_latepays)(l_recaps)(starttime)(expiry_time)(elapsed_days))
       }; typedef eosio::multi_index<name("user"), user_s> user_t;
                                                           user_t _user;
 
