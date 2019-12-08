@@ -1,0 +1,46 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/CMakeFiles/vcpuservice"
+		},
+		{
+			"file" : "/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/CMakeFiles/vcpuservice.rule"
+		},
+		{
+			"file" : "/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/CMakeFiles/vcpuservice-complete.rule"
+		},
+		{
+			"file" : "/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/vcpuservice-prefix/src/vcpuservice-stamp/vcpuservice-install.rule"
+		},
+		{
+			"file" : "/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/vcpuservice-prefix/src/vcpuservice-stamp/vcpuservice-mkdir.rule"
+		},
+		{
+			"file" : "/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/vcpuservice-prefix/src/vcpuservice-stamp/vcpuservice-download.rule"
+		},
+		{
+			"file" : "/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/vcpuservice-prefix/src/vcpuservice-stamp/vcpuservice-update.rule"
+		},
+		{
+			"file" : "/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/vcpuservice-prefix/src/vcpuservice-stamp/vcpuservice-patch.rule"
+		},
+		{
+			"file" : "/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/vcpuservice-prefix/src/vcpuservice-stamp/vcpuservice-configure.rule"
+		},
+		{
+			"file" : "/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/vcpuservice-prefix/src/vcpuservice-stamp/vcpuservice-build.rule"
+		},
+		{
+			"file" : "/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/vcpuservice-prefix/src/vcpuservice-stamp/vcpuservice-test.rule"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"vcpuservice"
+		],
+		"name" : "vcpuservice"
+	}
+}

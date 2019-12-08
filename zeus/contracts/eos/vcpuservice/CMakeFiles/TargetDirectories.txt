@@ -1,0 +1,3 @@
+/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/vcpuservice/CMakeFiles/rebuild_cache.dir
+/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/vcpuservice/CMakeFiles/edit_cache.dir
+/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/vcpuservice/CMakeFiles/vcpuservice.dir

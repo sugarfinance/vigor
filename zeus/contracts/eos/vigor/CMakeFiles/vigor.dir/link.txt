@@ -1,0 +1,1 @@
+//usr/local/bin/eosio-ld  CMakeFiles/vigor.dir/vigor.cpp.obj -o vigor.wasm 

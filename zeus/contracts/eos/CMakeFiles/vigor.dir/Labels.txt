@@ -1,0 +1,14 @@
+# Target labels
+ vigor
+# Source files and their labels
+/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/CMakeFiles/vigor
+/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/CMakeFiles/vigor.rule
+/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/CMakeFiles/vigor-complete.rule
+/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/vigor-prefix/src/vigor-stamp/vigor-install.rule
+/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/vigor-prefix/src/vigor-stamp/vigor-mkdir.rule
+/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/vigor-prefix/src/vigor-stamp/vigor-download.rule
+/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/vigor-prefix/src/vigor-stamp/vigor-update.rule
+/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/vigor-prefix/src/vigor-stamp/vigor-patch.rule
+/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/vigor-prefix/src/vigor-stamp/vigor-configure.rule
+/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/vigor-prefix/src/vigor-stamp/vigor-build.rule
+/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/vigor-prefix/src/vigor-stamp/vigor-test.rule

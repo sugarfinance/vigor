@@ -1,0 +1,14 @@
+# Target labels
+ dappservices
+# Source files and their labels
+/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/CMakeFiles/dappservices
+/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/CMakeFiles/dappservices.rule
+/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/CMakeFiles/dappservices-complete.rule
+/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/dappservices-prefix/src/dappservices-stamp/dappservices-install.rule
+/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/dappservices-prefix/src/dappservices-stamp/dappservices-mkdir.rule
+/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/dappservices-prefix/src/dappservices-stamp/dappservices-download.rule
+/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/dappservices-prefix/src/dappservices-stamp/dappservices-update.rule
+/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/dappservices-prefix/src/dappservices-stamp/dappservices-patch.rule
+/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/dappservices-prefix/src/dappservices-stamp/dappservices-configure.rule
+/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/dappservices-prefix/src/dappservices-stamp/dappservices-build.rule
+/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/dappservices-prefix/src/dappservices-stamp/dappservices-test.rule

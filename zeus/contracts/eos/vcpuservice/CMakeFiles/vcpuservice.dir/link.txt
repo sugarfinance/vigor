@@ -1,0 +1,1 @@
+//usr/local/bin/eosio-ld  CMakeFiles/vcpuservice.dir/vcpuservice.cpp.obj -o vcpuservice.wasm 

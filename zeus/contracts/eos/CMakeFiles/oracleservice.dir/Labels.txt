@@ -1,0 +1,14 @@
+# Target labels
+ oracleservice
+# Source files and their labels
+/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/CMakeFiles/oracleservice
+/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/CMakeFiles/oracleservice.rule
+/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/CMakeFiles/oracleservice-complete.rule
+/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/oracleservice-prefix/src/oracleservice-stamp/oracleservice-install.rule
+/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/oracleservice-prefix/src/oracleservice-stamp/oracleservice-mkdir.rule
+/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/oracleservice-prefix/src/oracleservice-stamp/oracleservice-download.rule
+/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/oracleservice-prefix/src/oracleservice-stamp/oracleservice-update.rule
+/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/oracleservice-prefix/src/oracleservice-stamp/oracleservice-patch.rule
+/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/oracleservice-prefix/src/oracleservice-stamp/oracleservice-configure.rule
+/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/oracleservice-prefix/src/oracleservice-stamp/oracleservice-build.rule
+/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/oracleservice-prefix/src/oracleservice-stamp/oracleservice-test.rule

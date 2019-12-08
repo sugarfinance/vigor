@@ -1,0 +1,1 @@
+//usr/local/bin/eosio-ld  CMakeFiles/oracleservice.dir/oracleservice.cpp.obj -o oracleservice.wasm 

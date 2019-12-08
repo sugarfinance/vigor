@@ -1,0 +1,30 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/vigor/vigor.cpp
+vigor.hpp
+-
+
+vigor.hpp
+eosio/transaction.hpp
+-
+eosio/singleton.hpp
+-
+eosio/asset.hpp
+-
+eosio/eosio.hpp
+-
+eosio/print.hpp
+-
+eosio/system.hpp
+-
+string
+-
+cmath
+-
+

@@ -1,0 +1,14 @@
+# Target labels
+ vcpuservice
+# Source files and their labels
+/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/CMakeFiles/vcpuservice
+/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/CMakeFiles/vcpuservice.rule
+/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/CMakeFiles/vcpuservice-complete.rule
+/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/vcpuservice-prefix/src/vcpuservice-stamp/vcpuservice-install.rule
+/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/vcpuservice-prefix/src/vcpuservice-stamp/vcpuservice-mkdir.rule
+/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/vcpuservice-prefix/src/vcpuservice-stamp/vcpuservice-download.rule
+/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/vcpuservice-prefix/src/vcpuservice-stamp/vcpuservice-update.rule
+/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/vcpuservice-prefix/src/vcpuservice-stamp/vcpuservice-patch.rule
+/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/vcpuservice-prefix/src/vcpuservice-stamp/vcpuservice-configure.rule
+/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/vcpuservice-prefix/src/vcpuservice-stamp/vcpuservice-build.rule
+/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/vcpuservice-prefix/src/vcpuservice-stamp/vcpuservice-test.rule

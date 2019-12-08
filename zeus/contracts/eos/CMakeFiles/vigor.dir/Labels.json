@@ -1,0 +1,46 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/CMakeFiles/vigor"
+		},
+		{
+			"file" : "/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/CMakeFiles/vigor.rule"
+		},
+		{
+			"file" : "/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/CMakeFiles/vigor-complete.rule"
+		},
+		{
+			"file" : "/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/vigor-prefix/src/vigor-stamp/vigor-install.rule"
+		},
+		{
+			"file" : "/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/vigor-prefix/src/vigor-stamp/vigor-mkdir.rule"
+		},
+		{
+			"file" : "/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/vigor-prefix/src/vigor-stamp/vigor-download.rule"
+		},
+		{
+			"file" : "/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/vigor-prefix/src/vigor-stamp/vigor-update.rule"
+		},
+		{
+			"file" : "/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/vigor-prefix/src/vigor-stamp/vigor-patch.rule"
+		},
+		{
+			"file" : "/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/vigor-prefix/src/vigor-stamp/vigor-configure.rule"
+		},
+		{
+			"file" : "/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/vigor-prefix/src/vigor-stamp/vigor-build.rule"
+		},
+		{
+			"file" : "/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/vigor-prefix/src/vigor-stamp/vigor-test.rule"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"vigor"
+		],
+		"name" : "vigor"
+	}
+}

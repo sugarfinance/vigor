@@ -1,0 +1,46 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/CMakeFiles/dappservices"
+		},
+		{
+			"file" : "/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/CMakeFiles/dappservices.rule"
+		},
+		{
+			"file" : "/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/CMakeFiles/dappservices-complete.rule"
+		},
+		{
+			"file" : "/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/dappservices-prefix/src/dappservices-stamp/dappservices-install.rule"
+		},
+		{
+			"file" : "/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/dappservices-prefix/src/dappservices-stamp/dappservices-mkdir.rule"
+		},
+		{
+			"file" : "/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/dappservices-prefix/src/dappservices-stamp/dappservices-download.rule"
+		},
+		{
+			"file" : "/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/dappservices-prefix/src/dappservices-stamp/dappservices-update.rule"
+		},
+		{
+			"file" : "/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/dappservices-prefix/src/dappservices-stamp/dappservices-patch.rule"
+		},
+		{
+			"file" : "/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/dappservices-prefix/src/dappservices-stamp/dappservices-configure.rule"
+		},
+		{
+			"file" : "/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/dappservices-prefix/src/dappservices-stamp/dappservices-build.rule"
+		},
+		{
+			"file" : "/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/dappservices-prefix/src/dappservices-stamp/dappservices-test.rule"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"dappservices"
+		],
+		"name" : "dappservices"
+	}
+}

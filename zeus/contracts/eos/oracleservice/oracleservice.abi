@@ -1,0 +1,118 @@
+{
+  "____comment": "This file was generated with dapp-services-eos. DO NOT EDIT Sun, 08 Dec 2019 03:50:50 GMT",
+  "version": "eosio::abi/1.0",
+  "structs": [
+    {
+      "name": "model_t",
+      "base": "",
+      "fields": [
+        {
+          "name": "geturi_model_field",
+          "type": "geturi_model_t"
+        },
+        {
+          "name": "orcclean_model_field",
+          "type": "orcclean_model_t"
+        }
+      ]
+    },
+    {
+      "name": "providermdl",
+      "base": "",
+      "fields": [
+        {
+          "name": "model",
+          "type": "model_t"
+        },
+        {
+          "name": "package_id",
+          "type": "name"
+        }
+      ]
+    },
+    {
+      "name": "xsignal",
+      "base": "",
+      "fields": [
+        {
+          "name": "service",
+          "type": "name"
+        },
+        {
+          "name": "action",
+          "type": "name"
+        },
+        {
+          "name": "provider",
+          "type": "name"
+        },
+        {
+          "name": "package",
+          "type": "name"
+        },
+        {
+          "name": "signalRawData",
+          "type": "bytes"
+        }
+      ]
+    },
+    {
+      "name": "regprovider",
+      "base": "",
+      "fields": [
+        {
+          "name": "provider",
+          "type": "name"
+        },
+        {
+          "name": "model",
+          "type": "providermdl"
+        }
+      ]
+    },
+    {
+      "name": "geturi_model_t",
+      "base": "",
+      "fields": [
+        {
+          "name": "cost_per_action",
+          "type": "uint64"
+        }
+      ]
+    },
+    {
+      "name": "orcclean_model_t",
+      "base": "",
+      "fields": [
+        {
+          "name": "cost_per_action",
+          "type": "uint64"
+        }
+      ]
+    }
+  ],
+  "types": [],
+  "actions": [
+    {
+      "name": "xsignal",
+      "type": "xsignal",
+      "ricardian_contract": ""
+    },
+    {
+      "name": "regprovider",
+      "type": "regprovider",
+      "ricardian_contract": ""
+    }
+  ],
+  "tables": [
+    {
+      "name": "providermdl",
+      "type": "providermdl",
+      "index_type": "i64",
+      "key_names": [],
+      "key_types": []
+    }
+  ],
+  "ricardian_clauses": [],
+  "abi_extensions": []
+}
