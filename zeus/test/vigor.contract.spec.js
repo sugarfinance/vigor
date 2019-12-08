@@ -54,6 +54,10 @@ describe(`Contract ${vigorCode}`, () => {
             await getCreateAccount(testbrw11111)
             let testbrw11112 = "testbrw11112"
             await getCreateAccount(testbrw11112)
+            let testins11111 = "testins11111"
+            await getCreateAccount(testins11111)
+            let testins11112 = "testins11112"
+            await getCreateAccount(testins11112)
             let finalreserve = "finalreserve"
             await getCreateAccount(finalreserve)
             // vigor
@@ -108,7 +112,7 @@ describe(`Contract ${vigorCode}`, () => {
             await vigContract.transfer({
                 from: vig,
                 to: testbrw11111,
-                quantity: "2000000.0000 VIG",
+                quantity: "1000000.0000 VIG",
                 memo: ""
             }, {
                 authorization: `${vig}@active`,
@@ -119,7 +123,29 @@ describe(`Contract ${vigorCode}`, () => {
             await vigContract.transfer({
                 from: vig,
                 to: testbrw11112,
-                quantity: "2000000.0000 VIG",
+                quantity: "1000000.0000 VIG",
+                memo: ""
+            }, {
+                authorization: `${vig}@active`,
+                broadcast: true,
+                keyProvider: [vigAccountKeys.active.privateKey],
+                sign: true
+            });
+            await vigContract.transfer({
+                from: vig,
+                to: testins11111,
+                quantity: "1000000.0000 VIG",
+                memo: ""
+            }, {
+                authorization: `${vig}@active`,
+                broadcast: true,
+                keyProvider: [vigAccountKeys.active.privateKey],
+                sign: true
+            });
+            await vigContract.transfer({
+                from: vig,
+                to: testins11112,
+                quantity: "1000000.0000 VIG",
                 memo: ""
             }, {
                 authorization: `${vig}@active`,

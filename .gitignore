@@ -1,3 +1,4 @@
 .vscode
 *.wasm
 node_modules
+db.development.pprovider1.sqlite
