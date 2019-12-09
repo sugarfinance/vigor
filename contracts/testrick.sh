@@ -85,7 +85,6 @@ cleos wallet import -n default --private-key 5J3JRDhf4JNhzzjEZAsQEgtVuqvsPPdZv4T
 cleos system newaccount eosio eosio.wrap EOS7LpGN1Qz5AbCJmsHzhG7sWEGd9mwhTXWmrYXqxhTknY2fvHQ1A --stake-cpu "50 EOS" --stake-net "10 EOS" --buy-ram-kbytes 5000 --transfer
 cleos push action eosio setpriv '["eosio.wrap", 1]' -p eosio@active
 cleos set contract eosio.wrap $EOSIO_CONTRACTS_ROOT/eosio.wrap/
-cleos push action eosio setparams '{"params":{"max_transaction_cpu_usage": 200000}}' -p eosio@active -d -s -j
 cleos push action eosio setparams '{"params":{"max_block_net_usage": 1048576, "target_block_net_usage_pct": 1000, "max_transaction_net_usage": 524288, "base_per_transaction_net_usage": 12, "net_usage_leeway": 500, "context_free_discount_net_usage_num": 20, "context_free_discount_net_usage_den": 100, "max_block_cpu_usage": 500000, "target_block_cpu_usage_pct": 2500, "max_transaction_cpu_usage": 400000, "min_transaction_cpu_usage": 100, "max_transaction_lifetime": 3600, "deferred_trx_expiration_window": 600, "max_transaction_delay": 3888000, "max_inline_action_size": 4096, "max_inline_action_depth": 6, "max_authority_depth": 6}}' -p eosio
 
 #=================================================================================#
@@ -321,8 +320,8 @@ cleos --verbose get table vigor1111111 vigor1111111 user -Ltestins11112 -Utestin
 cleos --verbose get table vigor1111111 vigor1111111 user -Lfinalreserve -Ufinalreserve
 cleos --verbose get table vigor1111111 vigor1111111 globals
 
-cleos --verbose push action datapreprocx doshock '{"shockvalue":0.8}' -p feeder111111@active
-cleos --verbose push action eosio.token transfer '{"from":"finalreserve","to":"vigor1111111","quantity":"0.0001 EOS","memo":"insurance"}' -p finalreserve@active
+cleos --verbose push action datapreprocx doshock '{"shockvalue":1.13}' -p feeder111111@active
+cleos --verbose push action eosio.token transfer '{"from":"finalreserve","to":"vigor1111111","quantity":"0.0001 EOS","memo":"collateral"}' -p finalreserve@active
 
 # cleos --verbose get table vigor1111111 VIGOR stat
 # cleos --verbose get table eosio.token vigor1111111 accounts
@@ -381,7 +380,7 @@ cleos --verbose push action vigor1111111 assetout '{"usern":"testbrw21111","asse
 cleos --verbose push action vigor1111111 assetout '{"usern":"testbrw21111","assetout":"2.0000 EOS","memo":"borrow"}' -p testbrw21111@active
 cleos --verbose push action vigor1111111 assetout '{"usern":"testbrw21111","assetout":"7.0000 EOS","memo":"borrow"}' -p testbrw21111@active
 cleos --verbose push action vigor1111111 assetout '{"usern":"testbrw21111","assetout":"100.000 IQ","memo":"borrow"}' -p testbrw21111@active
-cleos --verbose push action vigor1111111 assetout '{"usern":"testbrw21112","assetout":"1.0000 EOS","memo":"borrow"}' -p testbrw21112@active
+cleos --verbose push action vigor1111111 assetout '{"usern":"testbrw21112","assetout":"1.3000 EOS","memo":"borrow"}' -p testbrw21112@active
 
 #payback cryptos
 # when user paysback borrowed crypto, loop through and payoff the outstanding locate receipts booked into the reinvestment account
