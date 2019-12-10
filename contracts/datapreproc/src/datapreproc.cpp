@@ -11,7 +11,7 @@ ACTION datapreproc::addpair(name newpair) {
       _shocks.set(s, _self);
     }
 
-    pairstable pairsname(name("oracleoracle"), name("oracleoracle").value);
+    pairstable pairsname(name("oracleoracl2"), name("oracleoracl2").value);
     auto itr = pairsname.find(newpair.value);
     if ( itr != pairsname.end() ) { //pair must exist in the oracle
         pairtoproctb pairtoproc(_self,_self.value);
@@ -39,7 +39,7 @@ ACTION datapreproc::addpair(name newpair) {
             o.aname = newpair;
             o.base_symbol = symbol("VIGOR",4);
             o.base_type = asset_type::eosio_token;
-            o.base_contract = name("vigor1111111");
+            o.base_contract = name("vigor1111112");
             o.quote_symbol = symbol("USD",2);
             o.quote_type = asset_type::fiat;
             o.quote_contract = name("");
@@ -70,7 +70,7 @@ ACTION datapreproc::clear() {
         pairtoproc.erase(itr);
     }
 
-    pairstable pairsname(name("oracleoracle"), name("oracleoracle").value);
+    pairstable pairsname(name("oracleoracl2"), name("oracleoracl2").value);
     for ( auto it = pairsname.begin(); it != pairsname.end(); it++ ) {
       statstable store(_self, it->aname.value);
 
@@ -87,7 +87,7 @@ uint64_t datapreproc::get_last_price(name pair, uint64_t quoted_precision){
 
     uint64_t eosusd = 1;
     uint64_t eos_precision = 1;
-    datapointstable dstoreos(name("oracleoracle"), name("eosusd").value);
+    datapointstable dstoreos(name("oracleoracl2"), name("eosusd").value);
     auto newesteos = dstoreos.begin();
     if (newesteos != dstoreos.end()){
       pairtoproctb pairtoproc(_self,_self.value);
@@ -97,7 +97,7 @@ uint64_t datapreproc::get_last_price(name pair, uint64_t quoted_precision){
       eos_precision = eospair.quoted_precision;
       eosusd = newesteos->median;
     }
-    datapointstable dstore(name("oracleoracle"), pair.value);
+    datapointstable dstore(name("oracleoracl2"), pair.value);
     auto newest = dstore.begin();
     if (newest != dstore.end()) {
         if (pair==name("eosusd"))
@@ -119,7 +119,7 @@ void datapreproc::getprices(){
 
     pairtoproctb pairtoproc(_self,_self.value);
     
-    pairstable pairsname(name("oracleoracle"), name("oracleoracle").value);
+    pairstable pairsname(name("oracleoracl2"), name("oracleoracl2").value);
     
     for ( auto it = pairtoproc.begin(); it != pairtoproc.end(); it++ ) {
         auto itr = pairsname.find(it->aname.value);
@@ -260,7 +260,7 @@ void datapreproc::calcstats(const name pair, const uint32_t freq){
                   s.vol = vol;
                 });
                 
-            pairstable pairsname(name("oracleoracle"), name("oracleoracle").value);    
+            pairstable pairsname(name("oracleoracl2"), name("oracleoracl2").value);    
             pairtoproctb pairtoproc(_self,_self.value);    
             for ( auto jt = pairtoproc.begin(); jt != pairtoproc.end(); jt++ ) {
                 auto jto = pairsname.find(jt->aname.value);

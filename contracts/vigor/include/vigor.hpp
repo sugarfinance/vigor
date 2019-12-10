@@ -174,7 +174,7 @@ CONTRACT vigor : public eosio::contract {
       double stressinsx(name usern);
       double portVarianceCol(name usern);
       double l_portVarianceCol(name usern);
-      double portVarianceIns(name usern);
+      double portVarianceIns(name usern, double valueofins);
       double portVarianceIns();
       void update(name usern);
       void updateglobal();
@@ -209,7 +209,7 @@ CONTRACT vigor : public eosio::contract {
          {symbol("PEOS",4),	    name("dummytokensx")},
          {symbol("DICE",4),	    name("dummytokensx")},
          {symbol("TPT",4),	    name("dummytokensx")},
-         {symbol("VIGOR",4),	    name("vigor1111111")}
+         {symbol("VIGOR",4),	    name("vigor1111112")}
       };
 
       map <symbol, name> issuerfeed {

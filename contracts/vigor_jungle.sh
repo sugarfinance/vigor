@@ -167,12 +167,12 @@ cleos push action dummytokensx transfer '[ "dummytokensx", "testins11112", "1000
 
 #=================================================================================#
 # create the oracle contract for local testnet
-cleos system newaccount eosio oracleoracle $OWNER_KEY --stake-cpu "50 EOS" --stake-net "10 EOS" --buy-ram-kbytes 50000 --transfer
+cleos system newaccount eosio oracleoracl2 $OWNER_KEY --stake-cpu "50 EOS" --stake-net "10 EOS" --buy-ram-kbytes 50000 --transfer
 #cleos system newaccount eosio eostitanprod $OWNER_KEY --stake-cpu "50 EOS" --stake-net "10 EOS" --buy-ram-kbytes 50000 --transfer
 cleos system newaccount eosio feeder111111 $OWNER_KEY --stake-cpu "50 EOS" --stake-net "10 EOS" --buy-ram-kbytes 50000 --transfer
 cleos system newaccount eosio feeder111112 $OWNER_KEY --stake-cpu "50 EOS" --stake-net "10 EOS" --buy-ram-kbytes 50000 --transfer
 cleos system newaccount eosio feeder111113 $OWNER_KEY --stake-cpu "50 EOS" --stake-net "10 EOS" --buy-ram-kbytes 50000 --transfer
-cleos system newaccount eosio datapreprocx $OWNER_KEY --stake-cpu "50 EOS" --stake-net "10 EOS" --buy-ram-kbytes 50000 --transfer
+cleos system newaccount eosio datapreproc2 $OWNER_KEY --stake-cpu "50 EOS" --stake-net "10 EOS" --buy-ram-kbytes 50000 --transfer
 
 ORACLE_ROOT=/home/gg/contracts/vigor/contracts/oracle/src
 ORACLE_OUT=/home/gg/contracts/vigor/contracts/oracle
@@ -183,8 +183,8 @@ ORACLE_ABI="$ORACLE.abi"
 ORACLE_CPP="$ORACLE.cpp"
 EOSIO_CONTRACTS_ROOT=/home/gg/contracts/eosio.contracts/contracts
 eosio-cpp -contract=$ORACLE -I=$ORACLE_INCLUDE -I=$EOSIO_CONTRACTS_ROOT/eosio.system/include -o="$ORACLE_OUT/$ORACLE_WASM" -abigen "$ORACLE_ROOT/$ORACLE_CPP" 
-cleos set contract oracleoracle $ORACLE_OUT $ORACLE_WASM $ORACLE_ABI -p oracleoracle@active
-cleos push action oracleoracle configure '{}' -p oracleoracle@active
+cleos set contract oracleoracl2 $ORACLE_OUT $ORACLE_WASM $ORACLE_ABI -p oracleoracl2@active
+cleos push action oracleoracl2 configure '{}' -p oracleoracl2@active
 cd /home/gg/contracts/vigor/contracts/oracle && ORACLE=feeder111111 node updater_eosusd.js
 cd /home/gg/contracts/vigor/contracts/oracle && ORACLE=feeder111112 node updater_eosusd.js
 cd /home/gg/contracts/vigor/contracts/oracle && ORACLE=feeder111113 node updater_eosusd.js
@@ -195,24 +195,24 @@ cd /home/gg/contracts/vigor/contracts/oracle && ORACLE=feeder111111 node updater
 cd /home/gg/contracts/vigor/contracts/oracle && ORACLE=feeder111112 node updater_vigeos.js
 cd /home/gg/contracts/vigor/contracts/oracle && ORACLE=feeder111113 node updater_vigeos.js
 
-#cleos push action oracleoracle write '{"owner": "feeder111111","quotes": [{"value":"20000","pair":"eosusd", "base": {"sym": "4,EOS", "con": "eosio.token"}}]}' -p feeder111111@active
-#cleos push action oracleoracle write '{"owner": "feeder111111","quotes": [{"value":"10000","pair":"eosusd"},{"value":"80000","pair":"eosbtc"}]}' -p feeder111111@active
-#cleos push action oracleoracle write '{"owner": "feeder111112","quotes": [{"value":"20000","pair":"eosusd"},{"value":"80000","pair":"eosbtc"}]}' -p feeder111112@active
-#cleos push action oracleoracle write '{"owner": "feeder111113","quotes": [{"value":"30000","pair":"eosusd"},{"value":"80000","pair":"eosbtc"}]}' -p feeder111113@active
-#cleos push action oracleoracle write '{"owner": "feeder111111","quotes": [{"value":"70000","pair":"eosusd"},{"value":"70000","pair":"eosbtc"}]}' -p feeder111111@active
-#cleos push action oracleoracle write '{"owner": "feeder111111","quotes": [{"value":"60000","pair":"eosusd"},{"value":"60000","pair":"eosbtc"}]}' -p feeder111111@active
-#cleos push action oracleoracle write '{"owner": "feeder111111","quotes": [{"value":"50000","pair":"eosusd"},{"value":"50000","pair":"eosbtc"}]}' -p feeder111111@active
-#cleos push action oracleoracle write '{"owner": "feeder111111","quotes": [{"value":"40000","pair":"eosusd"},{"value":"40000","pair":"eosbtc"}]}' -p feeder111111@active
-#cleos push action oracleoracle write '{"owner": "feeder111111","quotes": [{"value":"30000","pair":"eosusd"},{"value":"30000","pair":"eosbtc"}]}' -p feeder111111@active
-#cleos push action oracleoracle write '{"owner": "feeder111111","quotes": [{"value":"20000","pair":"eosusd"},{"value":"20000","pair":"eosbtc"}]}' -p feeder111111@active
-#cleos push action oracleoracle write '{"owner": "feeder111111","quotes": [{"value":"10000","pair":"eosusd"},{"value":"10000","pair":"eosbtc"}]}' -p feeder111111@active
-#cleos push action oracleoracle clear '{"pair":"eosusd"}' -p oracleoracle@active
-#cleos push action oracleoracle clear '{"pair":"eosbtc"}' -p oracleoracle@active
-cleos get table oracleoracle eosusd datapoints --limit -1
-cleos get table oracleoracle iqeos datapoints --limit -1
-cleos get table oracleoracle vigeos datapoints --limit -1
-cleos get table oracleoracle oracleoracle stats
-cleos get table oracleoracle oracleoracle pairs
+#cleos push action oracleoracl2 write '{"owner": "feeder111111","quotes": [{"value":"20000","pair":"eosusd", "base": {"sym": "4,EOS", "con": "eosio.token"}}]}' -p feeder111111@active
+#cleos push action oracleoracl2 write '{"owner": "feeder111111","quotes": [{"value":"10000","pair":"eosusd"},{"value":"80000","pair":"eosbtc"}]}' -p feeder111111@active
+#cleos push action oracleoracl2 write '{"owner": "feeder111112","quotes": [{"value":"20000","pair":"eosusd"},{"value":"80000","pair":"eosbtc"}]}' -p feeder111112@active
+#cleos push action oracleoracl2 write '{"owner": "feeder111113","quotes": [{"value":"30000","pair":"eosusd"},{"value":"80000","pair":"eosbtc"}]}' -p feeder111113@active
+#cleos push action oracleoracl2 write '{"owner": "feeder111111","quotes": [{"value":"70000","pair":"eosusd"},{"value":"70000","pair":"eosbtc"}]}' -p feeder111111@active
+#cleos push action oracleoracl2 write '{"owner": "feeder111111","quotes": [{"value":"60000","pair":"eosusd"},{"value":"60000","pair":"eosbtc"}]}' -p feeder111111@active
+#cleos push action oracleoracl2 write '{"owner": "feeder111111","quotes": [{"value":"50000","pair":"eosusd"},{"value":"50000","pair":"eosbtc"}]}' -p feeder111111@active
+#cleos push action oracleoracl2 write '{"owner": "feeder111111","quotes": [{"value":"40000","pair":"eosusd"},{"value":"40000","pair":"eosbtc"}]}' -p feeder111111@active
+#cleos push action oracleoracl2 write '{"owner": "feeder111111","quotes": [{"value":"30000","pair":"eosusd"},{"value":"30000","pair":"eosbtc"}]}' -p feeder111111@active
+#cleos push action oracleoracl2 write '{"owner": "feeder111111","quotes": [{"value":"20000","pair":"eosusd"},{"value":"20000","pair":"eosbtc"}]}' -p feeder111111@active
+#cleos push action oracleoracl2 write '{"owner": "feeder111111","quotes": [{"value":"10000","pair":"eosusd"},{"value":"10000","pair":"eosbtc"}]}' -p feeder111111@active
+#cleos push action oracleoracl2 clear '{"pair":"eosusd"}' -p oracleoracl2@active
+#cleos push action oracleoracl2 clear '{"pair":"eosbtc"}' -p oracleoracl2@active
+cleos get table oracleoracl2 eosusd datapoints --limit -1
+cleos get table oracleoracl2 iqeos datapoints --limit -1
+cleos get table oracleoracl2 vigeos datapoints --limit -1
+cleos get table oracleoracl2 oracleoracl2 stats
+cleos get table oracleoracl2 oracleoracl2 pairs
 
 CONTRACT_ROOT=/home/gg/contracts/vigor/contracts/datapreproc/src
 CONTRACT_OUT=/home/gg/contracts/vigor/contracts/datapreproc
@@ -239,18 +239,18 @@ cleos get table datapreproc1 vigeos stats
 #cleos -u http://api.eosnewyork.io:80 get code delphioracle --wasm -c delphioracle.wasm
 #cleos -u http://api.eosnewyork.io:80 get code delphioracle --abi delphioracle.abi
 
-#cleos set contract oracleoracle . delphioracle.wasm delphioracle.abi -p oracleoracle@active
+#cleos set contract oracleoracl2 . delphioracle.wasm delphioracle.abi -p oracleoracl2@active
 
-#cleos push action oracleoracle setoracles '{"oracleslist":["feeder111111"]}' -p eostitanprod@active
+#cleos push action oracleoracl2 setoracles '{"oracleslist":["feeder111111"]}' -p eostitanprod@active
 
 #=================================================================================#
 
 ###### OPTIONAL FOR LOCAL TESTNET #############
 # cd ~/contracts/delphioracle/scripts
-# nodeosurl='http://127.0.0.1:8888' interval=15000 account="oracleoracle" defaultPrivateKey="5J3TQGkkiRQBKcg8Gg2a7Kk5a2QAQXsyGrkCnnq4krSSJSUkW12" feeder="feeder111111" node updater2.js
-#cleos get table oracleoracle oracleoracle eosusd --limit 1
-#cleos get table oracleoracle oracleoracle oracles
-#cleos get table oracleoracle oracleoracle eosusdstats
+# nodeosurl='http://127.0.0.1:8888' interval=15000 account="oracleoracl2" defaultPrivateKey="5J3TQGkkiRQBKcg8Gg2a7Kk5a2QAQXsyGrkCnnq4krSSJSUkW12" feeder="feeder111111" node updater2.js
+#cleos get table oracleoracl2 oracleoracl2 eosusd --limit 1
+#cleos get table oracleoracl2 oracleoracl2 oracles
+#cleos get table oracleoracl2 oracleoracl2 eosusdstats
 
 # launch two oracle feeders
 #in a new shell

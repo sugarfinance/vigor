@@ -5,7 +5,7 @@ using boost::math::erfc_inv;
 void vigor::doupdate()
 {
       //require_auth(_self);
-
+      eosio::print( "update called.", "\n");
       for ( auto it = _user.begin(); it != _user.end(); it++ )
         update(it->usern);
       updateglobal();
@@ -25,7 +25,7 @@ void vigor::doupdate()
       exitbailout = true;
       for ( auto it = _user.begin(); it != _user.end(); it++ ) {
         auto &user = _user.get(it->usern.value,"User not found14");
-          if (it->debt.amount > 0 && it->latepays > 4) {
+        /*  if (it->debt.amount > 0 && it->latepays > 4) {
             _user.modify(user, _self, [&]( auto& modified_user) {
               modified_user.latepays = 0; 
               modified_user.recaps += 1;
@@ -33,8 +33,8 @@ void vigor::doupdate()
             bailout(it->usern);
             exitbailout=false;
             break;
-          }
-          else if (( it->debt.amount / std::pow(10.0, 4) ) > it->valueofcol ) {
+          }*/
+          if (( it->debt.amount / std::pow(10.0, 4) ) > it->valueofcol ) {
             _user.modify(user, _self, [&]( auto& modified_user) {
               modified_user.recaps += 1;
             });
@@ -728,7 +728,7 @@ void vigor::assetout(name usern, asset assetout, string memo)
           
           double valueofasset = assetout.amount / std::pow(10.0, it->symbol.precision());
 
-          t_series stats(name("datapreprocx"),name(issuerfeed[assetout.symbol]).value);
+          t_series stats(name("datapreproc2"),name(issuerfeed[assetout.symbol]).value);
           auto itr = stats.find(1);
           check(itr != stats.end(),"asset not found in the datapreprocessor, or precision invalid");
           valueofasset *= (double)itr->price[0] / pricePrecision;
@@ -772,7 +772,7 @@ void vigor::assetout(name usern, asset assetout, string memo)
     auto &user = _user.get(usern.value, "User not found");
     globalstats gstats = _globals.get();
 
-    t_series stats(name("datapreprocx"),name(issuerfeed[assetout.symbol]).value);
+    t_series stats(name("datapreproc2"),name(issuerfeed[assetout.symbol]).value);
     auto itrp = stats.find(1);
     check(itrp != stats.end(),"asset not found in the datapreprocessor, or precision invalid");
     double valueofassetout = (assetout.amount) / std::pow(10.0, assetout.symbol.precision()) * 
@@ -1058,7 +1058,7 @@ double vigor::portVarianceCol(name usern)
   double portVariance = 0.0;
   for ( auto i = user.collateral.begin(); i != user.collateral.end(); ++i ) {
     
-    t_series stats(name("datapreprocx"),name(issuerfeed[i->symbol]).value);
+    t_series stats(name("datapreproc2"),name(issuerfeed[i->symbol]).value);
     auto itr = stats.find(1);
     double iVvol = (double)itr->vol/volPrecision;
     double iW = (double)itr->price[0] / pricePrecision;
@@ -1068,7 +1068,7 @@ double vigor::portVarianceCol(name usern)
   for (auto j = i + 1; j != user.collateral.end(); ++j ) {
     double c = (double)itr->correlation_matrix.at(j->symbol)/corrPrecision;
 
-    t_series statsj(name("datapreprocx"),name(issuerfeed[j->symbol]).value);
+    t_series statsj(name("datapreproc2"),name(issuerfeed[j->symbol]).value);
     auto itr = statsj.find(1);
     double jVvol = (double)itr->vol/volPrecision;
     double jW = (double)itr->price[0] / pricePrecision;
@@ -1090,7 +1090,7 @@ double vigor::l_portVarianceCol(name usern)
   double portVariance = 0.0;
   for ( auto i = user.l_collateral.begin(); i != user.l_collateral.end(); ++i ) {
     
-    t_series stats(name("datapreprocx"),name(issuerfeed[i->symbol]).value);
+    t_series stats(name("datapreproc2"),name(issuerfeed[i->symbol]).value);
     auto itr = stats.find(1);
     double iVvol = (double)itr->vol/volPrecision;
     double iW = (double)itr->price[0] / pricePrecision;
@@ -1100,7 +1100,7 @@ double vigor::l_portVarianceCol(name usern)
   for (auto j = i + 1; j != user.l_collateral.end(); ++j ) {
     double c = (double)itr->correlation_matrix.at(j->symbol)/corrPrecision;
 
-    t_series statsj(name("datapreprocx"),name(issuerfeed[j->symbol]).value);
+    t_series statsj(name("datapreproc2"),name(issuerfeed[j->symbol]).value);
     auto itr = statsj.find(1);
     double jVvol = (double)itr->vol/volPrecision;
     double jW = (double)itr->price[0] / pricePrecision;
@@ -1114,30 +1114,28 @@ double vigor::l_portVarianceCol(name usern)
 return portVariance;
 }
 
-double vigor::portVarianceIns(name usern)
+double vigor::portVarianceIns(name usern, double valueofins)
 {
-
   const auto& user = _user.get( usern.value, "User not found19" );  
-
+  
   double portVariance = 0.0;
   for ( auto i = user.insurance.begin(); i != user.insurance.end(); ++i ) {
-    
-    t_series stats(name("datapreprocx"),name(issuerfeed[i->symbol]).value);
+    t_series stats(name("datapreproc2"),name(issuerfeed[i->symbol]).value);
     auto itr = stats.find(1);
     double iVvol = (double)itr->vol/volPrecision;
     double iW = (double)itr->price[0] / pricePrecision;
     iW *= i->amount / std::pow(10.0, i->symbol.precision()); 
-    iW /= user.valueofins;
+    iW /= valueofins;
 
   for (auto j = i + 1; j != user.insurance.end(); ++j ) {
     double c = (double)itr->correlation_matrix.at(j->symbol)/corrPrecision;
 
-    t_series statsj(name("datapreprocx"),name(issuerfeed[j->symbol]).value);
+    t_series statsj(name("datapreproc2"),name(issuerfeed[j->symbol]).value);
     auto itr = statsj.find(1);
     double jVvol = (double)itr->vol/volPrecision;
     double jW = (double)itr->price[0] / pricePrecision;
     jW *= j->amount / std::pow(10.0, j->symbol.precision());
-    jW /= user.valueofins;
+    jW /= valueofins;
 
     portVariance += 2.0 * iW * jW * c * iVvol * jVvol;
   }
@@ -1155,22 +1153,22 @@ double vigor::portVarianceIns()
 
   for ( auto i = gstats.insurance.begin(); i != gstats.insurance.end(); ++i ) {
 
-    t_series stats(name("datapreprocx"),name(issuerfeed[i->symbol]).value);
+    t_series stats(name("datapreproc2"),name(issuerfeed[i->symbol]).value);
     auto itr = stats.find(1);
     double iVvol = (double)itr->vol/volPrecision;
     double iW = (double)itr->price[0] / pricePrecision;
     iW *= i->amount / std::pow(10.0, i->symbol.precision());
-    iW /=  gstats.valueofins;
+    iW /=  (gstats.valueofins);
 
     for (auto j = i + 1; j != gstats.insurance.end(); ++j ) {
       double c = (double)itr->correlation_matrix.at(j->symbol)/corrPrecision;
 
-      t_series stats(name("datapreprocx"),name(issuerfeed[j->symbol]).value);
+      t_series stats(name("datapreproc2"),name(issuerfeed[j->symbol]).value);
       auto itr = stats.find(1);
       double jVvol = (double)itr->vol/volPrecision;
       double jW = (double)itr->price[0] / pricePrecision;
       jW *= j->amount / std::pow(10.0, j->symbol.precision());
-      jW /=  gstats.valueofins; 
+      jW /=  (gstats.valueofins); 
 
       portVariance += 2.0 * iW * jW * c * iVvol * jVvol;
     }
@@ -1352,7 +1350,7 @@ double vigor::stressinsx(name usern) { // same as stressins, but remove the spec
 
   for ( auto i = gstats.insurance.begin(); i != gstats.insurance.end(); ++i ) {
 
-    t_series stats(name("datapreprocx"),name(issuerfeed[i->symbol]).value);
+    t_series stats(name("datapreproc2"),name(issuerfeed[i->symbol]).value);
     auto itr = stats.find(1);
     double iVvol = (double)itr->vol/volPrecision;
     double iW = (double)itr->price[0] / pricePrecision;
@@ -1370,7 +1368,7 @@ double vigor::stressinsx(name usern) { // same as stressins, but remove the spec
     for (auto j = i + 1; j != gstats.insurance.end(); ++j ) {
       double c = (double)itr->correlation_matrix.at(j->symbol)/corrPrecision;
 
-      t_series stats(name("datapreprocx"),name(issuerfeed[j->symbol]).value);
+      t_series stats(name("datapreproc2"),name(issuerfeed[j->symbol]).value);
       auto itr = stats.find(1);
       double jVvol = (double)itr->vol/volPrecision;
       double jW = (double)itr->price[0] / pricePrecision;
@@ -1462,7 +1460,7 @@ double vigor::RM() {
       continue;
     double solvencyx = riskx(it->usern);
     double dRMdw =  (gstats.solvency - solvencyx);
-    double w =  it->valueofins / gstats.valueofins;
+    double w =  it->valueofins / (gstats.valueofins + gstats.l_valueofcol);
     smctr +=  w * dRMdw;
   }
   return smctr;
@@ -1479,7 +1477,7 @@ double vigor::l_RM() {
       continue;
     double solvencyx = l_riskx(it->usern);
     double dRMdw =  (gstats.l_solvency - solvencyx);
-    double w =  it->valueofins / gstats.valueofins;
+    double w =  it->valueofins / (gstats.valueofins + gstats.l_valueofcol);
     smctr +=  w * dRMdw;
   }
   return smctr;
@@ -1494,7 +1492,7 @@ void vigor::l_pcts(name usern, double RM) { // percent contribution to solvency
   globalstats gstats = _globals.get();
 
   double solvencyx = l_riskx(usern);
-  double w =  user.valueofins / gstats.valueofins;
+  double w =  user.valueofins / (gstats.valueofins + gstats.l_valueofcol);
   double dRMdw =  (gstats.l_solvency - solvencyx);
 
   double pcts;
@@ -1518,7 +1516,7 @@ void vigor::pcts(name usern, double RM) { // percent contribution to solvency
   globalstats gstats = _globals.get();
 
   double solvencyx = riskx(usern);
-  double w =  user.valueofins / gstats.valueofins;
+  double w =  user.valueofins / (gstats.valueofins + gstats.l_valueofcol);
   double dRMdw =  (gstats.solvency - solvencyx);
 
   double pcts;
@@ -1551,7 +1549,7 @@ void vigor::pcts(name usern, double RM) { // percent contribution to solvency
     bool found = false;
     while ( !found && it++ != user.collateral.end() ) 
       found = (it-1)->symbol == vig; //User collateral type found
-    t_series stats(name("datapreprocx"),name(issuerfeed[vig]).value);
+    t_series stats(name("datapreproc2"),name(issuerfeed[vig]).value);
     auto itr = stats.find(1);
     amta.amount = uint64_t(( tespay * std::pow(10.0, 4) ) / // number of VIG*10e4 user must pay over time T
           ((double)itr->price[0] / pricePrecision));
@@ -1670,7 +1668,7 @@ void vigor::pcts(name usern, double RM) { // percent contribution to solvency
     while ( !found && it++ != user.collateral.end() )
       found = (it-1)->symbol == vig; 
 
-    t_series stats(name("datapreprocx"),name(issuerfeed[vig]).value);
+    t_series stats(name("datapreproc2"),name(issuerfeed[vig]).value);
 
     auto itr = stats.find(1);
 
@@ -1881,7 +1879,7 @@ void vigor::payfee(name usern) {
     while ( !found && it++ != user.collateral.end() )
       found = (it-1)->symbol == vig; //User collateral type found
   
-    t_series stats(name("datapreprocx"),name(issuerfeed[vig]).value);
+    t_series stats(name("datapreproc2"),name(issuerfeed[vig]).value);
 
 
     auto itr = stats.find(1);
@@ -2139,13 +2137,13 @@ void vigor::update(name usern)
   double valueofcol = 0.0;
   
   for ( auto it = user.insurance.begin(); it != user.insurance.end(); ++it ) {
-    t_series stats(name("datapreprocx"),name(issuerfeed[it->symbol]).value);
+    t_series stats(name("datapreproc2"),name(issuerfeed[it->symbol]).value);
     auto itr = stats.find(1);
     valueofins += (it->amount) / std::pow(10.0, it->symbol.precision()) * 
                   ( (double)itr->price[0] / pricePrecision );
   }
   for ( auto it = user.collateral.begin(); it != user.collateral.end(); ++it ){
-    t_series statsj(name("datapreprocx"),name(issuerfeed[it->symbol]).value);
+    t_series statsj(name("datapreproc2"),name(issuerfeed[it->symbol]).value);
     auto itr = statsj.find(1);
     valueofcol += (it->amount) / std::pow(10.0, it->symbol.precision()) * 
                   ( (double)itr->price[0] / pricePrecision );
@@ -2158,7 +2156,7 @@ void vigor::update(name usern)
     double l_valueofcol = 0.0;
     
     for ( auto it = user.l_collateral.begin(); it != user.l_collateral.end(); ++it ){
-      t_series statsj(name("datapreprocx"),name(issuerfeed[it->symbol]).value);
+      t_series statsj(name("datapreproc2"),name(issuerfeed[it->symbol]).value);
       auto itr = statsj.find(1);
       l_valueofcol += (it->amount) / std::pow(10.0, it->symbol.precision()) * 
                     ( (double)itr->price[0] / pricePrecision );
@@ -2179,13 +2177,13 @@ void vigor::updateglobal()
   double valueofcol = 0.0;
   
   for ( auto it = gstats.insurance.begin(); it != gstats.insurance.end(); ++it ) {
-    t_series stats(name("datapreprocx"),name(issuerfeed[it->symbol]).value);
+    t_series stats(name("datapreproc2"),name(issuerfeed[it->symbol]).value);
     auto itr = stats.find(1);
     valueofins += (it->amount) / std::pow(10.0, it->symbol.precision()) * 
                   ( (double)itr->price[0] / pricePrecision );
   }
   for ( auto it = gstats.collateral.begin(); it != gstats.collateral.end(); ++it ){
-    t_series statsj(name("datapreprocx"),name(issuerfeed[it->symbol]).value);
+    t_series statsj(name("datapreproc2"),name(issuerfeed[it->symbol]).value);
     auto itr = statsj.find(1);
     valueofcol += (it->amount) / std::pow(10.0, it->symbol.precision()) * 
                   ( (double)itr->price[0] / pricePrecision );
@@ -2197,7 +2195,7 @@ void vigor::updateglobal()
   double l_valueofcol = 0.0;
   
   for ( auto it = gstats.l_collateral.begin(); it != gstats.l_collateral.end(); ++it ){
-    t_series statsj(name("datapreprocx"),name(issuerfeed[it->symbol]).value);
+    t_series statsj(name("datapreproc2"),name(issuerfeed[it->symbol]).value);
     auto itr = statsj.find(1);
     l_valueofcol += (it->amount) / std::pow(10.0, it->symbol.precision()) * 
                   ( (double)itr->price[0] / pricePrecision );
@@ -2281,7 +2279,7 @@ void vigor::reserve()
   auto &user = _user.get(name("finalreserve").value, "finalreserve not found");
 
   _user.modify(user, _self, [&]( auto& modified_user) {
-      if (gstats.valueofins == user.valueofins)
+      if (gstats.valueofins + gstats.l_valueofcol == user.valueofins)
         modified_user.pcts = 1.0; // trigger reserve to accept bailouts
       else
         modified_user.pcts = 0.0; // reserve does not participate in bailouts unless insurers are wiped out.
@@ -2447,7 +2445,10 @@ void vigor::bailout(name usern)
 
         // insurers auotmatically convert some of their insurance assets into collateral to recapitalize the bad debt
         // recapReq: required amount of insurance assets to be converted to collateral to recap the failed loan; overcollateralize to cover a 1 standard deviations monthly event
-        double sp = std::sqrt(portVarianceIns(itr->usern)/12.0); // volatility of the particular insurers insurance portfolio, monthly
+        eosio::print( "valueofins : ", valueofins, "\n");
+        eosio::print( "itr->usern : ", itr->usern, "\n");
+        eosio::print( "itr->insurance.size() : ", itr->insurance.size(), "\n");
+        double sp = std::sqrt(portVarianceIns(itr->usern,valueofins)/12.0); // volatility of the particular insurers insurance portfolio, monthly
         eosio::print( "sp : ", sp, "\n");
         double recapReq = std::min((((debtshare/std::pow(10.0, 4))*(1.0+1.0*sp)))/valueofins,1.0); // recapReq as a percentage of the insurers insurance assets
         eosio::print( "recapReq : ", recapReq, "\n");
@@ -2645,7 +2646,7 @@ void vigor::bailoutup(name usern)
               }
               _globals.set(gstats, _self);
 
-              t_series stats(name("datapreprocx"),name(issuerfeed[i->symbol]).value);
+              t_series stats(name("datapreproc2"),name(issuerfeed[i->symbol]).value);
               auto itp = stats.find(1);
               valueofins -= (amti.amount) / std::pow(10.0, i->symbol.precision()) * ( (double)itp->price[0] / pricePrecision );//adjusted value of insurance to include cancelling some of the borrow
               W1 -= (amti.amount) / std::pow(10.0, i->symbol.precision()) * ( (double)itp->price[0] / pricePrecision );//adjusted value of the share of l_collateral to include cancelling some of the borrow
@@ -2742,7 +2743,7 @@ void vigor::bailoutup(name usern)
         // vigorneededa.amount==0.0 l_debtshare is sufficient to collateralize insurers share of adjusted l_collateral W1
         // W1==0 no borrows remain to be recapped
         // valueofins==0.0 no insurance assets available to recap the borrowed tokens
-        double spi = std::sqrt(portVarianceIns(itr->usern)/12.0); // volatility of the insurer insurance portfolio, monthly
+        double spi = std::sqrt(portVarianceIns(itr->usern,valueofins)/12.0); // volatility of the insurer insurance portfolio, monthly
         double recapReq =  std::min(((1.0+spi)*(vigorneededa.amount/std::pow(10.0, 4)))/valueofins,1.0); // amount of collateral needed, against which the insurer can borrow VIGOR to recap the borrowed risky tokens, as a pct of insurers insurance
         eosio::print( "recapReq ", recapReq, ", sp ", sp, ", spi ", spi, "\n");
         
