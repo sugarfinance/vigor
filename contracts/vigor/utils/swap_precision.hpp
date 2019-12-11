@@ -8,11 +8,7 @@
 #pragma once
 
 
-namespace swap_precision {
-
-  // default value for the clock
-  eosio::time_point_sec DEFAULT_TIME = (eosio::time_point_sec)(eosio::current_time_point().sec_since_epoch() - eosio::current_time_point().sec_since_epoch());
-    
+namespace swap_precision {   
   
   // the swap function
   auto swapprecision(eosio::asset asset_){

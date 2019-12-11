@@ -8,6 +8,7 @@
 
 #include <string>
 #include <cmath>
+#include <utility>  // using std::pair
 
 #include "../utils/rng.hpp"
 #include "../utils/swap_precision.hpp"
@@ -197,6 +198,15 @@ CONTRACT vigor : public eosio::contract {
       void expiration(name usern);
       void elapsedtime(name usern);
       void resttimer(name usern);
+
+      // this function determines and drives state transisiton
+      void statedriver(
+         eosio::name usern,
+         eosio::time_point_sec default_time,
+         Array2d<fsmpayfee::aistate>& obj,
+         std::pair<int, int>& duoval,
+         eosio::asset amta_
+      ); 
 
       map <symbol, name> issueracct {
          {symbol("EOS",4),	    name("eosio.token")},

@@ -19,6 +19,14 @@ class Array2d
     // The current height of the array
     int m_height;
 
+    
+    // default ctor
+    Array2d() : m_width(1), m_height(1)
+    {
+        // create the new array
+        m_array = new Datatype[ m_width * m_height ];
+    }
+
 
     // This creates the 2D array using a single linear array
     Array2d(int p_width, int p_height)
@@ -48,9 +56,14 @@ class Array2d
     }
 
     // This retrieves the iten at the Y index
-    Datatype& GetY(int p_x, int p_y)
+    /*Datatype& GetY(int p_x, int p_y)
     {
         return m_array[p_x * m_height + p_y ];
+    }*/
+
+    Datatype& GetY(int p_y)
+    {
+        return m_array[p_y]; // hardcoded, change later
     }
 
 };

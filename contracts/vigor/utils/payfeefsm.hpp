@@ -1,10 +1,15 @@
-// creating a finite state machine to deal with the different state, events and transitions that occur within payfee()
+
+/*
+*   IK Nwoke 
+*   creating a finite state machine to deal with the different state, events and transitions that occur within payfee()
+*/
 
 #pragma once
 
+#include <utility>    // using std::pair
 #include "Array2d.hpp"
 
-namespace fsm_payfee {
+namespace fsmpayfee {
 
     // enums
     enum aistate
@@ -12,7 +17,7 @@ namespace fsm_payfee {
         PAYMENTS,
         MISSED_PAYMENTS,
         END_OF_GRACE_PERIOD
-    };
+    } aistate_;
 
     enum aievents
     {
@@ -26,121 +31,141 @@ namespace fsm_payfee {
         PAYMENT_OF_VIG_MADE_THAT_COVERS_MISSED_PAYMENTS_AND_CLOCK_HAS_ALREADY_STARTED,
         DELIQUENCY_FEE_PAYMENTS,
         DELIQUENCY_FEE_PAYMENTS_SETTLED
-    };
+    } aievents_;
 
-    // create the Array2d object
-    Array2d<aistate> fsm_machine(3, 10);
+    //std::pair<int, int> machinevalues;  // this pair will contain values for state and events
 
-    // a variable that selects the current state
-    int g_currentstate = PAYMENTS;
-    int g_currentevents = NORMAL_PAYMENTS;
-
-    // algorithm
-    void InitFSM()
+    void InitFSM(Array2d<aistate>& obj, enum aistate, enum aievents)
     {
         int state;
         int event;
 
+
         // fill the machine with values first
         for( state = 0; state < 3; state++ )
         {
-            for( event = 0; event < 7; event++ )
+            for( event = 0; event < 10; event++ )
             {
-                fsm_machine.GetX(state, event) = (aistate)state;
+                obj.GetX(state, event) = (aistate)state;
             }
         }
 
         // now fill the machine in with the real values
-        fsm_machine.GetX(PAYMENTS, NORMAL_PAYMENTS) = PAYMENTS;
-        fsm_machine.GetX(PAYMENTS, NOT_ENOUGH_VIG_TO_MAKE_FULL_PAYMENT) = MISSED_PAYMENTS;
-        fsm_machine.GetX(PAYMENTS, NO_VIG_AND_CLOCK_HAS_NOT_STARTED) =  MISSED_PAYMENTS;
-        fsm_machine.GetX(MISSED_PAYMENTS, NO_VIG_AND_CLOCK_HAS_ALREADY_STARTED) = MISSED_PAYMENTS;
-        fsm_machine.GetX(MISSED_PAYMENTS, NO_VIG_AND_CLOCK_HAS_EXPIRED) = END_OF_GRACE_PERIOD;
-        fsm_machine.GetX(MISSED_PAYMENTS, PAYMENT_OF_VIG_MADE_BUT_NOT_ENOUGH_TO_MAKE_A_FULL_REPAYMENT_AND_CLOCK_ALREADY_STARTED) = MISSED_PAYMENTS;
-        fsm_machine.GetX(MISSED_PAYMENTS, PAYMENT_OF_VIG_MADE_BUT_NOT_ENOUGH_TO_MAKE_A_FULL_REPAYMENT_AND_CLOCK_HAS_EXPIRED) = END_OF_GRACE_PERIOD;
-        fsm_machine.GetX(MISSED_PAYMENTS,  PAYMENT_OF_VIG_MADE_THAT_COVERS_MISSED_PAYMENTS_AND_CLOCK_HAS_ALREADY_STARTED) = PAYMENTS;
-        fsm_machine.GetX(END_OF_GRACE_PERIOD, DELIQUENCY_FEE_PAYMENTS) = END_OF_GRACE_PERIOD;
-        fsm_machine.GetX(END_OF_GRACE_PERIOD, DELIQUENCY_FEE_PAYMENTS_SETTLED) = PAYMENTS;
+        obj.GetX(PAYMENTS, NORMAL_PAYMENTS) = PAYMENTS;
+        obj.GetX(PAYMENTS, NOT_ENOUGH_VIG_TO_MAKE_FULL_PAYMENT) = MISSED_PAYMENTS;
+        obj.GetX(PAYMENTS, NO_VIG_AND_CLOCK_HAS_NOT_STARTED) =  MISSED_PAYMENTS;
+        obj.GetX(MISSED_PAYMENTS, NO_VIG_AND_CLOCK_HAS_ALREADY_STARTED) = MISSED_PAYMENTS;
+        obj.GetX(MISSED_PAYMENTS, NO_VIG_AND_CLOCK_HAS_EXPIRED) = END_OF_GRACE_PERIOD;
+        obj.GetX(MISSED_PAYMENTS, PAYMENT_OF_VIG_MADE_BUT_NOT_ENOUGH_TO_MAKE_A_FULL_REPAYMENT_AND_CLOCK_ALREADY_STARTED) = MISSED_PAYMENTS;
+        obj.GetX(MISSED_PAYMENTS, PAYMENT_OF_VIG_MADE_BUT_NOT_ENOUGH_TO_MAKE_A_FULL_REPAYMENT_AND_CLOCK_HAS_EXPIRED) = END_OF_GRACE_PERIOD;
+        obj.GetX(MISSED_PAYMENTS,  PAYMENT_OF_VIG_MADE_THAT_COVERS_MISSED_PAYMENTS_AND_CLOCK_HAS_ALREADY_STARTED) = PAYMENTS;
+        obj.GetX(END_OF_GRACE_PERIOD, DELIQUENCY_FEE_PAYMENTS) = END_OF_GRACE_PERIOD;
+        obj.GetX(END_OF_GRACE_PERIOD, DELIQUENCY_FEE_PAYMENTS_SETTLED) = PAYMENTS;
+    } 
+ 
 
-    }
 
-    // transition phase
+    // transition functions
     // normal payments
-    int np()
+    std::pair<int, int> np(Array2d<aistate>& _obj_, int currentstate)
     {
         // fsm_machine.GetX(PAYMENTS, NORMAL_PAYMENTS) = PAYMENTS;
-        g_currentstate = fsm_machine.GetX(g_currentstate, NORMAL_PAYMENTS);
-        return g_currentstate;
+    
+        int localstate =_obj_.GetX(currentstate, NORMAL_PAYMENTS);
+        int localevent = _obj_.GetY(NORMAL_PAYMENTS); //hardcoded -change later!
+        return std::make_pair(localstate, localevent);
     }
-
+      
     // NOT_ENOUGH_VIG_TO_MAKE_FULL_PAYMENT,
-    int nevtomfp()
+    std::pair<int, int> nevtomfp(Array2d<aistate>& _obj_, int currentstate)
     {
         // fsm_machine.GetX(PAYMENTS, NOT_ENOUGH_VIG_TO_MAKE_FULL_PAYMENT) = MISSED_PAYMENTS;
-        g_currentstate = fsm_machine.GetX(g_currentstate,  NO_VIG_AND_CLOCK_HAS_NOT_STARTED);
-        return g_currentstate;
-    } 
+
+        int localstate =_obj_.GetX(currentstate, NOT_ENOUGH_VIG_TO_MAKE_FULL_PAYMENT);
+        int localevent = _obj_.GetY(NOT_ENOUGH_VIG_TO_MAKE_FULL_PAYMENT); //hardcoded -change later!
+        return std::make_pair(localstate, localevent);
+    }
 
     // NO_VIG_AND_CLOCK_HAS_NOT_STARTED
-    int nvachns()
+    std::pair<int, int> nvachns(Array2d<aistate>& _obj_, int currentstate)
     {
         //fsm_machine.GetX(PAYMENTS, NO_VIG_AND_CLOCK_HAS_NOT_STARTED) =  MISSED_PAYMENTS;
-        g_currentstate = fsm_machine.GetX(g_currentstate, NO_VIG_AND_CLOCK_HAS_NOT_STARTED);
-        return g_currentstate;
-    } 
+
+        int localstate =_obj_.GetX(currentstate, NO_VIG_AND_CLOCK_HAS_NOT_STARTED);
+        int localevent = _obj_.GetY(NO_VIG_AND_CLOCK_HAS_NOT_STARTED); //hardcoded -change later!
+        return std::make_pair(localstate, localevent);
+    }
+
 
     // NO_VIG_AND_CLOCK_HAS_ALREADY_STARTED
-    int nvachas()
+    std::pair<int, int> nvachas(Array2d<aistate>& _obj_, int currentstate)
     {
         // fsm_machine.GetX(MISSED_PAYMENTS, NO_VIG_AND_CLOCK_HAS_ALREADY_STARTED) = MISSED_PAYMENTS;
-        g_currentstate = fsm_machine.GetX(g_currentstate, NOT_ENOUGH_VIG_TO_MAKE_FULL_PAYMENT);
-        return g_currentstate;
+
+        int localstate =_obj_.GetX(currentstate, NO_VIG_AND_CLOCK_HAS_ALREADY_STARTED);
+        int localevent = _obj_.GetY(NO_VIG_AND_CLOCK_HAS_ALREADY_STARTED); //hardcoded -change later!
+        return std::make_pair(localstate, localevent);
     }
  
     //  NO_VIG_AND_CLOCK_HAS_EXPIRED
-    int nvache()
+    std::pair<int, int> nvache(Array2d<aistate>& _obj_, int currentstate)
     {
         // fsm_machine.GetX(MISSED_PAYMENTS, NO_VIG_AND_CLOCK_HAS_EXPIRED) = END_OF_GRACE_PERIOD;
-        g_currentstate =  fsm_machine.GetX(g_currentstate,  NO_VIG_AND_CLOCK_HAS_EXPIRED);
-        return g_currentstate;
+
+        int localstate =_obj_.GetX(currentstate, NO_VIG_AND_CLOCK_HAS_EXPIRED);
+        int localevent = _obj_.GetY(NO_VIG_AND_CLOCK_HAS_EXPIRED); //hardcoded -change later!
+        return std::make_pair(localstate, localevent);
     }
 
     // PAYMENT_OF_VIG_MADE_BUT_NOT_ENOUGH_TO_MAKE_A_FULL_REPAYMENT_AND_CLOCK_ALREADY_STARTED
-    int povmbnetmafracas()
+    std::pair<int, int>povmbnetmafracas(Array2d<aistate>& _obj_, int currentstate)
     {
         // fsm_machine.GetX(MISSED_PAYMENTS, PAYMENT_OF_VIG_MADE_BUT_NOT_ENOUGH_TO_MAKE_A_FULL_REPAYMENT_AND_CLOCK_ALREADY_STARTED) = MISSED_PAYMENTS;
-        g_currentstate = fsm_machine.GetX(g_currentstate, PAYMENT_OF_VIG_MADE_BUT_NOT_ENOUGH_TO_MAKE_A_FULL_REPAYMENT_AND_CLOCK_ALREADY_STARTED);
-        return g_currentstate;
+
+        int localstate =_obj_.GetX(currentstate, PAYMENT_OF_VIG_MADE_BUT_NOT_ENOUGH_TO_MAKE_A_FULL_REPAYMENT_AND_CLOCK_ALREADY_STARTED);
+        int localevent = _obj_.GetY(PAYMENT_OF_VIG_MADE_BUT_NOT_ENOUGH_TO_MAKE_A_FULL_REPAYMENT_AND_CLOCK_ALREADY_STARTED); //hardcoded -change later!
+        return std::make_pair(localstate, localevent);
     }
 
     // PAYMENT_OF_VIG_MADE_BUT_NOT_ENOUGH_TO_MAKE_A_FULL_REPAYMENT_AND_CLOCK_HAS_EXPIRED
-    int povmbnetmafrache()
+    std::pair<int, int> povmbnetmafrache(Array2d<aistate>& _obj_, int currentstate)
     {
         // fsm_machine.GetX(MISSED_PAYMENTS, PAYMENT_OF_VIG_MADE_BUT_NOT_ENOUGH_TO_MAKE_A_FULL_REPAYMENT_AND_CLOCK_HAS_EXPIRED) = END_OF_GRACE_PERIOD;
-        g_currentstate = fsm_machine.GetX(g_currentstate, PAYMENT_OF_VIG_MADE_BUT_NOT_ENOUGH_TO_MAKE_A_FULL_REPAYMENT_AND_CLOCK_HAS_EXPIRED);
-        return g_currentstate;
+
+        int localstate =_obj_.GetX(currentstate, PAYMENT_OF_VIG_MADE_BUT_NOT_ENOUGH_TO_MAKE_A_FULL_REPAYMENT_AND_CLOCK_HAS_EXPIRED);
+        int localevent = _obj_.GetY(PAYMENT_OF_VIG_MADE_BUT_NOT_ENOUGH_TO_MAKE_A_FULL_REPAYMENT_AND_CLOCK_HAS_EXPIRED); //hardcoded -change later!
+        return std::make_pair(localstate, localevent);
     }
 
     // PAYMENT_OF_VIG_MADE_THAT_COVERS_MISSED_PAYMENTS_AND_CLOCK_HAS_ALREADY_STARTED
-    int povmtcmpachas()
+    std::pair<int, int> povmtcmpachas(Array2d<aistate>& _obj_, int currentstate)
     {
         // fsm_machine.GetX(MISSED_PAYMENTS,  PAYMENT_OF_VIG_MADE_THAT_COVERS_MISSED_PAYMENTS_AND_CLOCK_HAS_ALREADY_STARTED) = PAYMENTS;
-        g_currentstate = fsm_machine.GetX(g_currentstate,  PAYMENT_OF_VIG_MADE_THAT_COVERS_MISSED_PAYMENTS_AND_CLOCK_HAS_ALREADY_STARTED);
-        return g_currentstate;
+
+        int localstate =_obj_.GetX(currentstate,  PAYMENT_OF_VIG_MADE_THAT_COVERS_MISSED_PAYMENTS_AND_CLOCK_HAS_ALREADY_STARTED);
+        int localevent = _obj_.GetY( PAYMENT_OF_VIG_MADE_THAT_COVERS_MISSED_PAYMENTS_AND_CLOCK_HAS_ALREADY_STARTED); //hardcoded -change later!
+        return std::make_pair(localstate, localevent);
     }
 
     // DELIQUENCY_FEE_PAYMENTS
-    void dfp()
+    std::pair<int, int> dfp(Array2d<aistate>& _obj_, int currentstate)
     {
         //  fsm_machine.GetX(END_OF_GRACE_PERIOD, DELIQUENCY_FEE_PAYMENTS) = END_OF_GRACE_PERIOD;
-        g_currentstate =  fsm_machine.GetX(g_currentstate, DELIQUENCY_FEE_PAYMENTS);
+   
+        int localstate =_obj_.GetX(currentstate,  DELIQUENCY_FEE_PAYMENTS);
+        int localevent = _obj_.GetY(DELIQUENCY_FEE_PAYMENTS); //hardcoded -change later!
+        return std::make_pair(localstate, localevent);
     }
 
     //  DELIQUENCY_FEE_PAYMENTS_SETTLED
-    void dfps()
+std::pair<int, int> dfps(Array2d<aistate>& _obj_, int currentstate)
     {
         // fsm_machine.GetX(END_OF_GRACE_PERIOD, DELIQUENCY_FEE_PAYMENTS_SETTLED) = PAYMENTS;
-        g_currentstate = fsm_machine.GetX(g_currentstate, DELIQUENCY_FEE_PAYMENTS_SETTLED);
+
+        int localstate =_obj_.GetX(currentstate, DELIQUENCY_FEE_PAYMENTS_SETTLED);
+        int localevent = _obj_.GetY(DELIQUENCY_FEE_PAYMENTS_SETTLED); //hardcoded -change later!
+        return std::make_pair(localstate, localevent);
     }
+
 
 };

@@ -1811,6 +1811,87 @@ void vigor::pcts(name usern, double RM) { // percent contribution to solvency
   
 }*/
 
+
+void vigor::statedriver(
+    eosio::name usern,
+    const eosio::time_point_sec p_default_time,
+    Array2d<fsmpayfee::aistate>& p_obj,
+    std::pair<int, int>& p_machineval,
+    eosio::asset p_amta
+){
+    using namespace fsmpayfee;
+
+    symbol vig =symbol("VIG", 10);
+
+    auto &user = _user.get( usern.value, "User not found23" );
+
+    auto it = user.collateral.begin();
+    bool found = false;
+
+    while ( !found && it++ != user.collateral.end() ) 
+      found = (it-1)->symbol == vig; //User collateral type found
+
+    if(!found){
+                if(user.starttime == p_default_time && user.expiry_time == p_default_time)
+                {
+                    int events = fsmpayfee::NO_VIG_AND_CLOCK_HAS_NOT_STARTED;    
+                    int currentstate = fsmpayfee::MISSED_PAYMENTS; 
+                    p_machineval = np(p_obj, currentstate);
+                }else{
+                    
+                    if(user.starttime < user.expiry_time )
+                    {
+                        int events = fsmpayfee::NO_VIG_AND_CLOCK_HAS_ALREADY_STARTED;
+                        int currentstate = fsmpayfee::MISSED_PAYMENTS;
+                        p_machineval = nvachas(p_obj, currentstate);
+                    }
+                    else if(user.starttime >= user.expiry_time)
+                    {
+                        int events = fsmpayfee::NO_VIG_AND_CLOCK_HAS_ALREADY_STARTED;
+                        int currentstate = fsmpayfee::NO_VIG_AND_CLOCK_HAS_EXPIRED;
+                        p_machineval = nvache(p_obj, currentstate);
+                    }
+                }
+    }
+    else { 
+      
+        if (user.latepays + p_amta.amount > (it-1)->amount)
+        { 
+                    if(user.starttime == p_default_time && user.expiry_time == p_default_time)
+                    {
+                        int events = fsmpayfee::NOT_ENOUGH_VIG_TO_MAKE_FULL_PAYMENT;
+                        int currentstate = fsmpayfee::MISSED_PAYMENTS;
+                        p_machineval = nevtomfp(p_obj, currentstate);        
+                    }else{
+                        if(user.starttime < user.expiry_time )
+                        {
+                            int events = fsmpayfee::PAYMENT_OF_VIG_MADE_BUT_NOT_ENOUGH_TO_MAKE_A_FULL_REPAYMENT_AND_CLOCK_ALREADY_STARTED;
+                            int currentstate = fsmpayfee::MISSED_PAYMENTS;
+                            p_machineval = povmbnetmafracas(p_obj, currentstate);
+                        }
+                        else if(user.starttime >= user.expiry_time)
+                        {
+                            int events = fsmpayfee::PAYMENT_OF_VIG_MADE_BUT_NOT_ENOUGH_TO_MAKE_A_FULL_REPAYMENT_AND_CLOCK_HAS_EXPIRED;
+                            int currentstate = fsmpayfee::END_OF_GRACE_PERIOD;
+                            p_machineval = povmbnetmafrache(p_obj, currentstate);
+                        }
+                    }
+        }else if (user.latepays + p_amta.amount > 0){
+                    if(user.starttime == p_default_time && user.expiry_time == p_default_time)
+                    {
+                        int events =  fsmpayfee::NORMAL_PAYMENTS;
+                        int currentstate = fsmpayfee::PAYMENTS;
+                        p_machineval = fsmpayfee::np(p_obj, currentstate);
+                    }else if(user.starttime < user.expiry_time ){
+                            int events = fsmpayfee::PAYMENT_OF_VIG_MADE_THAT_COVERS_MISSED_PAYMENTS_AND_CLOCK_HAS_ALREADY_STARTED;
+                            int currentstate = fsmpayfee::PAYMENTS;
+                            p_machineval = fsmpayfee::povmtcmpachas(p_obj, currentstate);
+                    }
+        }
+    }
+}
+
+
 void vigor::payfee(name usern) {
 
   auto &user = _user.get( usern.value, "User not found23" );
@@ -1819,19 +1900,17 @@ void vigor::payfee(name usern) {
 
   globalstats gstats = _globals.get();
 
+  std::pair<int, int> machinevalues;  // this pair will contain values for state and events
+
   bool late = true;
 
   uint64_t amt = 0;
-
    
   // symbol vig = symbol("VIG", 4);
   symbol vig =symbol("VIG", 10);
 
-    // the amount in vig that gets paid back
+  // the amount in vig that gets paid back
   asset amta = asset(amt, vig);
-
-  const int64_t amount = 0;
-  
 
   uint32_t dsec = current_time_point().sec_since_epoch() - user.lastupdate.sec_since_epoch() + 1; 
 
@@ -1848,104 +1927,32 @@ void vigor::payfee(name usern) {
   eosio::time_point_sec et;  // expiry time
   int count = 0; // count of the number of days that payements have been missed
 
-    auto it = user.collateral.begin();
+  //auto it = user.collateral.begin();
 
 
-    bool found = false;
-   
-
-    bool graceperiodend = false; // this is a boolean that checks if the late payements period is still active
-   
-    while ( !found && it++ != user.collateral.end() )
-      found = (it-1)->symbol == vig; //User collateral type found
+  //bool found = false;
   
-    t_series stats(name("datapreprocx"),name(issuerfeed[vig]).value);
+  //while ( !found && it++ != user.collateral.end() )
+  //  found = (it-1)->symbol == vig; //User collateral type found
+
+  t_series stats(name("datapreprocx"),name(issuerfeed[vig]).value);
 
 
-    auto itr = stats.find(1);
+  auto itr = stats.find(1);
 
-     // number of VIG*10e4 user must pay over time T
-     // CORRECTION: number of VIG*10e10 user must pay over time T
-    amta.amount = uint64_t(( tespay * std::pow(10.0, 4) ) / ((double)itr->price[0] / pricePrecision));
+  // number of VIG*10e4 user must pay over time T
+  // CORRECTION: number of VIG*10e10 user must pay over time T
+  amta.amount = uint64_t(( tespay * std::pow(10.0, 4) ) / ((double)itr->price[0] / pricePrecision));
 
-    // fsm_payfee::InitFSM(); // initialise the finite state machine
-    
-    int currentstate = fsm_payfee::g_currentstate;
-    int& state{currentstate};
+  // creating the Array2d object
+  Array2d<fsmpayfee::aistate> obj;
 
-    int currentevents = fsm_payfee::g_currentevents;
-    int& events{currentevents};
-    
-    if(!found){
-                //currentstate = fsm_payfee::MISSED_PAYMENTS;
-                if(user.starttime == swap_precision::DEFAULT_TIME && user.expiry_time == swap_precision::DEFAULT_TIME)
-                {
-                    events = fsm_payfee::aievents::NO_VIG_AND_CLOCK_HAS_NOT_STARTED;    
-                    //currentstate = MISSED_PAYMENTS; 
-                    //   fsm_machine.GetX(PAYMENTS, NO_VIG_AND_CLOCK_HAS_NOT_STARTED) =  MISSED_PAYMENTS;
-                    state = fsm_payfee::nvachns();   
-                }else{
-                    
-                    if(user.starttime < user.expiry_time )
-                    {
-                        events = fsm_payfee::aievents::NO_VIG_AND_CLOCK_HAS_ALREADY_STARTED;
-                        //currentstate = MISSED_PAYMENTS;
-                        // fsm_machine.GetX(MISSED_PAYMENTS, NO_VIG_AND_CLOCK_HAS_ALREADY_STARTED) = MISSED_PAYMENTS;
-                        state = fsm_payfee::nvachas();
-                    }
-                    else if(user.starttime >= user.expiry_time)
-                    {
-                        //events = NO_VIG_AND_CLOCK_HAS_ALREADY_STARTED;
-                        events = fsm_payfee::aievents::NO_VIG_AND_CLOCK_HAS_EXPIRED;
-                        //currentstate = END_OF_GRACE_PERIOD;
-                        // fsm_machine.GetX(MISSED_PAYMENTS, NO_VIG_AND_CLOCK_HAS_EXPIRED) = END_OF_GRACE_PERIOD;
-                        state = fsm_payfee::nvache();
-                    }
-                }
-    }
-    else { 
-      
-        if (user.latepays + amta.amount > (it-1)->amount)
-        { 
-                    //currentstate = fsm_payfee::MISSED_PAYMENTS;
-                    if(user.starttime == swap_precision::DEFAULT_TIME && user.expiry_time == swap_precision::DEFAULT_TIME)
-                    {
-                        events = fsm_payfee::aievents::NOT_ENOUGH_VIG_TO_MAKE_FULL_PAYMENT;
-                        //currentstate = MISSED_PAYMENTS;
-                        // fsm_machine.GetX(PAYMENTS, NOT_ENOUGH_VIG_TO_MAKE_FULL_PAYMENT) = MISSED_PAYMENTS;
-                        state = fsm_payfee::nevtomfp();             
-                    }else{
-                        if(user.starttime < user.expiry_time )
-                        {
-                            events = fsm_payfee::aievents::PAYMENT_OF_VIG_MADE_BUT_NOT_ENOUGH_TO_MAKE_A_FULL_REPAYMENT_AND_CLOCK_ALREADY_STARTED;
-                            //currentstate = MISSED_PAYMENTS;
-                            // g_currentstate = fsm_machine.GetX(g_currentstate, PAYMENT_OF_VIG_MADE_BUT_NOT_ENOUGH_TO_MAKE_A_FULL_REPAYMENT_AND_CLOCK_ALREADY_STARTED);
-                            state = fsm_payfee::povmbnetmafracas();
-                        }
-                        else if(user.starttime >= user.expiry_time)
-                        {
-                            events = fsm_payfee::aievents::PAYMENT_OF_VIG_MADE_BUT_NOT_ENOUGH_TO_MAKE_A_FULL_REPAYMENT_AND_CLOCK_HAS_EXPIRED;
-                            //currentstate = END_OF_GRACE_PERIOD;
-                            // g_currentstate = fsm_machine.GetX(g_currentstate, PAYMENT_OF_VIG_MADE_BUT_NOT_ENOUGH_TO_MAKE_A_FULL_REPAYMENT_AND_CLOCK_HAS_EXPIRED);
-                            state = fsm_payfee::povmbnetmafrache();
-                        }
-                    }
-        }else if (user.latepays + amta.amount > 0){
-                    //currentstate = fsm_payfee::MISSED_PAYMENTS;
-                    if(user.starttime == swap_precision::DEFAULT_TIME && user.expiry_time == swap_precision::DEFAULT_TIME)
-                    {
-                        events =  fsm_payfee::aievents::NORMAL_PAYMENTS;
-                        //currenstate = PAYMENTS;
-                        // g_currentstate = fsm_machine.GetX(g_currentstate, NORMAL_PAYMENTS);
-                        state = fsm_payfee::np();
-                    }else if(user.starttime < user.expiry_time ){
-                            events = fsm_payfee::aievents::PAYMENT_OF_VIG_MADE_THAT_COVERS_MISSED_PAYMENTS_AND_CLOCK_HAS_ALREADY_STARTED;
-                            //currentstate = PAYMENTS; 
-                            //  g_currentstate = fsm_machine.GetX(g_currentstate,  PAYMENT_OF_VIG_MADE_THAT_COVERS_MISSED_PAYMENTS_AND_CLOCK_HAS_ALREADY_STARTED);                     
-                            state = fsm_payfee::povmtcmpachas();
-                    }
-        }
-    }
+  fsmpayfee::InitFSM(obj, fsmpayfee::aistate_,  fsmpayfee::aievents_);
+
+
+  // this function determines and drives state transisiton
+  //statedriver(usern, timer::DEFAULT_TIME, fsmpayfee::aistate_,  fsmpayfee::aievents_, amta);
+  statedriver(usern, timer::DEFAULT_TIME, obj, machinevalues, amta);
     
     
 
@@ -2190,7 +2197,7 @@ void vigor::payfee(name usern) {
   */
 
      // executes the actions within  a particular state - all the updating is done within the switch statement
-    switch(state){
+   /* switch(state){
         case fsm_payfee::aistate::PAYMENTS:
             if(events == fsm_payfee::aievents::NORMAL_PAYMENTS){
                 // ia. accumulated_late_pays == 0;
@@ -2251,7 +2258,7 @@ void vigor::payfee(name usern) {
             break;
         default:
             break;
-    };
+    };*/
   
 }
 
