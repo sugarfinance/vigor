@@ -1835,8 +1835,8 @@ void vigor::statedriver(
                 if(user.starttime == p_default_time && user.expiry_time == p_default_time)
                 {
                     int events = fsmpayfee::NO_VIG_AND_CLOCK_HAS_NOT_STARTED;    
-                    int currentstate = fsmpayfee::MISSED_PAYMENTS; 
-                    p_machineval = np(p_obj, currentstate);
+                    int currentstate = fsmpayfee::PAYMENTS; 
+                    p_machineval = nvachns(p_obj, currentstate);
                 }else{
                     
                     if(user.starttime < user.expiry_time )
@@ -1846,9 +1846,9 @@ void vigor::statedriver(
                         p_machineval = nvachas(p_obj, currentstate);
                     }
                     else if(user.starttime >= user.expiry_time)
-                    {
-                        int events = fsmpayfee::NO_VIG_AND_CLOCK_HAS_ALREADY_STARTED;
-                        int currentstate = fsmpayfee::NO_VIG_AND_CLOCK_HAS_EXPIRED;
+                    {                    
+                        int events = fsmpayfee::NO_VIG_AND_CLOCK_HAS_EXPIRED;
+                        int currentstate = fsmpayfee::MISSED_PAYMENTS;
                         p_machineval = nvache(p_obj, currentstate);
                     }
                 }
@@ -1860,7 +1860,7 @@ void vigor::statedriver(
                     if(user.starttime == p_default_time && user.expiry_time == p_default_time)
                     {
                         int events = fsmpayfee::NOT_ENOUGH_VIG_TO_MAKE_FULL_PAYMENT;
-                        int currentstate = fsmpayfee::MISSED_PAYMENTS;
+                        int currentstate = fsmpayfee::PAYMENTS;
                         p_machineval = nevtomfp(p_obj, currentstate);        
                     }else{
                         if(user.starttime < user.expiry_time )
@@ -1872,7 +1872,7 @@ void vigor::statedriver(
                         else if(user.starttime >= user.expiry_time)
                         {
                             int events = fsmpayfee::PAYMENT_OF_VIG_MADE_BUT_NOT_ENOUGH_TO_MAKE_A_FULL_REPAYMENT_AND_CLOCK_HAS_EXPIRED;
-                            int currentstate = fsmpayfee::END_OF_GRACE_PERIOD;
+                            int currentstate = fsmpayfee::MISSED_PAYMENTS;
                             p_machineval = povmbnetmafrache(p_obj, currentstate);
                         }
                     }
@@ -1884,7 +1884,7 @@ void vigor::statedriver(
                         p_machineval = fsmpayfee::np(p_obj, currentstate);
                     }else if(user.starttime < user.expiry_time ){
                             int events = fsmpayfee::PAYMENT_OF_VIG_MADE_THAT_COVERS_MISSED_PAYMENTS_AND_CLOCK_HAS_ALREADY_STARTED;
-                            int currentstate = fsmpayfee::PAYMENTS;
+                            int currentstate = fsmpayfee::MISSED_PAYMENTS;
                             p_machineval = fsmpayfee::povmtcmpachas(p_obj, currentstate);
                     }
         }
