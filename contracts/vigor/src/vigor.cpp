@@ -1531,307 +1531,420 @@ void vigor::pcts(name usern, double RM) { // percent contribution to solvency
     
 }
 
+// this methid set the expiry date of the missed payments window
+eosio::time_point_sec vigor::expirydate(){
+    static const uint32_t now = current_time_point().sec_since_epoch();
+    static const uint32_t r = now % hours(24).to_seconds();
+    static const time_point_sec expiry_date = (time_point_sec)(now - r + (7 * hours(24).to_seconds()));
+    return expiry_date;
+  }
 
-/*void vigor::payfee(name usern) {
-  auto &user = _user.get( usern.value, "User not found23" );
-  check(_globals.exists(), "no global table exists yet");
-  globalstats gstats = _globals.get();
 
-  bool late = true;
-  uint64_t amt = 0;
-  symbol vig = symbol("VIG", 4);
-  asset amta = asset(amt, vig);
-  uint32_t dsec = current_time_point().sec_since_epoch() - user.lastupdate.sec_since_epoch() + 1; //+1 to protect against 0
-  uint32_t T = (uint32_t)(360.0 * 24.0 * 60.0 * (60.0 / (double)dsec));
-  double tespay = (user.debt.amount / std::pow(10.0, 4)) * (std::pow((1 + user.tesprice), (1.0 / T)) - 1); // $ amount user must pay over time T
-  
+void vigor::statedriver(
+    eosio::name usern,
+    const eosio::time_point_sec p_default_time,
+    Array2d<fsmpayfee::aistate>& p_obj,
+    std::pair<int, int>& p_machineval,
+    eosio::asset p_amta,
+    eosio::time_point_sec& st,  // start time
+    eosio::time_point_sec& et,  // expiry time
+    const double tespay_,
+    bool p_late,
+    bool p_updateglobal
+){
+    using namespace fsmpayfee;
+
+    symbol vig =symbol("VIG", 10);
+
+    auto &user = _user.get( usern.value, "User not found23" );
+
+
+    check(_globals.exists(), "no global table exists yet");
+
+    globalstats gstats = _globals.get();
+
     auto it = user.collateral.begin();
     bool found = false;
+
     while ( !found && it++ != user.collateral.end() ) 
       found = (it-1)->symbol == vig; //User collateral type found
-    t_series stats(name("datapreproc2"),name(issuerfeed[vig]).value);
-    auto itr = stats.find(1);
-    amta.amount = uint64_t(( tespay * std::pow(10.0, 4) ) / // number of VIG*10e4 user must pay over time T
-          ((double)itr->price[0] / pricePrecision));
-      if (!found)
-          _user.modify(user, _self, [&]( auto& modified_user) { // withdraw fee
-            modified_user.latepays += 1;
-          });
-      else {
-        if (amta.amount > (it-1)->amount)
-          _user.modify(user, _self, [&]( auto& modified_user) { // withdraw fee
-            modified_user.latepays += 1;
-          });
-        else if (amta.amount > 0) {
-          _user.modify(user, _self, [&]( auto& modified_user) { // withdraw fee
-            modified_user.feespaid.amount += amta.amount;
-            if (amta.amount == (it-1)->amount)
-              modified_user.collateral.erase(it-1);
-            else {
-            modified_user.collateral[(it-1) - user.collateral.begin()] -= amta;
-            }
-          });
-          for ( auto itr = gstats.collateral.begin(); itr != gstats.collateral.end(); ++itr )
-            if ( itr->symbol == vig ) {
-              if (gstats.collateral[itr - gstats.collateral.begin()].amount - amta.amount > 0) {
-                gstats.collateral[itr - gstats.collateral.begin()].amount -= amta.amount;
-                gstats.valueofcol -= tespay;
-              }
-              else {
-                gstats.collateral.erase(itr-1);
-                gstats.valueofcol = 0.0;
-              }
-              break;
-            }
-          late = false;
-        }
-      }
-  
-  if (!late) {
-    uint64_t res = (uint64_t)(std::pow(10.0, 4)*(amta.amount/std::pow(10.0, 4) * reservecut));
-    
-    amta.amount = (uint64_t)(std::pow(10.0, 4)*(amta.amount/std::pow(10.0, 4) * (1.0-reservecut)));
-    for ( auto itr = _user.begin(); itr != _user.end(); ++itr ) {
-    double weight = itr->pcts; //eosio::print( "percent contribution to risk : ", weight, "\n");
-      if ( weight > 0.0 ) {
-        asset viga = asset(amta.amount * weight, vig);
-        found = false;
-        auto it = itr->insurance.begin();
-        while ( !found && it++ != itr->insurance.end() )
-          found = (it-1)->symbol == vig;
-        if (!found && amta.amount > 0)
-            _user.modify(itr, _self, [&]( auto& modified_user) { // deposit fee
-              modified_user.insurance.push_back(viga);
-              });
-        else
-            if (amta.amount > 0) {
-              _user.modify( itr, _self, [&]( auto& modified_user ) { // deposit fee
-              modified_user.insurance[(it-1) - itr->insurance.begin()] += viga;
-              });
-            }
-        found = false;
-        auto itg = gstats.insurance.begin();   
-        while ( !found && itg++ != gstats.insurance.end() )
-          found = (itg-1)->symbol == vig;  
-        if (!found && amta.amount > 0) {
-          gstats.insurance.push_back(viga);
-          gstats.valueofins += tespay;
-        }
-        else if (amta.amount > 0){
-          gstats.insurance[(itg-1) - gstats.insurance.begin()] += viga;
-          gstats.valueofins += tespay;
-        }       
-      }
-    }
-  _globals.set(gstats, _self);
-  }
-  
-}*/
 
-
-/*void vigor::payfee(name usern) {
-
-  auto &user = _user.get( usern.value, "User not found23" );
-
-  check(_globals.exists(), "no global table exists yet");
-
-  globalstats gstats = _globals.get();
- 
-  bool late = true;
- 
-  uint64_t amt = 0;
-
-  symbol vig =symbol("VIG", 10);
-
-  asset amta = asset(amt, vig);
-  
-  uint32_t dsec = current_time_point().sec_since_epoch() - user.lastupdate.sec_since_epoch() + 1; //+1 to protect against 0
-
-  // T is a converted time value
-  uint32_t T = (uint32_t)(360.0 * 24.0 * 60.0 * (60.0 / (double)dsec));
-
-  // calculating token swap pay
-  double tespay = (user.debt.amount / std::pow(10.0, 4)) * (std::pow((1 + user.tesprice), (1.0 / T)) - 1); // $ amount user must pay over time T
-  
-  
-  // create an instance of the feeclock()
-  timer::feeclock _clock;
-  eosio::time_point_sec st;  // start time
-  eosio::time_point_sec et;  // expiry time
-    
-    
-    auto it = user.collateral.begin();
-
-
-    bool found = false;
-
-    while ( !found && it++ != user.collateral.end() )
-      found = (it-1)->symbol == vig; 
-
-    t_series stats(name("datapreproc2"),name(issuerfeed[vig]).value);
-
-    auto itr = stats.find(1);
-
-     // number of VIG*10e4 user must pay over time T
-    amta.amount = uint64_t(( tespay * std::pow(10.0, 4) ) / ((double)itr->price[0] / pricePrecision));
-
-      if (!found){
-        
-                auto function = [&] (auto user, auto st, auto rt, auto _clock, auto _user, auto _self){
-      
-                    if(user.starttime == DEFAULT_TIME && user.expiry_time == DEFAULT_TIME)
+    if(!found){
+                if(user.starttime == p_default_time && user.expiry_time == p_default_time)
+                {
+                    int events = fsmpayfee::NO_VIG_AND_CLOCK_HAS_NOT_STARTED;    
+                    int currentstate = fsmpayfee::PAYMENTS; 
+                    p_machineval = nvachns(p_obj, currentstate);
+                }else{
+                    
+                    if(user.starttime < user.expiry_time )
                     {
-                      //set clock time 
-                      _clock.set_time(current_time_point().sec_since_epoch());
-                      //set the starttimer 
-                      st = _clock.get_time();
-                      //set the expiry_timer
-                      et = timer::expirydate(_clock);
-                      
-                      _user.modify(user, _self, [&]( auto& modified_user) { // withdraw fee
-                           
-                           // modify the user starttime
-                           user.starttime = st;
-                           // modify the user expiry_time
-                           user.expiry_time = et;
-                           // late pays getime_of_start accumulated here
-                           //asset accumulatepays = asset(0, symbol("VIG", 10));
-                       }); 
-                      
-                    }
-                    else if(user.starttime < user.expiry_time)
-                    {
-                      // fetch the users start time
-                      eosio::time_point_sec time_of_start = user.starttime;
-                      
-                      // fetch the current time 
-                      eosio::time_point_sec current_time = eosio::current_time_point();
-
-                      // time checks
-                      eosio::time_point_sec hours24 = eosio::time_point_sec(time_of_start + hours(24));
-                      eosio::time_point_sec hours48 = eosio::time_point_sec(time_of_start + hours(48));
-                      eosio::time_point_sec hours72 = eosio::time_point_sec(time_of_start + hours(72));
-                      eosio::time_point_sec hours96 = eosio::time_point_sec(time_of_start + hours(96));
-                      eosio::time_point_sec hours120 = eosio::time_point_sec(time_of_start + hours(120));
-                      eosio::time_point_sec hours144 = eosio::time_point_sec(time_of_start + hours(144));
-                      eosio::time_point_sec hours168 = eosio::time_point_sec(time_of_start + hours(168));
-                     
-                      
-                      int count = 0;
-                      
-                      if(hours24 < current_time){
-                        //break;
-                      }else if(hours24 >= current_time && hours48 < current_time){
-                        count = 1;
-                      }else if(hours48 >= current_time && hours72 < current_time){
-                        count = 2;
-                      }else if(hours72 >= current_time && hours96 < current_time){
-                        count = 3;
-                      }else if(hours96 >= current_time && hours120 < current_time){
-                        count = 4;
-                      }else if(hours120 >= current_time && hours144 < current_time){
-                        count = 5;
-                      }else if(hours144 >= current_time && hours168 < current_time){
-                        count = 6;
-                      }else if(hours168 >= current_time){
-                        count = 7;
-                      }
-                        
-                      
-                      _user.modify(itr, usern, [&](auto& acc){
-                        acc.elapsed_days = count;
-                      });
-  
-   
+                        int events = fsmpayfee::NO_VIG_AND_CLOCK_HAS_ALREADY_STARTED;
+                        int currentstate = fsmpayfee::MISSED_PAYMENTS;
+                        p_machineval = nvachas(p_obj, currentstate);
                     }
                     else if(user.starttime >= user.expiry_time)
-                    {
-                      // the grace peroid has expiried
-                      // bailout 
-                      // delinquency_fee()
-                      // reset the clock
+                    {                    
+                        int events = fsmpayfee::NO_VIG_AND_CLOCK_HAS_EXPIRED;
+                        int currentstate = fsmpayfee::MISSED_PAYMENTS;
+                        p_machineval = nvache(p_obj, currentstate);
                     }
-               };
-      }
-      else {
-       
-        if (amta.amount > (it-1)->amount)
-        {     
-          _user.modify(user, _self, [&]( auto& modified_user) { // withdraw fee
-            modified_user.latepays += 1;
-          });
-          
-        }
-        else if (amta.amount > 0){ 
-             
-              // here is where the fees are paid
-
-          _user.modify(user, _self, [&]( auto& modified_user) { // withdraw fee
-            modified_user.feespaid.amount += amta.amount;
-            if (amta.amount == (it-1)->amount)  
-              modified_user.collateral.erase(it-1); 
-            else {
-            modified_user.collateral[(it-1) - user.collateral.begin()] -= amta; 
-            }
-          });
-
-           // the global table is updated
-          for ( auto itr = gstats.collateral.begin(); itr != gstats.collateral.end(); ++itr )
-            if ( itr->symbol == vig ) {
-              if (gstats.collateral[itr - gstats.collateral.begin()].amount - amta.amount > 0) {
-                gstats.collateral[itr - gstats.collateral.begin()].amount -= amta.amount;
-                gstats.valueofcol -= tespay;
-              }
-              else {
-                gstats.collateral.erase(itr-1);
-                gstats.valueofcol = 0.0;
-              }
-              break;
-            }
-          late = false;
-        }
-      }
-  
-  if (!late) {  // this block of code concerns the insurers
-    uint64_t res = (uint64_t)(std::pow(10.0, 4)*(amta.amount/std::pow(10.0, 4) * reservecut));
-    
-    amta.amount = (uint64_t)(std::pow(10.0, 4)*(amta.amount/std::pow(10.0, 4) * (1.0-reservecut)));
-    for ( auto itr = _user.begin(); itr != _user.end(); ++itr ) {
-    double weight = itr->pcts; //eosio::print( "percent contribution to risk : ", weight, "\n");
-      if ( weight > 0.0 ) {
-        asset viga = asset(amta.amount * weight, vig);
-        found = false;
-        auto it = itr->insurance.begin();
-        while ( !found && it++ != itr->insurance.end() )
-          found = (it-1)->symbol == vig;
-        if (!found && amta.amount > 0)
-            _user.modify(itr, _self, [&]( auto& modified_user) { // deposit fee
-              modified_user.insurance.push_back(viga);
-              });
-        else
-            if (amta.amount > 0) {
-              _user.modify( itr, _self, [&]( auto& modified_user ) { // deposit fee
-              modified_user.insurance[(it-1) - itr->insurance.begin()] += viga;
-              });
-            }
-        found = false;
-        auto itg = gstats.insurance.begin();   
-        while ( !found && itg++ != gstats.insurance.end() )
-          found = (itg-1)->symbol == vig;  
-        if (!found && amta.amount > 0) {
-          gstats.insurance.push_back(viga);
-          gstats.valueofins += tespay;
-        }
-        else if (amta.amount > 0){
-          gstats.insurance[(itg-1) - gstats.insurance.begin()] += viga;
-          gstats.valueofins += tespay;
-        }       
-      }
+                }
     }
-  _globals.set(gstats, _self);
+    else { 
+      
+        if (user.latepays + p_amta.amount > (it-1)->amount)
+        { 
+                    if(user.starttime == p_default_time && user.expiry_time == p_default_time)
+                    {
+                        int events = fsmpayfee::NOT_ENOUGH_VIG_TO_MAKE_FULL_PAYMENT;
+                        int currentstate = fsmpayfee::PAYMENTS;
+                        p_machineval = nevtomfp(p_obj, currentstate);        
+                    }else{
+                        if(user.starttime < user.expiry_time )
+                        {
+                            int events = fsmpayfee::PAYMENT_OF_VIG_MADE_BUT_NOT_ENOUGH_TO_MAKE_A_FULL_REPAYMENT_AND_CLOCK_ALREADY_STARTED;
+                            int currentstate = fsmpayfee::MISSED_PAYMENTS;
+                            p_machineval = povmbnetmafracas(p_obj, currentstate);
+                        }
+                        else if(user.starttime >= user.expiry_time)
+                        {
+                            int events = fsmpayfee::PAYMENT_OF_VIG_MADE_BUT_NOT_ENOUGH_TO_MAKE_A_FULL_REPAYMENT_AND_CLOCK_HAS_EXPIRED;
+                            int currentstate = fsmpayfee::MISSED_PAYMENTS;
+                            p_machineval = povmbnetmafrache(p_obj, currentstate);
+                        }
+                    }
+        }else if (user.latepays + p_amta.amount > 0){
+                    if(user.starttime == p_default_time && user.expiry_time == p_default_time)
+                    {
+                        int events =  fsmpayfee::NORMAL_PAYMENTS;
+                        int currentstate = fsmpayfee::PAYMENTS;
+                        p_machineval = fsmpayfee::np(p_obj, currentstate);
+                    }else if(user.starttime < user.expiry_time ){
+                            int events = fsmpayfee::PAYMENT_OF_VIG_MADE_THAT_COVERS_MISSED_PAYMENTS_AND_CLOCK_HAS_ALREADY_STARTED;
+                            int currentstate = fsmpayfee::MISSED_PAYMENTS;
+                            p_machineval = fsmpayfee::povmtcmpachas(p_obj, currentstate);
+                    }
+        }
+    }
+
+
+     // executes the actions within  a particular state - all the updating is done within the switch statement
+    switch(p_machineval.first){
+        case fsmpayfee::PAYMENTS:
+            if(p_machineval.second == fsmpayfee::NORMAL_PAYMENTS){
+                
+                  _user.modify(user, _self, [&]( auto& modified_user) { // withdraw fee  
+                        // clock starttime = DEFAULT_TIME,
+                        modified_user.starttime = timer::DEFAULT_TIME;
+                        // clock endtime == DEFAULT_TIME;
+                        modified_user.expiry_time = timer::DEFAULT_TIME;
+                        // accumulated_late_pays == 0;
+                        modified_user.latepays = 0;
+                        // count_of_days = 0;
+                        modified_user.elapsed_days = 0;
+                        // feespaid.amount is updated 
+                        modified_user.feespaid.amount += p_amta.amount;
+                        if (p_amta.amount == (it-1)->amount)  // if amta.amount == (user.collateral.begin() - 1)->amount
+                          modified_user.collateral.erase(it-1); // then users collateral at (it - 1) is erased because has made all his payments
+                        else 
+                          modified_user.collateral[(it-1) - user.collateral.begin()] -= p_amta; // if not, another deduction is made thereby reducing the 
+                    }); 
+
+                        
+                        // a boolean flag that enables the function atfer goto
+                        p_updateglobal = false; 
+                        // the global table is updated - use goto
+                        goto run;
+                        // insurer's table is updated      
+            }else if(p_machineval.second == fsmpayfee::NOT_ENOUGH_VIG_TO_MAKE_FULL_PAYMENT){ // dusting occurs here
+
+                // VIG cannot be negative so the minuend and the subtrahend is arranged like this to give the difference a positive value
+                // amta.amount = minuend
+                // (it-1)->amount = subtrahend
+                // diff = difference
+                uint64_t diff = p_amta.amount - (it-1)->amount;
+
+                // the clock should be at the default start time - check
+    
+                //set the starttimer 
+                st = (eosio::time_point_sec)(current_time_point().sec_since_epoch());
+                //set the expiry_timer
+                et = expirydate();
+
+                _user.modify(user, _self, [&]( auto& modified_user) { // withdraw fee  
+                       // the payment is taken - feespaid.amount is updated - the dust at (it-1)->amount is paid in
+                      modified_user.feespaid.amount += (it-1)->amount;
+                      // the amount of VIG that is then owed is paid to the accumulation of latepays
+                      modified_user.latepays += diff; //.amount; 
+                      // the position of the asset in the collateral vector can now be erased since it is 'empty'
+                      modified_user.collateral.erase(it-1);
+                      // modify the user starttime
+                      modified_user.starttime = (eosio::time_point_sec)(current_time_point().sec_since_epoch());
+                      // modify the user expiry_time
+                      modified_user.expiry_time = et;
+                      // start the count_of_days_elapsed ??
+                  }); 
+                
+                      // a boolean flag that enables the function after goto
+                      p_updateglobal = false;
+                      // the global table is updated - use goto
+                      goto run;
+                      // insurer's table is updated
+            }else if(p_machineval.second == fsmpayfee::NO_VIG_AND_CLOCK_HAS_NOT_STARTED){
+
+
+                  // the clock should be at the default start time - check
+              
+                  //set the starttimer 
+                  st = (eosio::time_point_sec)(current_time_point().sec_since_epoch());
+                  //set the expiry_timer
+                  et = expirydate();
+
+
+                  _user.modify(user, _self, [&]( auto& modified_user) { // withdraw fee 
+                      // the amount of VIG that is then owed is paid to the accumulation of latepays
+                      modified_user.latepays += p_amta.amount;
+                      // modify the user starttime
+                      modified_user.starttime = st;
+                      // modify the user expiry_time
+                      modified_user.expiry_time = et;
+                      // start the count_of_days_elapsed ??
+                  });          
+            }
+            break;
+        case fsmpayfee::MISSED_PAYMENTS:
+            if(p_machineval.second == fsmpayfee::NO_VIG_AND_CLOCK_HAS_ALREADY_STARTED){
+                  // the clock is continued
+
+                  // fetch the user's start time
+                  eosio::time_point_sec time_of_start = user.starttime;
+                      
+                  // fetch the current time 
+                  eosio::time_point_sec current_time = eosio::current_time_point();
+
+                  // time checks
+                  eosio::time_point_sec hours24 = eosio::time_point_sec(time_of_start + hours(24));
+                  eosio::time_point_sec hours48 = eosio::time_point_sec(time_of_start + hours(48));
+                  eosio::time_point_sec hours72 = eosio::time_point_sec(time_of_start + hours(72));
+                  eosio::time_point_sec hours96 = eosio::time_point_sec(time_of_start + hours(96));
+                  eosio::time_point_sec hours120 = eosio::time_point_sec(time_of_start + hours(120));
+                  eosio::time_point_sec hours144 = eosio::time_point_sec(time_of_start + hours(144));
+                  eosio::time_point_sec hours168 = eosio::time_point_sec(time_of_start + hours(168));
+
+                  _user.modify(user, _self, [&]( auto& modified_user) { 
+                        // check how many days have expired
+                        if(hours24 < current_time){
+                          // the number of days passed since start of timer
+                          modified_user.elapsed_days = 0;
+                        }else if(hours24 >= current_time && hours48 < current_time){
+                          // the number of days passed since start of timer
+                          modified_user.elapsed_days = 1;
+                        }else if(hours48 >= current_time && hours72 < current_time){
+                          // the number of days passed since start of timer
+                          modified_user.elapsed_days = 2;
+                        }else if(hours72 >= current_time && hours96 < current_time){
+                          // the number of days passed since start of timer
+                          modified_user.elapsed_days = 3;
+                        }else if(hours96 >= current_time && hours120 < current_time){
+                          // the number of days passed since start of timer
+                          modified_user.elapsed_days = 4;
+                        }else if(hours120 >= current_time && hours144 < current_time){
+                          // the number of days passed since start of timer
+                          modified_user.elapsed_days = 5;
+                        }else if(hours144 >= current_time && hours168 < current_time){
+                          // the number of days passed since start of timer
+                          modified_user.elapsed_days = 6;
+                        }else if(hours168 >= current_time){ 
+                          //the grace period to make repayments is now over
+                          // the number of days passed since start of timer
+                          modified_user.elapsed_days = 7;
+                        }
+
+                        // continue the accumlation of latepays
+                        modified_user.latepays = p_amta.amount;
+                  }); 
+
+            }else if(p_machineval.second == fsmpayfee::PAYMENT_OF_VIG_MADE_BUT_NOT_ENOUGH_TO_MAKE_A_FULL_REPAYMENT_AND_CLOCK_ALREADY_STARTED){
+
+                  // fetch the user's start time
+                  eosio::time_point_sec time_of_start = user.starttime;
+                      
+                  // fetch the current time 
+                  eosio::time_point_sec current_time = eosio::current_time_point();
+
+                  // time checks
+                  eosio::time_point_sec hours24 = eosio::time_point_sec(time_of_start + hours(24));
+                  eosio::time_point_sec hours48 = eosio::time_point_sec(time_of_start + hours(48));
+                  eosio::time_point_sec hours72 = eosio::time_point_sec(time_of_start + hours(72));
+                  eosio::time_point_sec hours96 = eosio::time_point_sec(time_of_start + hours(96));
+                  eosio::time_point_sec hours120 = eosio::time_point_sec(time_of_start + hours(120));
+                  eosio::time_point_sec hours144 = eosio::time_point_sec(time_of_start + hours(144));
+                  eosio::time_point_sec hours168 = eosio::time_point_sec(time_of_start + hours(168));
+
+                  // calculate how much is repaid and how much is still owed
+                  uint64_t diff = (user.latepays + p_amta.amount) - (it-1)->amount;
+
+                  _user.modify(user, _self, [&]( auto& modified_user) { 
+                        // the payment is taken - feespaid.amount is updated - the dust at (it-1)->amount is paid in
+                        modified_user.feespaid.amount += (it-1)->amount;
+                        // the amount of VIG that is then owed is added to the accumulation of latepays including the latest missed payment
+                        modified_user.latepays += diff + p_amta.amount; 
+                        // the position of the asset in the collateral vector can now be erased since it is 'empty'
+                        modified_user.collateral.erase(it-1);
+                        // check how many days have expired 
+                        if(hours24 < current_time){                         
+                          // the number of days passed since start of timer
+                          modified_user.elapsed_days = 0;
+                        }else if(hours24 >= current_time && hours48 < current_time){
+                          // the number of days passed since start of timer
+                          modified_user.elapsed_days = 1;
+                        }else if(hours48 >= current_time && hours72 < current_time){
+                          // the number of days passed since start of timer
+                          modified_user.elapsed_days = 2;
+                        }else if(hours72 >= current_time && hours96 < current_time){
+                          // the number of days passed since start of timer
+                          modified_user.elapsed_days = 3;
+                        }else if(hours96 >= current_time && hours120 < current_time){
+                          // the number of days passed since start of timer
+                          modified_user.elapsed_days = 4;
+                        }else if(hours120 >= current_time && hours144 < current_time){
+                          // the number of days passed since start of timer
+                          modified_user.elapsed_days = 5;
+                        }else if(hours144 >= current_time && hours168 < current_time){
+                          // the number of days passed since start of timer
+                          modified_user.elapsed_days = 6;
+                        }else if(hours168 >= current_time){
+                          // late pays gets accumulated her                         
+                          modified_user.elapsed_days = 7;    
+                        }
+
+                  });
+
+                
+                      // a boolean flag that enables the function atfer goto
+                      p_updateglobal = false;
+                      // the global table is updated - use goto
+                      goto run;
+                      // insurer's table is updated
+            }else if(p_machineval.second == fsmpayfee::PAYMENT_OF_VIG_MADE_THAT_COVERS_MISSED_PAYMENTS_AND_CLOCK_HAS_ALREADY_STARTED){
+                        
+                        // initialising missed_payments variables
+                        // uint64_t missed_payments = user.latepays + p_amta; //.amount; 
+
+                 _user.modify(user, _self, [&]( auto& modified_user) { 
+                        // the payment is taken - feespaid.amount is updated - the dust at (it-1)->amount is paid in
+                        // modified_user.feespaid.amount += (missed_payments + p_amta.amount);
+                        modified_user.feespaid.amount += (it-1)->amount;
+                        // users table is updated
+                        //if (user.latepays + p_amta.amount == (it-1)->amount)  // if amta.amount == (user.collateral.begin() - 1)->amount
+                        //  modified_user.collateral.erase(it-1); // then users collateral at (it - 1) is erased because has made all his payments
+                        //else 
+                        // modified_user.collateral[(it-1) - user.collateral.begin()] -= missed_payments; // if not, another deduction is made thereby reducing the 
+                        //  reset clock
+                        modified_user.starttime = timer::DEFAULT_TIME;
+                        // clock endtime == DEFAULT_TIME;
+                        modified_user.expiry_time = timer::DEFAULT_TIME; 
+                        //  reset accumulated_late_pays
+                        modified_user.latepays = 0;
+                        //  reset count_of_days_elapsed
+                        modified_user.elapsed_days = 0;
+                  });
+                      // a boolean flag that enables the function atfer goto
+                      p_updateglobal = false;
+                      // the global table is updated - use goto
+                      goto run;
+                      // insurer's table is updated 
+            }
+            break;
+        case fsmpayfee::END_OF_GRACE_PERIOD:
+            if(p_machineval.second == fsmpayfee::DELIQUENCY_FEE_PAYMENTS){
+                // BAILOUT
+                // DELIQUENCY_FEE
+                // ia. the deliquency fee is being repaid this can happen over stages
+                // ib. the deliquency fee has been repaid fully
+                // iia. bailout is being repaid
+                // iib. bailout has been repaid in full
+                 _user.modify(user, _self, [&]( auto& modified_user) {  
+                        //  reset clock
+                        modified_user.starttime = timer::DEFAULT_TIME;
+                        // clock endtime == DEFAULT_TIME;
+                        modified_user.expiry_time = timer::DEFAULT_TIME; 
+                        //  reset accumulated_late_pays
+                        modified_user.latepays = 0;
+                        //  reset count_of_days_elapsed
+                        modified_user.elapsed_days = 0;
+                  });
+
+            }
+            break;
+        default:
+            break;
+    };
+
+  // the global table is updated - use goto
+  // insurer's table is updated 
+  // goto jumps here
+  run:  
+  if(!p_updateglobal)
+  {
+      for ( auto itr = gstats.collateral.begin(); itr != gstats.collateral.end(); ++itr )
+          if ( itr->symbol == vig ) {
+            if (gstats.collateral[itr - gstats.collateral.begin()].amount - p_amta.amount > 0) {
+              gstats.collateral[itr - gstats.collateral.begin()].amount -= p_amta.amount;
+              gstats.valueofcol -= tespay_;
+            }
+            else {
+              gstats.collateral.erase(itr-1);
+              gstats.valueofcol = 0.0;
+            }
+            break;
+          }
+
+    p_late = false;
+
+      if (!p_late) {
+        uint64_t res = (uint64_t)(std::pow(10.0, 4)*(p_amta.amount/std::pow(10.0, 4) * reservecut));
+        
+        p_amta.amount = (uint64_t)(std::pow(10.0, 4)*(p_amta.amount/std::pow(10.0, 4) * (1.0-reservecut)));
+        for ( auto itr = _user.begin(); itr != _user.end(); ++itr ) {
+        double weight = itr->pcts; //eosio::print( "percent contribution to risk : ", weight, "\n");
+          if ( weight > 0.0 ) {
+            asset viga = asset(p_amta.amount * weight, vig);
+            found = false;
+            auto it = itr->insurance.begin();
+            while ( !found && it++ != itr->insurance.end() )
+              found = (it-1)->symbol == vig;
+            if (!found && p_amta.amount > 0)
+                _user.modify(itr, _self, [&]( auto& modified_user) { // deposit fee
+                  modified_user.insurance.push_back(viga);
+                  });
+            else
+                if (p_amta.amount > 0) {
+                  _user.modify( itr, _self, [&]( auto& modified_user ) { // deposit fee
+                  modified_user.insurance[(it-1) - itr->insurance.begin()] += viga;
+                  });
+                }
+            found = false;
+            auto itg = gstats.insurance.begin();   
+            while ( !found && itg++ != gstats.insurance.end() )
+              found = (itg-1)->symbol == vig;  
+            if (!found && p_amta.amount > 0) {
+              gstats.insurance.push_back(viga);
+              gstats.valueofins += tespay_;
+            }
+            else if (p_amta.amount > 0){
+              gstats.insurance[(itg-1) - gstats.insurance.begin()] += viga;
+              gstats.valueofins += tespay_;
+            }       
+          }
+        }
+      _globals.set(gstats, _self);
+    }
   }
   
-}*/
+}
+
 
 void vigor::payfee(name usern) {
 
@@ -1841,17 +1954,18 @@ void vigor::payfee(name usern) {
 
   globalstats gstats = _globals.get();
 
-  bool late = true;
+  std::pair<int, int> machinevalues;  // this pair will contain values for state and events
+  
+  bool updateglobal = true; // flag to upadte the global stats table
+  bool late = true;  // flag that 
 
   uint64_t amt = 0;
-
    
   // symbol vig = symbol("VIG", 4);
   symbol vig =symbol("VIG", 10);
 
-    // the amount in vig that gets paid back
+  // the amount in vig that gets paid back
   asset amta = asset(amt, vig);
-  
 
   uint32_t dsec = current_time_point().sec_since_epoch() - user.lastupdate.sec_since_epoch() + 1; 
 
@@ -1860,272 +1974,37 @@ void vigor::payfee(name usern) {
 
   // calculating token swap pay
   double tespay = (user.debt.amount / std::pow(10.0, 4)) * (std::pow((1 + user.tesprice), (1.0 / T)) - 1); 
-  
-  
-  // create an instance of the feeclock()
-  timer::feeclock _clock;
+
   eosio::time_point_sec st;  // start time
   eosio::time_point_sec et;  // expiry time
-  int count = 0; // count of the number of days that payements have been missed
-
-    auto it = user.collateral.begin();
-
-
-    bool found = false;
-   
-
-    bool graceperiodend = false; // this is a boolean that checks if the late payements period is still active
-   
-    while ( !found && it++ != user.collateral.end() )
-      found = (it-1)->symbol == vig; //User collateral type found
   
-    t_series stats(name("datapreproc2"),name(issuerfeed[vig]).value);
+
+  //auto it = user.collateral.begin();
 
 
-    auto itr = stats.find(1);
+  //bool found = false;
+  
+  //while ( !found && it++ != user.collateral.end() )
+  //  found = (it-1)->symbol == vig; //User collateral type found
 
-     // number of VIG*10e4 user must pay over time T
-     // CORRECTION: number of VIG*10e10 user must pay over time T
-    amta.amount = uint64_t(( tespay * std::pow(10.0, 4) ) / ((double)itr->price[0] / pricePrecision));
+  t_series stats(name("datapreprocx"),name(issuerfeed[vig]).value);
 
+
+  auto itr = stats.find(1);
+
+  // number of VIG*10e4 user must pay over time T
+  // CORRECTION: number of VIG*10e10 user must pay over time T
+  amta.amount = uint64_t(( tespay * std::pow(10.0, 4) ) / ((double)itr->price[0] / pricePrecision));
+
+  // creating the Array2d object
+  Array2d<fsmpayfee::aistate> obj;
+
+  fsmpayfee::InitFSM(obj, fsmpayfee::aistate_,  fsmpayfee::aievents_);
+
+
+  // this function determines and drives state transisiton
+  statedriver(usern, timer::DEFAULT_TIME, obj, machinevalues, amta,  st, et, tespay, late, updateglobal);
     
-      if (!found){
-        
-      
-                auto function = [&] (auto user, auto st, auto rt, auto _clock, auto _user, auto _self){
-              
-                    if(user.starttime == DEFAULT_TIME && user.expiry_time == DEFAULT_TIME)
-                    {
-                      //set clock time 
-                      _clock.set_time(current_time_point().sec_since_epoch());
-                      //set the starttimer 
-                      st = _clock.get_time();
-                      //set the expiry_timer
-                      et = timer::expirydate(_clock);
-                      
-                      // using a lambda to set modify a row
-                      _user.modify(user, _self, [&]( auto& modified_user) { // withdraw fee  
-                           // modify the user starttime
-                           user.starttime = st;
-                           // modify the user expiry_time
-                           user.expiry_time = et;
-                           // late pays gets accumulated here
-                           // asset accumulatepays = asset(0, symbol("VIG", 10));
-                       }); 
-                      
-                    }
-                    else if(user.starttime < user.expiry_time)
-                    {
-                     
-                      
-                      eosio::time_point_sec time_of_start = user.starttime;
-                    
-                      eosio::time_point_sec current_time = eosio::current_time_point();
-
-                      // time checks
-                      eosio::time_point_sec hours24 = eosio::time_point_sec(time_of_start + hours(24));
-                      eosio::time_point_sec hours48 = eosio::time_point_sec(time_of_start + hours(48));
-                      eosio::time_point_sec hours72 = eosio::time_point_sec(time_of_start + hours(72));
-                      eosio::time_point_sec hours96 = eosio::time_point_sec(time_of_start + hours(96));
-                      eosio::time_point_sec hours120 = eosio::time_point_sec(time_of_start + hours(120));
-                      eosio::time_point_sec hours144 = eosio::time_point_sec(time_of_start + hours(144));
-                      eosio::time_point_sec hours168 = eosio::time_point_sec(time_of_start + hours(168));
-                     
-                      
-                      
-                      
-                      if(hours24 < current_time){
-                        // late pays gets accumulated here
-                          _user.modify(itr, usern, [&](auto& acc){
-                            //acc.elapsed_days = count;
-                            // late pays gets accumulated here
-                          });
-  
-                      }else if(hours24 >= current_time && hours48 < current_time){
-                        count = 1;
-                        // late pays gets accumulated here
-                          _user.modify(itr, usern, [&](auto& acc){
-                            acc.elapsed_days = count;
-                            // late pays gets accumulated here
-                          });
-  
-                      }else if(hours48 >= current_time && hours72 < current_time){
-                        count = 2;
-                        // late pays gets accumulated here
-                          _user.modify(itr, usern, [&](auto& acc){
-                            acc.elapsed_days = count;
-                            // late pays gets accumulated here
-                          });
-  
-
-                      }else if(hours72 >= current_time && hours96 < current_time){
-                        count = 3;
-                        // late pays gets accumulated here
-                          _user.modify(itr, usern, [&](auto& acc){
-                            acc.elapsed_days = count;
-                            // late pays gets accumulated here
-                          });
-  
-
-                      }else if(hours96 >= current_time && hours120 < current_time){
-                        count = 4;
-                        // late pays gets accumulated here
-                          _user.modify(itr, usern, [&](auto& acc){
-                            acc.elapsed_days = count;
-                            // late pays gets accumulated here
-                          });
-  
-
-                      }else if(hours120 >= current_time && hours144 < current_time){
-                        count = 5;
-                        // late pays gets accumulated here
-                          _user.modify(itr, usern, [&](auto& acc){
-                            acc.elapsed_days = count;
-                            // late pays gets accumulated here
-                          });
-        
-
-                      }else if(hours144 >= current_time && hours168 < current_time){
-                        count = 6;
-                        // late pays gets accumulated here
-                          _user.modify(itr, usern, [&](auto& acc){
-                            acc.elapsed_days = count;
-                            // late pays gets accumulated here
-                          });
-  
-
-                      }else if(hours168 >= current_time){
-                            count = 7;
-                            //the grace period to make repayments is now over
-                            graceperiodend = true; 
-                            //goto 
-                            _user.modify(itr, usern, [&](auto& acc){
-                              acc.elapsed_days = count;
-                              // late pays gets accumulated here
-                            });
-    
-                      }
-        
-                    }
-                    
-
-                    if(graceperiodend){
-                      check(user.starttime >= user.expiry_time, "the grace period hasn't ended yet");
-                      check(count == 7, "the count is not at 7 yet");
-                      // the grace peroid has expiried
-                      // bailout 
-                      // delinquency_fee()
-
-                      // reset the clock
-                      _clock.set_time(DEFAULT_TIME);
-                      //set the starttimer 
-                      st = _clock.get_time();
-                      //set the expiry_timer
-                      et = timer::expirydate(_clock);
-
-                      // reset the count
-                      count = 0;
-      
-                      // using a lambda to set modify a row
-                      _user.modify(user, _self, [&]( auto& modified_user) { // withdraw fee                               
-                          // modify the user starttime
-                          modified_user.starttime = st;
-                          // modify the user expiry_time
-                          modified_user.expiry_time = et;
-
-                          modified_user.elapsed_days = count;
-                          // late pays gets accumulated here
-                          // asset accumulatepays = asset(0, symbol("VIG", 10));
-                      }); 
-
-                      // reset the boolean
-                      graceperiodend = false;
-                    }
-
-                 
-               };
-    
-              
-      }
-      else {
-     
-        if (amta.amount > (it-1)->amount)
-        {   
-
-          _user.modify(user, _self, [&]( auto& modified_user) { // withdraw fee
-            modified_user.latepays += 1;
-          });
-          
-        }
-        else if (amta.amount > 0){ 
-            
-
-              // here is where the fees are paid
-
-          _user.modify(user, _self, [&]( auto& modified_user) { // withdraw fee
-            modified_user.feespaid.amount += amta.amount;
-            if (amta.amount == (it-1)->amount)  // if amta.amount == (user.collateral.begin() - 1)->amount
-              modified_user.collateral.erase(it-1); // then users collateral at (it - 1) is erased because has made all his payments
-            else {
-            modified_user.collateral[(it-1) - user.collateral.begin()] -= amta; // if not, another deducurrent_timeion is made thereby reducing the 
-            }
-          });
-
-           // the global table is updated
-          for ( auto itr = gstats.collateral.begin(); itr != gstats.collateral.end(); ++itr )
-            if ( itr->symbol == vig ) {
-              if (gstats.collateral[itr - gstats.collateral.begin()].amount - amta.amount > 0) {
-                gstats.collateral[itr - gstats.collateral.begin()].amount -= amta.amount;
-                gstats.valueofcol -= tespay;
-              }
-              else {
-                gstats.collateral.erase(itr-1);
-                gstats.valueofcol = 0.0;
-              }
-              break;
-            }
-          late = false;
-        }
-      }
-  
-  if (!late) {  // this block of code concerns the insurers
-    uint64_t res = (uint64_t)(std::pow(10.0, 4)*(amta.amount/std::pow(10.0, 4) * reservecut));
-    
-    amta.amount = (uint64_t)(std::pow(10.0, 4)*(amta.amount/std::pow(10.0, 4) * (1.0-reservecut)));
-    for ( auto itr = _user.begin(); itr != _user.end(); ++itr ) {
-    double weight = itr->pcts; //eosio::print( "percent contribution to risk : ", weight, "\n");
-      if ( weight > 0.0 ) {
-        asset viga = asset(amta.amount * weight, vig);
-        found = false;
-        auto it = itr->insurance.begin();
-        while ( !found && it++ != itr->insurance.end() )
-          found = (it-1)->symbol == vig;
-        if (!found && amta.amount > 0)
-            _user.modify(itr, _self, [&]( auto& modified_user) { // deposit fee
-              modified_user.insurance.push_back(viga);
-              });
-        else
-            if (amta.amount > 0) {
-              _user.modify( itr, _self, [&]( auto& modified_user ) { // deposit fee
-              modified_user.insurance[(it-1) - itr->insurance.begin()] += viga;
-              });
-            }
-        found = false;
-        auto itg = gstats.insurance.begin();   
-        while ( !found && itg++ != gstats.insurance.end() )
-          found = (itg-1)->symbol == vig;  
-        if (!found && amta.amount > 0) {
-          gstats.insurance.push_back(viga);
-          gstats.valueofins += tespay;
-        }
-        else if (amta.amount > 0){
-          gstats.insurance[(itg-1) - gstats.insurance.begin()] += viga;
-          gstats.valueofins += tespay;
-        }       
-      }
-    }
-  _globals.set(gstats, _self);
-  }
   
 }
 

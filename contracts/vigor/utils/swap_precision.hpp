@@ -8,13 +8,13 @@
 #pragma once
 
 
-namespace swap_precision {
+namespace swap_precision {   
   
   // the swap function
   auto swapprecision(eosio::asset asset_){
     // getting the symbol of the assetin token
     auto _sym = asset_.symbol.code();
-    
+
     eosio::asset amt;
     
     // find out the precision of asset amount

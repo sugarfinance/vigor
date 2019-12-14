@@ -8,13 +8,16 @@
 
 #include <string>
 #include <cmath>
+#include <utility>  // using std::pair
 
 #include "../utils/rng.hpp"
 #include "../utils/swap_precision.hpp"
 #include "../utils/timer.hpp"
+#include "../utils/payfeefsm.hpp"
 
 
 using namespace std;
+using namespace timer;
 using namespace eosio;
 
 namespace eosiosystem {
@@ -32,8 +35,7 @@ namespace eosiosystem {
       const double pricePrecision = 1000000;
       const uint64_t defaultVol = 600000;
       
-      // default value for the clock
-      eosio::time_point_sec DEFAULT_TIME = (time_point_sec)(current_time_point().sec_since_epoch() - current_time_point().sec_since_epoch());
+      
 
 CONTRACT vigor : public eosio::contract {
 
@@ -97,7 +99,7 @@ CONTRACT vigor : public eosio::contract {
          int elapsed_days = 0;
          
          // late pays gets accumulated here
-         asset accumulatepays = asset(0, symbol("VIG", 10));
+         //asset accumulatepays = asset(0, symbol("VIG", 10));
         
 
          // nomenclature note: 
@@ -117,7 +119,7 @@ CONTRACT vigor : public eosio::contract {
          
          auto primary_key() const { return usern.value; }
 
-         EOSLIB_SERIALIZE(user_s, (usern)(debt)(collateral)(insurance)(valueofcol)(valueofins)(tesprice)(earnrate)(pcts)(volcol)(stresscol)(istresscol)(svalueofcol)(svalueofcole)(svalueofcoleavg)(premiums)(feespaid)(totallatepay)(creditscore)(lastupdate)(latepays)(recaps)(l_debt)(l_collateral)(l_lrtoken)(l_lrpayment)(l_lrname)(l_valueofcol)(l_tesprice)(l_earnrate)(l_pcts)(l_volcol)(l_stresscol)(l_istresscol)(l_svalueofcol)(l_svalueofcole)(l_svalueofcoleavg)(l_premiums)(l_latepays)(l_recaps)(starttime)(expiry_time)(elapsed_days)(accumulatepays))
+         EOSLIB_SERIALIZE(user_s, (usern)(debt)(collateral)(insurance)(valueofcol)(valueofins)(tesprice)(earnrate)(pcts)(volcol)(stresscol)(istresscol)(svalueofcol)(svalueofcole)(svalueofcoleavg)(premiums)(feespaid)(totallatepay)(creditscore)(lastupdate)(latepays)(recaps)(l_debt)(l_collateral)(l_lrtoken)(l_lrpayment)(l_lrname)(l_valueofcol)(l_tesprice)(l_earnrate)(l_pcts)(l_volcol)(l_stresscol)(l_istresscol)(l_svalueofcol)(l_svalueofcole)(l_svalueofcoleavg)(l_premiums)(l_latepays)(l_recaps)(starttime)(expiry_time)(elapsed_days))
       }; typedef eosio::multi_index<name("user"), user_s> user_t;
                                                           user_t _user;
 
@@ -196,10 +198,25 @@ CONTRACT vigor : public eosio::contract {
       
       
       // timer functions definitions
-      void starttimer(name usern);
-      void expiration(name usern);
-      void elapsedtime(name usern);
-      void resttimer(name usern);
+      eosio::time_point_sec expirydate();
+      //void starttimer(name usern);
+      //void expiration(name usern);
+      //void elapsedtime(name usern);
+      //void resttimer(name usern);
+
+      // this function determines and drives state transisiton
+      void statedriver(
+         eosio::name usern,
+         eosio::time_point_sec default_time,
+         Array2d<fsmpayfee::aistate>& obj,
+         std::pair<int, int>& duoval,
+         eosio::asset p_amta_,
+         eosio::time_point_sec& st,  // start time
+         eosio::time_point_sec& et,  // expiry time
+         const double tespay_,
+         bool late_,
+         bool updateglobal_
+      ); 
 
       map <symbol, name> issueracct {
          {symbol("EOS",4),	    name("eosio.token")},
