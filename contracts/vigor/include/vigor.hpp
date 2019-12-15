@@ -35,12 +35,23 @@ namespace eosiosystem {
       const double pricePrecision = 1000000;
       const uint64_t defaultVol = 600000;
       
-      
+      inline uint128_t usernticker(name usern, symbol_code ticker) {
+      return (((uint128_t)usern.value)<<64) | ticker.raw();
+      }
 
 CONTRACT vigor : public eosio::contract {
 
    private:
-      
+
+        TABLE collateral_s {
+          name             usern;
+          symbol_code      ticker;
+          uint64_t         amount;
+          uint128_t  primary_key() const { return usernticker(usern,ticker); }
+         
+         EOSLIB_SERIALIZE(collateral_s, (usern)(ticker)(amount))
+        }; typedef eosio::multi_index<name("collateral"), collateral_s> collateral_t;
+                                                                     collateral_t _collateral;
       TABLE user_s {
          name usern;
          asset debt = asset(0, symbol("VIGOR", 4));
@@ -292,7 +303,7 @@ CONTRACT vigor : public eosio::contract {
       vigor(name receiver, name code, datastream<const char*> ds):contract(receiver, code, ds), 
       _user(receiver, receiver.value),
       _coinstats(receiver, receiver.value), _globals(receiver, receiver.value),
-      _statstable(receiver, receiver.value)  {}
+      _statstable(receiver, receiver.value), _collateral(receiver, receiver.value)  {}
      
       ACTION assetin( name   from,
                      name   to,

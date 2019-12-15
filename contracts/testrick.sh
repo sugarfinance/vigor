@@ -192,7 +192,7 @@ ORACLE_WASM="$ORACLE.wasm"
 ORACLE_ABI="$ORACLE.abi"
 ORACLE_CPP="$ORACLE.cpp"
 EOSIO_CONTRACTS_ROOT=/home/gg/contracts/eosio.contracts/contracts
-#eosio-cpp -contract=$ORACLE -I=$ORACLE_INCLUDE -I=$EOSIO_CONTRACTS_ROOT/eosio.system/include -o="$ORACLE_OUT/$ORACLE_WASM" -abigen "$ORACLE_ROOT/$ORACLE_CPP" 
+eosio-cpp -contract=$ORACLE -I=$ORACLE_INCLUDE -I=$EOSIO_CONTRACTS_ROOT/eosio.system/include -o="$ORACLE_OUT/$ORACLE_WASM" -abigen "$ORACLE_ROOT/$ORACLE_CPP" 
 cleos set contract oracleoracl2 $ORACLE_OUT $ORACLE_WASM $ORACLE_ABI -p oracleoracl2@active
 cleos push action oracleoracl2 configure '{}' -p oracleoracl2@active
 cd /home/gg/contracts/vigor/contracts/oracle && ORACLE=feeder111111 node updater_eosusd.js
@@ -276,11 +276,11 @@ cleos --verbose push action vig111111111 transfer '{"from":"finalreserve","to":"
 
 cleos --verbose push action eosio.token transfer '{"from":"reinvestment","to":"vigor1111112","quantity":"1.0000 EOS","memo":"collateral"}' -p reinvestment@active
 
-cleos --verbose push action eosio.token transfer '{"from":"testbrw11111","to":"vigor1111112","quantity":"15.0000 EOS","memo":"collateral"}' -p testbrw11111@active
+cleos --verbose push action eosio.token transfer '{"from":"testbrw11111","to":"vigor1111112","quantity":"16.0000 EOS","memo":"collateral"}' -p testbrw11111@active
 cleos --verbose push action dummytokensx transfer '{"from":"testbrw11111","to":"vigor1111112","quantity":"3000.000 IQ","memo":"collateral"}' -p testbrw11111@active
 cleos --verbose push action vig111111111 transfer '{"from":"testbrw11111","to":"vigor1111112","quantity":"3000.0000 VIG","memo":"collateral"}' -p testbrw11111@active
 
-cleos --verbose push action eosio.token transfer '{"from":"testbrw11112","to":"vigor1111112","quantity":"6.0000 EOS","memo":"collateral"}' -p testbrw11112@active
+cleos --verbose push action eosio.token transfer '{"from":"testbrw11112","to":"vigor1111112","quantity":"7.0000 EOS","memo":"collateral"}' -p testbrw11112@active
 cleos --verbose push action dummytokensx transfer '{"from":"testbrw11112","to":"vigor1111112","quantity":"3000.000 IQ","memo":"collateral"}' -p testbrw11112@active
 cleos --verbose push action vig111111111 transfer '{"from":"testbrw11112","to":"vigor1111112","quantity":"3000.0000 VIG","memo":"collateral"}' -p testbrw11112@active
 
