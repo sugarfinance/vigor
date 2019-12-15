@@ -450,11 +450,16 @@ void vigor::assetin( name   from, // handler for notification of transfer action
   else if (memo.c_str() == string("collateral")) {
 
       // testing the composite primary key
-      auto itr = _collateral.find(usernticker(from,assetin.symbol.code()));
+      auto colidx = _collateral.get_index<name("usernticker")>();
+      auto itr = colidx.find(usernticker(from,assetin.symbol.code()));
       auto &col = *itr;
+
+    eosio::print( "from ", from,"\n");
+    eosio::print( "assetin.symbol.code() ", assetin.symbol.code().to_string(),"\n");
     
-      if ( itr == _collateral.end() ) {
-        itr = _collateral.emplace(_self, [&](auto& new_user) {
+      if ( itr == colidx.end() ) {
+          _collateral.emplace(_self, [&](auto& new_user) {
+          new_user.id = _collateral.available_primary_key();
           new_user.usern = from;
           new_user.ticker = assetin.symbol.code();
           new_user.amount = assetin.amount;
@@ -463,6 +468,7 @@ void vigor::assetin( name   from, // handler for notification of transfer action
           _collateral.modify(col, _self, [&]( auto& modified_user) {
           modified_user.amount += assetin.amount;
         });
+
       }
 
     // transfer tokens into collateral (not stablecoin)

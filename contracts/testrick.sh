@@ -192,7 +192,7 @@ ORACLE_WASM="$ORACLE.wasm"
 ORACLE_ABI="$ORACLE.abi"
 ORACLE_CPP="$ORACLE.cpp"
 EOSIO_CONTRACTS_ROOT=/home/gg/contracts/eosio.contracts/contracts
-eosio-cpp -contract=$ORACLE -I=$ORACLE_INCLUDE -I=$EOSIO_CONTRACTS_ROOT/eosio.system/include -o="$ORACLE_OUT/$ORACLE_WASM" -abigen "$ORACLE_ROOT/$ORACLE_CPP" 
+#eosio-cpp -contract=$ORACLE -I=$ORACLE_INCLUDE -I=$EOSIO_CONTRACTS_ROOT/eosio.system/include -o="$ORACLE_OUT/$ORACLE_WASM" -abigen "$ORACLE_ROOT/$ORACLE_CPP" 
 cleos set contract oracleoracl2 $ORACLE_OUT $ORACLE_WASM $ORACLE_ABI -p oracleoracl2@active
 cleos push action oracleoracl2 configure '{}' -p oracleoracl2@active
 cd /home/gg/contracts/vigor/contracts/oracle && ORACLE=feeder111111 node updater_eosusd.js
@@ -313,6 +313,7 @@ cleos --verbose push action vigor1111112 transfer '{"from":"testbrw11111","to":"
 #cleos --verbose get table vigor1111112 vigor1111112 user
 
 # get all the user data
+cleos --verbose get table vigor1111112 vigor1111112 collateral
 cleos --verbose get table vigor1111112 vigor1111112 user
 cleos --verbose get table vigor1111112 vigor1111112 user -Ltestbrw11111 -Utestbrw11111
 cleos --verbose get table vigor1111112 vigor1111112 user -Ltestbrw11112 -Utestbrw11112

@@ -72,6 +72,10 @@
             "base": "",
             "fields": [
                 {
+                    "name": "id",
+                    "type": "uint64"
+                },
+                {
                     "name": "usern",
                     "type": "name"
                 },
@@ -81,7 +85,7 @@
                 },
                 {
                     "name": "amount",
-                    "type": "uint64"
+                    "type": "int64"
                 }
             ]
         },

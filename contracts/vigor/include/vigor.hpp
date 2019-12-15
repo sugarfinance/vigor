@@ -44,14 +44,21 @@ CONTRACT vigor : public eosio::contract {
    private:
 
         TABLE collateral_s {
+          uint64_t         id;
           name             usern;
           symbol_code      ticker;
-          uint64_t         amount;
-          uint128_t  primary_key() const { return usernticker(usern,ticker); }
+          int64_t         amount;
+          uint64_t  primary_key()const { return id; }
+          uint128_t  get_usernticker() const { return usernticker(usern,ticker); }
          
-         EOSLIB_SERIALIZE(collateral_s, (usern)(ticker)(amount))
-        }; typedef eosio::multi_index<name("collateral"), collateral_s> collateral_t;
-                                                                     collateral_t _collateral;
+         EOSLIB_SERIALIZE(collateral_s, (id)(usern)(ticker)(amount))
+        };
+         typedef eosio::multi_index<name("collateral"), collateral_s,
+          indexed_by<name("usernticker"), const_mem_fun<collateral_s, uint128_t, &collateral_s::get_usernticker>>
+          > collateral_t;
+            collateral_t _collateral;
+
+
       TABLE user_s {
          name usern;
          asset debt = asset(0, symbol("VIGOR", 4));
