@@ -132,8 +132,32 @@
                     "type": "float64"
                 },
                 {
-                    "name": "inreserve",
-                    "type": "asset"
+                    "name": "svalueofcoleavg",
+                    "type": "float64"
+                },
+                {
+                    "name": "svalueofinsavg",
+                    "type": "float64"
+                },
+                {
+                    "name": "raroc",
+                    "type": "float64"
+                },
+                {
+                    "name": "premiums",
+                    "type": "float64"
+                },
+                {
+                    "name": "scr",
+                    "type": "float64"
+                },
+                {
+                    "name": "earnrate",
+                    "type": "float64"
+                },
+                {
+                    "name": "lastupdate",
+                    "type": "time_point"
                 },
                 {
                     "name": "totaldebt",
@@ -145,6 +169,58 @@
                 },
                 {
                     "name": "collateral",
+                    "type": "asset[]"
+                },
+                {
+                    "name": "l_solvency",
+                    "type": "float64"
+                },
+                {
+                    "name": "l_valueofcol",
+                    "type": "float64"
+                },
+                {
+                    "name": "l_scale",
+                    "type": "float64"
+                },
+                {
+                    "name": "l_svalueofcole",
+                    "type": "float64"
+                },
+                {
+                    "name": "l_svalueofins",
+                    "type": "float64"
+                },
+                {
+                    "name": "l_svalueofcoleavg",
+                    "type": "float64"
+                },
+                {
+                    "name": "l_svalueofinsavg",
+                    "type": "float64"
+                },
+                {
+                    "name": "l_raroc",
+                    "type": "float64"
+                },
+                {
+                    "name": "l_premiums",
+                    "type": "float64"
+                },
+                {
+                    "name": "l_scr",
+                    "type": "float64"
+                },
+                {
+                    "name": "l_earnrate",
+                    "type": "float64"
+                },
+                {
+                    "name": "l_totaldebt",
+                    "type": "asset"
+                },
+                {
+                    "name": "l_collateral",
                     "type": "asset[]"
                 }
             ]
@@ -233,11 +309,11 @@
             "fields": [
                 {
                     "name": "freq",
-                    "type": "uint64"
+                    "type": "uint32"
                 },
                 {
                     "name": "timestamp",
-                    "type": "uint64"
+                    "type": "time_point"
                 },
                 {
                     "name": "price",
@@ -312,6 +388,10 @@
                     "type": "float64"
                 },
                 {
+                    "name": "earnrate",
+                    "type": "float64"
+                },
+                {
                     "name": "pcts",
                     "type": "float64"
                 },
@@ -336,7 +416,19 @@
                     "type": "float64"
                 },
                 {
+                    "name": "svalueofcoleavg",
+                    "type": "float64"
+                },
+                {
+                    "name": "premiums",
+                    "type": "float64"
+                },
+                {
                     "name": "feespaid",
+                    "type": "asset"
+                },
+                {
+                    "name": "totallatepay",
                     "type": "asset"
                 },
                 {
@@ -345,7 +437,7 @@
                 },
                 {
                     "name": "lastupdate",
-                    "type": "uint32"
+                    "type": "time_point"
                 },
                 {
                     "name": "latepays",
@@ -354,6 +446,90 @@
                 {
                     "name": "recaps",
                     "type": "uint32"
+                },
+                {
+                    "name": "l_debt",
+                    "type": "asset"
+                },
+                {
+                    "name": "l_collateral",
+                    "type": "asset[]"
+                },
+                {
+                    "name": "l_lrtoken",
+                    "type": "asset[]"
+                },
+                {
+                    "name": "l_lrpayment",
+                    "type": "asset[]"
+                },
+                {
+                    "name": "l_lrname",
+                    "type": "name[]"
+                },
+                {
+                    "name": "l_valueofcol",
+                    "type": "float64"
+                },
+                {
+                    "name": "l_tesprice",
+                    "type": "float64"
+                },
+                {
+                    "name": "l_earnrate",
+                    "type": "float64"
+                },
+                {
+                    "name": "l_pcts",
+                    "type": "float64"
+                },
+                {
+                    "name": "l_volcol",
+                    "type": "float64"
+                },
+                {
+                    "name": "l_stresscol",
+                    "type": "float64"
+                },
+                {
+                    "name": "l_istresscol",
+                    "type": "float64"
+                },
+                {
+                    "name": "l_svalueofcol",
+                    "type": "float64"
+                },
+                {
+                    "name": "l_svalueofcole",
+                    "type": "float64"
+                },
+                {
+                    "name": "l_svalueofcoleavg",
+                    "type": "float64"
+                },
+                {
+                    "name": "l_premiums",
+                    "type": "float64"
+                },
+                {
+                    "name": "l_latepays",
+                    "type": "uint32"
+                },
+                {
+                    "name": "l_recaps",
+                    "type": "uint32"
+                },
+                {
+                    "name": "starttime",
+                    "type": "time_point_sec"
+                },
+                {
+                    "name": "expiry_time",
+                    "type": "time_point_sec"
+                },
+                {
+                    "name": "elapsed_days",
+                    "type": "int32"
                 }
             ]
         }

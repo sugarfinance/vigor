@@ -34,6 +34,9 @@ function write(){
 			if (results.data && results.data.USD){
 
 				console.log(" results.data.USD",  results.data.USD);
+				console.log(" owner",  owner);
+				console.log(" scope",  oracleContract);
+				console.log(" authorization",  [`${owner}@${process.env.ORACLE_PERMISSION || 'active'}`]);
 
 				eos.contract(oracleContract)
 					.then((contract) => {

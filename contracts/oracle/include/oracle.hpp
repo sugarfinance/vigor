@@ -15,12 +15,11 @@ OK - do the automated fee distribution based on contribution
 */
 
 //#include <eosio.system/eosio.system.hpp>
-#include <eosiolib/symbol.hpp>
-#include <eosiolib/chain.h>
-#include <eosiolib/time.hpp>
-#include <eosiolib/asset.hpp>
-#include <eosiolib/eosio.hpp>
+#include <eosio/symbol.hpp>
+#include <eosio/asset.hpp>
+#include <eosio/eosio.hpp>
 #include <math.h>
+#include <eosio/system.hpp>
 
 using namespace eosio;
 
@@ -32,7 +31,7 @@ using namespace eosio;
 static const uint64_t val_min = 1;
 static const uint64_t val_max = 100000000;
 
-const uint64_t one_minute = 1000000 * 55; //give extra time for cron jobs
+const uint32_t one_minute = 55; //give extra time for cron jobs
 
 static const uint64_t standbys = 50; //allowed standby producers rank cutoff
 static const uint64_t paid = 21; //maximum number of oracles getting paid from donations
@@ -58,10 +57,10 @@ CONTRACT oracle : public eosio::contract {
     name owner; 
     uint64_t value;
     uint64_t median;
-    uint64_t timestamp;
+    time_point timestamp;
 
     uint64_t primary_key() const {return id;}
-    uint64_t by_timestamp() const {return timestamp;}
+    uint64_t by_timestamp() const {return timestamp.elapsed.to_seconds();}
     uint64_t by_value() const {return value;}
     EOSLIB_SERIALIZE( datapoints, (id)(owner)(value)(median)(timestamp))
   };
@@ -78,7 +77,7 @@ CONTRACT oracle : public eosio::contract {
   //Holds the count and time of last writes for qualified oracles
   TABLE stats {
     name owner; 
-    uint64_t timestamp;
+    time_point timestamp;
     uint64_t count;
     uint64_t last_claim;
     asset balance;
@@ -146,7 +145,7 @@ CONTRACT oracle : public eosio::contract {
   TABLE producer_info {
     name                  owner;
     double                total_votes = 0;
-    eosio::public_key     producer_key; /// a packed public key object
+    //eosio::public_key     producer_key; /// a packed public key object
     bool                  is_active = true;
     std::string           url;
     uint32_t              unpaid_blocks = 0;

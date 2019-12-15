@@ -2,7 +2,7 @@ const Eos = require('eosjs');
 const dotenv = require('dotenv');
 const axios = require('axios');
 
-const url = "https://api.newdex.io/v1/price?symbol=betdicetoken-dice-eos";
+const url = "https://api.newdex.io/v1/price?symbol=vig111111111-vig-eos";
 //https://api.newdex.io/v1/price?symbol=everipediaiq-iq-eos
 //https://api.newdex.io/v1/price?symbol=thepeostoken-peos-eos
 //https://api.newdex.io/v1/price?symbol=betdicetoken-dice-eos
