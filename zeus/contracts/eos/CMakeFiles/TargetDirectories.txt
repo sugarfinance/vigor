@@ -1,4 +1,6 @@
 /Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/CMakeFiles/edit_cache.dir
+/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/CMakeFiles/run.dir
+/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/CMakeFiles/oracle.dir
 /Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/CMakeFiles/vigor.dir
 /Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/CMakeFiles/rebuild_cache.dir
 /Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/CMakeFiles/oracleservice.dir

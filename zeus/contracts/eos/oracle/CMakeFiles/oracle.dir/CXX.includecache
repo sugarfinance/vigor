@@ -1,0 +1,24 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/oracle/oracle.cpp
+oracle.hpp
+-
+
+oracle.hpp
+eosio/symbol.hpp
+-
+eosio/asset.hpp
+-
+eosio/eosio.hpp
+-
+math.h
+-
+eosio/system.hpp
+-
+

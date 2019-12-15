@@ -1,0 +1,126 @@
+Compiling the C compiler identification source file "CMakeCCompilerId.c" failed.
+Compiler: //usr/local/bin/eosio-cc 
+Build flags: ;-O3;
+Id flags:  
+
+The output was:
+255
+/usr/local/Cellar/eosio.cdt/1.6.1/opt/eosio.cdt/bin/wasm-ld: error: cannot open /var/folders/m8/rf6w5xrj5hv048w3ht8g67380000gn/T//CMakeCCompilerId.c.o: No such file or directory
+
+
+Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" failed.
+Compiler: //usr/local/bin/eosio-cpp 
+Build flags: ;-O3;
+Id flags:  
+
+The output was:
+255
+/usr/local/Cellar/eosio.cdt/1.6.1/opt/eosio.cdt/bin/wasm-ld: error: duplicate symbol: main(int, char**)
+>>> defined in /var/folders/m8/rf6w5xrj5hv048w3ht8g67380000gn/T//CMakeCXXCompilerId.cpp.o
+>>> defined in /var/folders/m8/rf6w5xrj5hv048w3ht8g67380000gn/T//CMakeCXXCompilerId.cpp.o
+
+/usr/local/Cellar/eosio.cdt/1.6.1/opt/eosio.cdt/bin/wasm-ld: error: duplicate symbol: info_platform
+>>> defined in /var/folders/m8/rf6w5xrj5hv048w3ht8g67380000gn/T//CMakeCXXCompilerId.cpp.o
+>>> defined in /var/folders/m8/rf6w5xrj5hv048w3ht8g67380000gn/T//CMakeCXXCompilerId.cpp.o
+
+/usr/local/Cellar/eosio.cdt/1.6.1/opt/eosio.cdt/bin/wasm-ld: error: duplicate symbol: info_compiler
+>>> defined in /var/folders/m8/rf6w5xrj5hv048w3ht8g67380000gn/T//CMakeCXXCompilerId.cpp.o
+>>> defined in /var/folders/m8/rf6w5xrj5hv048w3ht8g67380000gn/T//CMakeCXXCompilerId.cpp.o
+
+/usr/local/Cellar/eosio.cdt/1.6.1/opt/eosio.cdt/bin/wasm-ld: error: duplicate symbol: info_language_dialect_default
+>>> defined in /var/folders/m8/rf6w5xrj5hv048w3ht8g67380000gn/T//CMakeCXXCompilerId.cpp.o
+>>> defined in /var/folders/m8/rf6w5xrj5hv048w3ht8g67380000gn/T//CMakeCXXCompilerId.cpp.o
+
+/usr/local/Cellar/eosio.cdt/1.6.1/opt/eosio.cdt/bin/wasm-ld: error: duplicate symbol: info_arch
+>>> defined in /var/folders/m8/rf6w5xrj5hv048w3ht8g67380000gn/T//CMakeCXXCompilerId.cpp.o
+>>> defined in /var/folders/m8/rf6w5xrj5hv048w3ht8g67380000gn/T//CMakeCXXCompilerId.cpp.o
+
+
+Detecting C compiler ABI info failed to compile with the following output:
+Change Dir: /Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/oracle/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/usr/local/bin/gmake cmTC_7a8b6/fast 
+gmake[3]: Entering directory '/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/oracle/CMakeFiles/CMakeTmp'
+/usr/local/bin/gmake -f CMakeFiles/cmTC_7a8b6.dir/build.make CMakeFiles/cmTC_7a8b6.dir/build
+gmake[4]: Entering directory '/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/oracle/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_7a8b6.dir/CMakeCCompilerABI.c.obj
+//usr/local/bin/eosio-cc   -O3     -v -o CMakeFiles/cmTC_7a8b6.dir/CMakeCCompilerABI.c.obj   -c /usr/local/Cellar/cmake/3.14.4/share/cmake/Modules/CMakeCCompilerABI.c
+clang version 7.0.0 (https://github.com/eosio/clang.git 6b886302a11a8419b76e469794ff9d0c531a4b4b) (git@github.com:eosio/llvm a41b8e7653258a4f1a5911ef28c95672efce051e)
+Target: x86_64-apple-darwin18.7.0
+Thread model: posix
+InstalledDir: /usr/local/Cellar/eosio.cdt/1.6.1/opt/eosio.cdt/bin
+Linking C executable cmTC_7a8b6.wasm
+/usr/local/Cellar/cmake/3.14.4/bin/cmake -E cmake_link_script CMakeFiles/cmTC_7a8b6.dir/link.txt --verbose=1
+//usr/local/bin/eosio-ld  -v CMakeFiles/cmTC_7a8b6.dir/CMakeCCompilerABI.c.obj -o cmTC_7a8b6.wasm 
+eosio-ld: Unknown command line argument '-v'.  Try: '//usr/local/bin/eosio-ld -help'
+eosio-ld: Did you mean '-L'?
+gmake[4]: *** [CMakeFiles/cmTC_7a8b6.dir/build.make:87: cmTC_7a8b6.wasm] Error 1
+gmake[4]: Leaving directory '/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/oracle/CMakeFiles/CMakeTmp'
+gmake[3]: *** [Makefile:121: cmTC_7a8b6/fast] Error 2
+gmake[3]: Leaving directory '/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/oracle/CMakeFiles/CMakeTmp'
+
+
+
+Detecting C [-std=c11] compiler features failed to compile with the following output:
+Change Dir: /Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/oracle/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/usr/local/bin/gmake cmTC_a5dfe/fast 
+gmake[3]: Entering directory '/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/oracle/CMakeFiles/CMakeTmp'
+/usr/local/bin/gmake -f CMakeFiles/cmTC_a5dfe.dir/build.make CMakeFiles/cmTC_a5dfe.dir/build
+gmake[4]: Entering directory '/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/oracle/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_a5dfe.dir/feature_tests.c.obj
+//usr/local/bin/eosio-cc   -O3     -std=c11 -o CMakeFiles/cmTC_a5dfe.dir/feature_tests.c.obj   -c /Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/oracle/CMakeFiles/feature_tests.c
+eosio-cc: Unknown command line argument '-std=c11'.  Try: '//usr/local/bin/eosio-cc -help'
+eosio-cc: Did you mean '-w=c11'?
+gmake[4]: *** [CMakeFiles/cmTC_a5dfe.dir/build.make:66: CMakeFiles/cmTC_a5dfe.dir/feature_tests.c.obj] Error 1
+gmake[4]: Leaving directory '/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/oracle/CMakeFiles/CMakeTmp'
+gmake[3]: *** [Makefile:121: cmTC_a5dfe/fast] Error 2
+gmake[3]: Leaving directory '/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/oracle/CMakeFiles/CMakeTmp'
+
+
+
+Detecting CXX compiler ABI info failed to compile with the following output:
+Change Dir: /Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/oracle/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/usr/local/bin/gmake cmTC_08200/fast 
+gmake[3]: Entering directory '/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/oracle/CMakeFiles/CMakeTmp'
+/usr/local/bin/gmake -f CMakeFiles/cmTC_08200.dir/build.make CMakeFiles/cmTC_08200.dir/build
+gmake[4]: Entering directory '/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/oracle/CMakeFiles/CMakeTmp'
+Building CXX object CMakeFiles/cmTC_08200.dir/CMakeCXXCompilerABI.cpp.obj
+//usr/local/bin/eosio-cpp    -O3     -v -o CMakeFiles/cmTC_08200.dir/CMakeCXXCompilerABI.cpp.obj -c /usr/local/Cellar/cmake/3.14.4/share/cmake/Modules/CMakeCXXCompilerABI.cpp
+clang version 7.0.0 (https://github.com/eosio/clang.git 6b886302a11a8419b76e469794ff9d0c531a4b4b) (git@github.com:eosio/llvm a41b8e7653258a4f1a5911ef28c95672efce051e)
+Target: x86_64-apple-darwin18.7.0
+Thread model: posix
+InstalledDir: /usr/local/Cellar/eosio.cdt/1.6.1/opt/eosio.cdt/bin
+Linking CXX executable cmTC_08200.wasm
+/usr/local/Cellar/cmake/3.14.4/bin/cmake -E cmake_link_script CMakeFiles/cmTC_08200.dir/link.txt --verbose=1
+//usr/local/bin/eosio-ld  -v CMakeFiles/cmTC_08200.dir/CMakeCXXCompilerABI.cpp.obj -o cmTC_08200.wasm 
+eosio-ld: Unknown command line argument '-v'.  Try: '//usr/local/bin/eosio-ld -help'
+eosio-ld: Did you mean '-L'?
+gmake[4]: *** [CMakeFiles/cmTC_08200.dir/build.make:87: cmTC_08200.wasm] Error 1
+gmake[4]: Leaving directory '/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/oracle/CMakeFiles/CMakeTmp'
+gmake[3]: *** [Makefile:121: cmTC_08200/fast] Error 2
+gmake[3]: Leaving directory '/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/oracle/CMakeFiles/CMakeTmp'
+
+
+
+Detecting CXX [-std=c++2a] compiler features failed to compile with the following output:
+Change Dir: /Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/oracle/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/usr/local/bin/gmake cmTC_c8d41/fast 
+gmake[3]: Entering directory '/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/oracle/CMakeFiles/CMakeTmp'
+/usr/local/bin/gmake -f CMakeFiles/cmTC_c8d41.dir/build.make CMakeFiles/cmTC_c8d41.dir/build
+gmake[4]: Entering directory '/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/oracle/CMakeFiles/CMakeTmp'
+Building CXX object CMakeFiles/cmTC_c8d41.dir/feature_tests.cxx.obj
+//usr/local/bin/eosio-cpp    -O3     -std=c++2a -o CMakeFiles/cmTC_c8d41.dir/feature_tests.cxx.obj -c /Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/oracle/CMakeFiles/feature_tests.cxx
+Linking CXX executable cmTC_c8d41.wasm
+/usr/local/Cellar/cmake/3.14.4/bin/cmake -E cmake_link_script CMakeFiles/cmTC_c8d41.dir/link.txt --verbose=1
+//usr/local/bin/eosio-ld   CMakeFiles/cmTC_c8d41.dir/feature_tests.cxx.obj -o cmTC_c8d41.wasm 
+/usr/local/Cellar/eosio.cdt/1.6.1/opt/eosio.cdt/bin/wasm-ld: error: fatal failure: contract with no actions and trying to create dispatcher
+gmake[4]: *** [CMakeFiles/cmTC_c8d41.dir/build.make:87: cmTC_c8d41.wasm] Error 255
+gmake[4]: Leaving directory '/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/oracle/CMakeFiles/CMakeTmp'
+gmake[3]: *** [Makefile:121: cmTC_c8d41/fast] Error 2
+gmake[3]: Leaving directory '/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/oracle/CMakeFiles/CMakeTmp'
+
+
+

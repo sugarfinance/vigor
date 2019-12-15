@@ -1,6 +1,8 @@
 # Hashes of file build rules.
 f18f99c0497bc8766b5c9d0cbef0ea63 CMakeFiles/dappservices
 023403ddf7912b95d3ce19362f95289d CMakeFiles/dappservices-complete
+f18f99c0497bc8766b5c9d0cbef0ea63 CMakeFiles/oracle
+f91bf0af95711f5941911a222ce2a887 CMakeFiles/oracle-complete
 f18f99c0497bc8766b5c9d0cbef0ea63 CMakeFiles/oracleservice
 1518e6102f9be3161a2dbd16299efb53 CMakeFiles/oracleservice-complete
 f18f99c0497bc8766b5c9d0cbef0ea63 CMakeFiles/vcpuservice
@@ -15,6 +17,14 @@ bc73a264f1d5367b5ad8939fba36a8de CMakeFiles/vigor-complete
 4adf44796f603d1096589bc7dbaf393b dappservices-prefix/src/dappservices-stamp/dappservices-patch
 17001fc63dcf8401008206646b850e05 dappservices-prefix/src/dappservices-stamp/dappservices-test
 cd010cb0e7710bf43016af37fbf85ced dappservices-prefix/src/dappservices-stamp/dappservices-update
+49a96d11bcc9ced885f00f9ffd92b0b1 oracle-prefix/src/oracle-stamp/oracle-build
+b711e1ef7ddb355c5b48c394435f0a1f oracle-prefix/src/oracle-stamp/oracle-configure
+b4bc8f7f2a3d3baa40310cee76e94115 oracle-prefix/src/oracle-stamp/oracle-download
+bbeaa08ba60032dd28c6082ed6772129 oracle-prefix/src/oracle-stamp/oracle-install
+a4c4d23e742edff226dd651b10b778bb oracle-prefix/src/oracle-stamp/oracle-mkdir
+944070730c0b00205dbe14d59e12dd2a oracle-prefix/src/oracle-stamp/oracle-patch
+70af787d44400baf21985644c9fa8f2b oracle-prefix/src/oracle-stamp/oracle-test
+cadeedbb323689eee2544ccddaddcf7d oracle-prefix/src/oracle-stamp/oracle-update
 07f1e376e6beeb3cf519273a49686026 oracleservice-prefix/src/oracleservice-stamp/oracleservice-build
 85fc5312d4606b640cdaf8d26c38bbaf oracleservice-prefix/src/oracleservice-stamp/oracleservice-configure
 db8dff2051260a0ba79718320a711ff9 oracleservice-prefix/src/oracleservice-stamp/oracleservice-download

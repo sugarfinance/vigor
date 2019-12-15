@@ -1,0 +1,46 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/CMakeFiles/oracle"
+		},
+		{
+			"file" : "/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/CMakeFiles/oracle.rule"
+		},
+		{
+			"file" : "/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/CMakeFiles/oracle-complete.rule"
+		},
+		{
+			"file" : "/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/oracle-prefix/src/oracle-stamp/oracle-install.rule"
+		},
+		{
+			"file" : "/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/oracle-prefix/src/oracle-stamp/oracle-mkdir.rule"
+		},
+		{
+			"file" : "/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/oracle-prefix/src/oracle-stamp/oracle-download.rule"
+		},
+		{
+			"file" : "/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/oracle-prefix/src/oracle-stamp/oracle-update.rule"
+		},
+		{
+			"file" : "/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/oracle-prefix/src/oracle-stamp/oracle-patch.rule"
+		},
+		{
+			"file" : "/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/oracle-prefix/src/oracle-stamp/oracle-configure.rule"
+		},
+		{
+			"file" : "/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/oracle-prefix/src/oracle-stamp/oracle-build.rule"
+		},
+		{
+			"file" : "/Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/oracle-prefix/src/oracle-stamp/oracle-test.rule"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"oracle"
+		],
+		"name" : "oracle"
+	}
+}

@@ -1,5 +1,5 @@
 {
-  "____comment": "This file was generated with dapp-services-eos. DO NOT EDIT Sun, 08 Dec 2019 03:50:50 GMT",
+  "____comment": "This file was generated with dapp-services-eos. DO NOT EDIT Sun, 15 Dec 2019 22:22:45 GMT",
   "version": "eosio::abi/1.0",
   "structs": [
     {

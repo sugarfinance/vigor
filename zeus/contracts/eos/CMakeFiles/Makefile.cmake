@@ -12,6 +12,7 @@ set(CMAKE_MAKEFILE_DEPENDS
   "CMakeFiles/3.14.4/CMakeSystem.cmake"
   "CMakeLists.txt"
   "dappservices-prefix/tmp/dappservices-cfgcmd.txt.in"
+  "oracle-prefix/tmp/oracle-cfgcmd.txt.in"
   "oracleservice-prefix/tmp/oracleservice-cfgcmd.txt.in"
   "vcpuservice-prefix/tmp/vcpuservice-cfgcmd.txt.in"
   "vigor-prefix/tmp/vigor-cfgcmd.txt.in"
@@ -23,9 +24,14 @@ set(CMAKE_MAKEFILE_DEPENDS
   "/usr/local/Cellar/cmake/3.14.4/share/cmake/Modules/CMakeSystemSpecificInitialize.cmake"
   "/usr/local/Cellar/cmake/3.14.4/share/cmake/Modules/CMakeUnixFindMake.cmake"
   "/usr/local/Cellar/cmake/3.14.4/share/cmake/Modules/ExternalProject.cmake"
+  "/usr/local/Cellar/cmake/3.14.4/share/cmake/Modules/FindBoost.cmake"
   "/usr/local/Cellar/cmake/3.14.4/share/cmake/Modules/Platform/Darwin-Initialize.cmake"
   "/usr/local/Cellar/cmake/3.14.4/share/cmake/Modules/Platform/Darwin.cmake"
   "/usr/local/Cellar/cmake/3.14.4/share/cmake/Modules/Platform/UnixPaths.cmake"
+  "/usr/local/lib/cmake/Boost-1.71.0/BoostConfig.cmake"
+  "/usr/local/lib/cmake/Boost-1.71.0/BoostConfigVersion.cmake"
+  "/usr/local/lib/cmake/boost_headers-1.71.0/boost_headers-config-version.cmake"
+  "/usr/local/lib/cmake/boost_headers-1.71.0/boost_headers-config.cmake"
   "/usr/local/lib/cmake/eosio.cdt/eosio.cdt-config.cmake"
   )
 
@@ -42,11 +48,14 @@ set(CMAKE_MAKEFILE_PRODUCTS
   "oracleservice-prefix/tmp/oracleservice-cfgcmd.txt"
   "vcpuservice-prefix/tmp/vcpuservice-cfgcmd.txt"
   "vigor-prefix/tmp/vigor-cfgcmd.txt"
+  "oracle-prefix/tmp/oracle-cfgcmd.txt"
   "CMakeFiles/CMakeDirectoryInformation.cmake"
   )
 
 # Dependency information for all targets:
 set(CMAKE_DEPEND_INFO_FILES
+  "CMakeFiles/run.dir/DependInfo.cmake"
+  "CMakeFiles/oracle.dir/DependInfo.cmake"
   "CMakeFiles/vigor.dir/DependInfo.cmake"
   "CMakeFiles/oracleservice.dir/DependInfo.cmake"
   "CMakeFiles/vcpuservice.dir/DependInfo.cmake"

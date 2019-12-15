@@ -6,8 +6,24 @@
 
 #IncludeRegexTransform: 
 
+./utils/Array2d.hpp
+
+./utils/payfeefsm.hpp
+utility
+-
+Array2d.hpp
+./utils/Array2d.hpp
+
+./utils/rng.hpp
+
+./utils/swap_precision.hpp
+
+./utils/timer.hpp
+
 /Users/natanaelprudhomme/Workspaces/vigor/zeus/contracts/eos/vigor/vigor.cpp
 vigor.hpp
+-
+boost/math/special_functions/erf.hpp
 -
 
 vigor.hpp
@@ -23,8 +39,20 @@ eosio/print.hpp
 -
 eosio/system.hpp
 -
+eosio/time.hpp
+-
 string
 -
 cmath
 -
+utility
+-
+./utils/rng.hpp
+./utils/rng.hpp
+./utils/swap_precision.hpp
+./utils/swap_precision.hpp
+./utils/timer.hpp
+./utils/timer.hpp
+./utils/payfeefsm.hpp
+./utils/payfeefsm.hpp
 

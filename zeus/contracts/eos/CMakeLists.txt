@@ -57,3 +57,20 @@ ExternalProject_Add(
    INSTALL_COMMAND ""
    BUILD_ALWAYS 1
 )
+
+
+# building:oracle
+
+ExternalProject_Add(
+   oracle
+   SOURCE_DIR oracle
+   BINARY_DIR oracle
+   CMAKE_ARGS -DCMAKE_TOOLCHAIN_FILE=${EOSIO_CDT_ROOT}/lib/cmake/eosio.cdt/EosioWasmToolchain.cmake
+   UPDATE_COMMAND ""
+   PATCH_COMMAND ""
+   TEST_COMMAND ""
+   INSTALL_COMMAND ""
+   BUILD_ALWAYS 1
+)
+
+find_package(Boost 1.71.0 COMPONENTS)

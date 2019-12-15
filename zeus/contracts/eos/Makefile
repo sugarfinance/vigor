@@ -111,6 +111,32 @@ depend:
 .PHONY : depend
 
 #=============================================================================
+# Target rules for targets named run
+
+# Build rule for target.
+run: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 run
+.PHONY : run
+
+# fast build rule for target.
+run/fast:
+	$(MAKE) -f CMakeFiles/run.dir/build.make CMakeFiles/run.dir/build
+.PHONY : run/fast
+
+#=============================================================================
+# Target rules for targets named oracle
+
+# Build rule for target.
+oracle: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 oracle
+.PHONY : oracle
+
+# fast build rule for target.
+oracle/fast:
+	$(MAKE) -f CMakeFiles/oracle.dir/build.make CMakeFiles/oracle.dir/build
+.PHONY : oracle/fast
+
+#=============================================================================
 # Target rules for targets named vigor
 
 # Build rule for target.
@@ -169,6 +195,8 @@ help:
 	@echo "... clean"
 	@echo "... depend"
 	@echo "... edit_cache"
+	@echo "... run"
+	@echo "... oracle"
 	@echo "... vigor"
 	@echo "... rebuild_cache"
 	@echo "... oracleservice"
