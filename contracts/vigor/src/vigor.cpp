@@ -1613,7 +1613,7 @@ void vigor::payfee(name usern) {
   // calculating token swap pay
   double tespay = (user.debt.amount / std::pow(10.0, 4)) * (std::pow((1.0 + user.tesprice), (1.0 / T)) - 1);
   double l_tespay = user.l_valueofcol * (std::pow((1.0 + user.l_tesprice), (1.0 / T)) - 1);
- eosio::print( "user.l_valueofcol : ", user.l_valueofcol, "\n");
+
   eosio::time_point_sec st;  // start time
   eosio::time_point_sec et;  // expiry time
 
@@ -1640,7 +1640,7 @@ void vigor::payfee(name usern) {
                   st = (eosio::time_point_sec)(ctp.sec_since_epoch());
                   et = expirydate(ctp);
                   _user.modify(useritr, _self, [&]( auto& modified_user) {
-                      modified_user.latepays += amta.amount;
+                      modified_user.latepays += amta.amount + l_amta.amount;
                       modified_user.starttime = st;
                       modified_user.expiry_time = et;
                   });  
@@ -1651,7 +1651,7 @@ void vigor::payfee(name usern) {
                         //NO_VIG_AND_CLOCK_HAS_ALREADY_STARTED;
                         //MISSED_PAYMENTS;
                       _user.modify(useritr, _self, [&]( auto& modified_user) {
-                            modified_user.latepays = amta.amount;
+                            modified_user.latepays = amta.amount + l_amta.amount;
                       }); 
                      }
                      else if(user.starttime >= user.expiry_time)
@@ -1679,15 +1679,16 @@ void vigor::payfee(name usern) {
     }
     else {
       
-        if (user.latepays + amta.amount > (it-1)->amount)
+        if (user.latepays + amta.amount + l_amta.amount> (it-1)->amount)
         { 
                     if(user.starttime == st && user.expiry_time == st)
 
                     {
                         //NOT_ENOUGH_VIG_TO_MAKE_FULL_PAYMENT;
                         //PAYMENTS;
-                        uint64_t diff = amta.amount - (it-1)->amount;
+                        uint64_t diff = (amta.amount + l_amta.amount) - (it-1)->amount;
                         amta.amount = (it-1)->amount;
+                        l_amta.amount = 0;
                         st = (eosio::time_point_sec)(ctp.sec_since_epoch());
                         et = expirydate(ctp);
 
@@ -1705,8 +1706,9 @@ void vigor::payfee(name usern) {
                         {
                             //PAYMENT_OF_VIG_MADE_BUT_NOT_ENOUGH_TO_MAKE_A_FULL_REPAYMENT_AND_CLOCK_ALREADY_STARTED;
                             //MISSED_PAYMENTS;
-                            uint64_t diff = (user.latepays + amta.amount) - (it-1)->amount;
+                            uint64_t diff = (user.latepays + (amta.amount + l_amta.amount)) - (it-1)->amount;
                             amta.amount = (it-1)->amount;
+                            l_amta.amount = 0;
 
                             _user.modify(useritr, _self, [&]( auto& modified_user) {
                                   modified_user.feespaid.amount += amta.amount;
@@ -1733,23 +1735,23 @@ void vigor::payfee(name usern) {
                               });
                         }
                     }
-        }else if (user.latepays + amta.amount > 0){
+        }else if (user.latepays + amta.amount + l_amta.amount > 0){
                     if(user.starttime == st && user.expiry_time == st)
                     {
                        //NORMAL_PAYMENTS;
                        //PAYMENTS;
                         _user.modify(useritr, _self, [&]( auto& modified_user) {
-                        modified_user.feespaid.amount += amta.amount;
-                        if (amta.amount == (it-1)->amount)  
+                        modified_user.feespaid.amount += amta.amount + l_amta.amount;
+                        if ((amta.amount + l_amta.amount) == (it-1)->amount)  
                           modified_user.collateral.erase(it-1); 
                         else 
-                          modified_user.collateral[(it-1) - user.collateral.begin()] -= amta; 
+                          modified_user.collateral[(it-1) - user.collateral.begin()] -= (amta + l_amta); 
                         });
                         updateglobal = false;  
                     }else if(user.starttime < user.expiry_time ){
                            //PAYMENT_OF_VIG_MADE_THAT_COVERS_MISSED_PAYMENTS_AND_CLOCK_HAS_ALREADY_STARTED;
                            //MISSED_PAYMENTS;
-                          _user.modify(useritr, _self, [&]( auto& modified_user) { 
+                          _user.modify(useritr, _self, [&]( auto& modified_user) {
                               modified_user.feespaid.amount += (it-1)->amount;
                               modified_user.starttime = st;
                               modified_user.expiry_time = st; 
@@ -1757,62 +1759,65 @@ void vigor::payfee(name usern) {
                               if (amta.amount == (it-1)->amount)  
                                 modified_user.collateral.erase(it-1); 
                               else 
-                                modified_user.collateral[(it-1) - user.collateral.begin()] -= amta; 
+                                modified_user.collateral[(it-1) - user.collateral.begin()] -= (amta + l_amta);  
                               });
                           }
                             updateglobal = false;
         }
         }
 
-          if(!updateglobal)
-        {
-            for ( auto itr = gstats.collateral.begin(); itr != gstats.collateral.end(); ++itr )
-                if ( itr->symbol == vig ) {
-                  if (gstats.collateral[itr - gstats.collateral.begin()].amount - amta.amount > 0) {
-                    gstats.collateral[itr - gstats.collateral.begin()].amount -= amta.amount;
-                  }
-                  else {
-                    gstats.collateral.erase(itr-1);
-                  }
-                  break;
-                }
-
-              uint64_t res = (uint64_t)(std::pow(10.0, 4)*(amta.amount/std::pow(10.0, 4) * reservecut));
-              
-              amta.amount = (uint64_t)(std::pow(10.0, 4)*(amta.amount/std::pow(10.0, 4) * (1.0-reservecut)));
+          if(!updateglobal) {
+              uint64_t n = 0; // count to identify last insurer, who will absorb dust
+              uint64_t numinsurers = 0;
+              asset viga;
+              asset vigaremaining = asset(amta.amount + l_amta.amount, vig);
+              for ( auto itr = _user.begin(); itr != _user.end(); ++itr )
+                  if (itr->pcts > 0.0 || itr->l_pcts > 0.0 || itr->usern.value==name("finalreserve").value)
+                    numinsurers += 1;
               for ( auto itr = _user.begin(); itr != _user.end(); ++itr ) {
-              double weight = itr->pcts; //eosio::print( "percent contribution to risk : ", weight, "\n");
-                if ( weight > 0.0 ) {
-                  asset viga = asset(amta.amount * weight, vig);
+                  if (itr->pcts > 0.0 || itr->l_pcts > 0.0 || itr->usern.value==name("finalreserve").value) {
+                  eosio::print( "vigaremaining : ", vigaremaining, "\n");  
+                  n += 1;
+                  if (itr->usern.value==name("finalreserve").value)
+                    viga = asset(amta.amount * reservecut, vig) + asset(l_amta.amount * reservecut, vig);
+                  else
+                    viga = asset(amta.amount * itr->pcts*(1.0-reservecut), vig) + asset(l_amta.amount * itr->l_pcts*(1.0-reservecut), vig);
+                  if (n==numinsurers)
+                    viga = vigaremaining; // adjustment for dust, so that the amount allocated to last insurer brings the vigaremaining to zero
+                  vigaremaining -= viga;
                   found = false;
                   auto it = itr->insurance.begin();
                   while ( !found && it++ != itr->insurance.end() )
                     found = (it-1)->symbol == vig;
-                  if (!found && amta.amount > 0)
-                      _user.modify(itr, _self, [&]( auto& modified_user) { // deposit fee
+                  if (!found && viga.amount > 0)
+                      _user.modify(itr, _self, [&]( auto& modified_user) {
                         modified_user.insurance.push_back(viga);
                         });
-                  else
-                      if (amta.amount > 0) {
-                        _user.modify( itr, _self, [&]( auto& modified_user ) { // deposit fee
+                  else if (viga.amount > 0) {
+                        _user.modify( itr, _self, [&]( auto& modified_user ) {
                         modified_user.insurance[(it-1) - itr->insurance.begin()] += viga;
                         });
                       }
-                  found = false;
-                  auto itg = gstats.insurance.begin();   
-                  while ( !found && itg++ != gstats.insurance.end() )
-                    found = (itg-1)->symbol == vig;  
-                  if (!found && amta.amount > 0) {
-                    gstats.insurance.push_back(viga);
-                  }
-                  else if (amta.amount > 0){
-                    gstats.insurance[(itg-1) - gstats.insurance.begin()] += viga;
-                  }       
                 }
               }
-            _globals.set(gstats, _self);
-          
-        }    
+                for ( auto itr = gstats.collateral.begin(); itr != gstats.collateral.end(); ++itr )
+                  if ( itr->symbol == vig ) {
+                    if (gstats.collateral[itr - gstats.collateral.begin()].amount - (amta.amount + l_amta.amount)> 0)
+                      gstats.collateral[itr - gstats.collateral.begin()].amount -= (amta.amount + l_amta.amount);
+                    else 
+                      gstats.collateral.erase(itr-1);
+                    break;
+                  }
+                found = false;
+                auto itg = gstats.insurance.begin();  
+                while ( !found && itg++ != gstats.insurance.end() )
+                  found = (itg-1)->symbol == vig;
+                if ( !found )
+                  gstats.insurance.push_back(asset(amta.amount + l_amta.amount, vig));
+                else
+                  gstats.insurance[(itg-1) - gstats.insurance.begin()] += asset(amta.amount + l_amta.amount, vig);
+                _globals.set(gstats, _self);
+            }
   }
 
 void vigor::update(name usern) 
