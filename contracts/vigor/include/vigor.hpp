@@ -8,16 +8,18 @@
 
 #include <string>
 #include <cmath>
-#include <utility>  // using std::pair
+//#include <utility>  // using std::pair
 
-#include "../utils/rng.hpp"
+//#include "../utils/rng.hpp"
 #include "../utils/swap_precision.hpp"
-#include "../utils/timer.hpp"
-#include "../utils/payfeefsm.hpp"
+//#include "../utils/timer.hpp"
+//#include "../utils/payfeefsm.hpp"
+
+//#include "smart_table.hpp"
 
 
 using namespace std;
-using namespace timer;
+//using namespace timer;
 using namespace eosio;
 
 namespace eosiosystem {
@@ -35,33 +37,14 @@ namespace eosiosystem {
       const double pricePrecision = 1000000;
       const uint64_t defaultVol = 600000;
       
-      inline uint128_t usernticker(name usern, symbol_code ticker) {
-      return (((uint128_t)usern.value)<<64) | ticker.raw();
-      }
 
 CONTRACT vigor : public eosio::contract {
 
    private:
 
-        TABLE collateral_s {
-          uint64_t         id;
-          name             usern;
-          symbol_code      ticker;
-          int64_t         amount;
-          uint64_t  primary_key()const { return id; }
-          uint128_t  get_usernticker() const { return usernticker(usern,ticker); }
-         
-         EOSLIB_SERIALIZE(collateral_s, (id)(usern)(ticker)(amount))
-        };
-         typedef eosio::multi_index<name("collateral"), collateral_s,
-          indexed_by<name("usernticker"), const_mem_fun<collateral_s, uint128_t, &collateral_s::get_usernticker>>
-          > collateral_t;
-            collateral_t _collateral;
-
-
       TABLE user_s {
          name usern;
-         asset debt = asset(0, symbol("VIGOR", 4));
+         asset debt = asset(0, symbol("VIGOR", 4)); // VIGOR stablecoin borrowed
 
          vector<asset> collateral;
          vector<asset> insurance;
@@ -70,7 +53,7 @@ CONTRACT vigor : public eosio::contract {
          double valueofins = 0.0; // dollar value of user portfolio of insurance crypto assets
 
          double tesprice = 0.0; // annualized rate borrowers pay in periodic premiums to insure their collateral
-         double earnrate = 0.0; // annualized rate of return on user portfolio of insurance crypto assets
+         double earnrate = 0.0; // annualized rate of return on user portfolio of insurance crypto assets, insuring for downside price jumps
          double pcts = 0.0; // percent contribution to solvency (weighted marginal contribution to risk (solvency) rescaled by sum of that
          double volcol = 1.0; // volatility of the user collateral portfolio
          double stresscol = 0.0; // model suggested percentage loss that the user collateral portfolio would experience in a stress event.
@@ -82,7 +65,7 @@ CONTRACT vigor : public eosio::contract {
          asset feespaid = asset(0, symbol("VIG", 10)); //VIG
          asset totallatepay = asset(0, symbol("VIG", 10)); // VIG with precision 10
          uint64_t creditscore = 500; //out of 800
-         time_point lastupdate = time_point(microseconds(0));;
+         time_point lastupdate = current_time_point();
          uint32_t latepays = 0;
          uint32_t recaps = 0;
 
@@ -93,11 +76,11 @@ CONTRACT vigor : public eosio::contract {
          vector<asset> l_lrpayment;
          vector<name> l_lrname;
 
-         double l_valueofcol = 0.0; // dollar value of user portfolio of collateral crypto assets
+         double l_valueofcol = 0.0; // dollar value of user portfolio of borrowed crypto assets
 
-         double l_tesprice = 0.0; // annualized rate borrowers pay in periodic premiums to insure their collateral
-         double l_earnrate; // annualized rate of return on user portfolio of insurance crypto assets
-         double l_pcts = 0.0; // percent contribution to solvency (weighted marginal contribution to risk (solvency) rescaled by sum of that
+         double l_tesprice = 0.0; // annualized rate borrowers pay in periodic premiums to insure their borrows
+         double l_earnrate; // annualized rate of return on user portfolio of insurance crypto assets, insuring for upside price jumps
+         double l_pcts = 0.0; // percent contribution to l_solvency (weighted marginal contribution to risk (solvency) rescaled by sum of that
          double l_volcol = 1.0; // volatility of the user collateral portfolio
          double l_stresscol = 0.0; // model suggested percentage loss that the user collateral portfolio would experience in a stress event.
          double l_istresscol = 0.0; // market determined implied percentage loss that the user collateral portfolio would experience in a stress event.
@@ -154,16 +137,16 @@ CONTRACT vigor : public eosio::contract {
          double raroc = 0.0; // RAROC risk adjusted return on capital. expected return on capital employed. (Revenues - Expected Losses)/ Economic Capital
          double premiums = 0.0; // total dollar amount of premiums all borrowers would pay in one year to insure their collateral
          double scr = 0.0; // solvency capial requirement is the dollar amount of insurance assets required to survive a sress event
-         double earnrate = 0.0; // annualized rate of return on total portfolio of insurance crypto assets
+         double earnrate = 0.0; // annualized rate of return on total portfolio of insurance crypto assets, insuring for downside price jumps
          time_point lastupdate = time_point(microseconds(0));;
          
-         asset totaldebt = asset(0, symbol("VIGOR", 4)); // VIGOR
+         asset totaldebt = asset(0, symbol("VIGOR", 4)); // VIGOR stablecoin borrowed
          
          vector<asset> insurance;
          vector<asset> collateral;
 
-         double l_solvency = 1.0; // solvency, represents capital adequacy to back the stablecoin
-         double l_valueofcol = 0.0; // dollar value of total portfolio of borrowers crypto collateral assets
+         double l_solvency = 1.0; // solvency, represents capital adequacy to back the token borrows
+         double l_valueofcol = 0.0; // dollar value of total portfolio of borrows
          double l_scale = 1.0; // TES pricing model parameters are scaled to drive risk (solvency) to a target set by custodians.
          double l_svalueofcole = 0.0; // model suggested dollar value of the sum of all insufficient collateral in a stressed market SUM_i [ min((1 - svalueofcoli ) * valueofcoli - debti,0) ]
          double l_svalueofins = 0.0; // model suggested dollar value of the total insurance asset portfolio in a stress event. [ (1 - stressins ) * INS ]
@@ -172,7 +155,7 @@ CONTRACT vigor : public eosio::contract {
          double l_raroc = 0.0; // RAROC risk adjusted return on capital. expected return on capital employed. (Revenues - Expected Losses)/ Economic Capital
          double l_premiums = 0.0; // total dollar amount of premiums all borrowers would pay in one year to insure their collateral
          double l_scr = 0.0; // solvency capial requirement is the dollar amount of insurance assets required to survive a sress event
-         double l_earnrate = 0.0; // annualized rate of return on total portfolio of insurance crypto assets
+         double l_earnrate = 0.0; // annualized rate of return on total portfolio of insurance crypto assets, insuring for upside price jumps
 
          asset l_totaldebt = asset( 0, symbol("VIGOR", 4) ); // VIGOR stablecoin locked as collateral
 
@@ -214,27 +197,7 @@ CONTRACT vigor : public eosio::contract {
       void reserve();
       void payback_borrowed_token(name from, asset  assetin);
       
-      
-      // timer functions definitions
-      eosio::time_point_sec expirydate();
-      //void starttimer(name usern);
-      //void expiration(name usern);
-      //void elapsedtime(name usern);
-      //void resttimer(name usern);
-
-      // this function determines and drives state transisiton
-      void statedriver(
-         eosio::name usern,
-         eosio::time_point_sec default_time,
-         Array2d<fsmpayfee::aistate>& obj,
-         std::pair<int, int>& duoval,
-         eosio::asset p_amta_,
-         eosio::time_point_sec& st,  // start time
-         eosio::time_point_sec& et,  // expiry time
-         const double tespay_,
-         bool late_,
-         bool updateglobal_
-      ); 
+      eosio::time_point_sec expirydate(eosio::time_point ctp);
 
       map <symbol, name> issueracct {
          {symbol("EOS",4),	    name("eosio.token")},
@@ -310,7 +273,7 @@ CONTRACT vigor : public eosio::contract {
       vigor(name receiver, name code, datastream<const char*> ds):contract(receiver, code, ds), 
       _user(receiver, receiver.value),
       _coinstats(receiver, receiver.value), _globals(receiver, receiver.value),
-      _statstable(receiver, receiver.value), _collateral(receiver, receiver.value)  {}
+      _statstable(receiver, receiver.value)   {}
      
       ACTION assetin( name   from,
                      name   to,

@@ -108,6 +108,7 @@ cleos set contract vigor1111112 $CONTRACT_OUT $CONTRACT_WASM $CONTRACT_ABI -p vi
 cleos push action vigor1111112 create '[ "vigor1111112", "1000000000.0000 VIGOR"]' -p vigor1111112@active
 cleos push action vigor1111112 setsupply '[ "vigor1111112", "1000000000.0000 VIGOR"]' -p vigor1111112@active
 
+
 #cd ~/contracts/eosio.cdt/examples/hello/src
 #eosio-cpp -contract=hello -o=hello.wasm -I=../include -abigen hello.cpp
 #cleos set contract vigor1111112 . hello.wasm hello.abi -p vigor1111112@active
@@ -137,6 +138,21 @@ cleos --verbose push action eosio.token transfer '[ "eosio", "testbrw21111", "10
 cleos --verbose push action eosio.token transfer '[ "eosio", "testbrw21112", "1000000.0000 EOS", "m" ]' -p eosio
 cleos --verbose push action eosio.token transfer '[ "eosio", "testins21111", "1000000.0000 EOS", "m" ]' -p eosio
 cleos --verbose push action eosio.token transfer '[ "eosio", "testins21112", "1000000.0000 EOS", "m" ]' -p eosio
+
+#=================================================================================#
+#cleos system newaccount eosio profile11111 $OWNER_KEY --stake-cpu "50 EOS" --stake-net "10 EOS" --buy-ram-kbytes 50000 --transfer
+#cleos set account permission profile11111 active '{"threshold":1,"keys":[{"key":"EOS6TnW2MQbZwXHWDHAYQazmdc3Sc1KGv4M9TSgsKZJSo43Uxs2Bx","weight":1}],"accounts":[{"permission":{"actor":"profile11111","permission":"eosio.code"},"weight":1}],"waits":[]}' -p profile11111@active
+#CONTRACT_ROOT=/home/gg/contracts/vigor/contracts/vigor/src
+#CONTRACT_OUT=/home/gg/contracts/vigor/contracts/vigor
+#CONTRACT_INCLUDE=/home/gg/contracts/vigor/contracts/vigor/include
+#CONTRACT="profile"
+#CONTRACT_WASM="$CONTRACT.wasm"
+#CONTRACT_ABI="$CONTRACT.abi"
+#CONTRACT_CPP="$CONTRACT.cpp"
+#eosio-cpp -contract=$CONTRACT -o="$CONTRACT_OUT/$CONTRACT_WASM" -I="$CONTRACT_INCLUDE" -abigen "$CONTRACT_ROOT/$CONTRACT_CPP"
+#cleos set contract profile11111 $CONTRACT_OUT $CONTRACT_WASM $CONTRACT_ABI -p profile11111@active
+#cleos push action profile11111 update '[ "testbrw11111", "nicktestbrw11111", "avattestbrw11111","webtestbrw11111", "loctestbrw11111", "metatestbrw11111",1.0]' -p testbrw11111@active
+#cleos get table profile11111 profile11111 profiles --limit -1
 
 #=================================================================================#
 # create the VIG token

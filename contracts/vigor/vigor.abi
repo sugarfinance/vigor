@@ -68,28 +68,6 @@
             ]
         },
         {
-            "name": "collateral_s",
-            "base": "",
-            "fields": [
-                {
-                    "name": "id",
-                    "type": "uint64"
-                },
-                {
-                    "name": "usern",
-                    "type": "name"
-                },
-                {
-                    "name": "ticker",
-                    "type": "symbol_code"
-                },
-                {
-                    "name": "amount",
-                    "type": "int64"
-                }
-            ]
-        },
-        {
             "name": "create",
             "base": "",
             "fields": [
@@ -607,13 +585,6 @@
         {
             "name": "accounts",
             "type": "account",
-            "index_type": "i64",
-            "key_names": [],
-            "key_types": []
-        },
-        {
-            "name": "collateral",
-            "type": "collateral_s",
             "index_type": "i64",
             "key_names": [],
             "key_types": []
