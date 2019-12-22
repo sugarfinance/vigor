@@ -8,16 +8,12 @@
 
 #include <string>
 #include <cmath>
-#include <utility>  // using std::pair
 
-#include "../utils/rng.hpp"
 #include "../utils/swap_precision.hpp"
-#include "../utils/timer.hpp"
-#include "../utils/payfeefsm.hpp"
+
 
 
 using namespace std;
-using namespace timer;
 using namespace eosio;
 
 namespace eosiosystem {
@@ -195,28 +191,14 @@ CONTRACT vigor : public eosio::contract {
       double l_RM();
       void reserve();
       void payback_borrowed_token(name from, asset  assetin);
+  
       
       
       // timer functions definitions
-      eosio::time_point_sec expirydate();
-      //void starttimer(name usern);
-      //void expiration(name usern);
-      //void elapsedtime(name usern);
-      //void resttimer(name usern);
+      eosio::time_point_sec expirydate(eosio::time_point ctp);
+     
+   
 
-      // this function determines and drives state transisiton
-      void statedriver(
-         eosio::name usern,
-         eosio::time_point_sec default_time,
-         Array2d<fsmpayfee::aistate>& obj,
-         std::pair<int, int>& duoval,
-         eosio::asset p_amta_,
-         eosio::time_point_sec& st,  // start time
-         eosio::time_point_sec& et,  // expiry time
-         const double tespay_,
-         bool late_,
-         bool updateglobal_
-      ); 
 
       map <symbol, name> issueracct {
          {symbol("EOS",4),	    name("eosio.token")},
