@@ -2,9 +2,6 @@
 
 void vigor::doupdate()
 {
-      //eosio::print("-1.0*std::sqrt(2.0)*erfc_inv(2.0*alphatest) ",-1.0*std::sqrt(2.0)*erfc_inv(2.0*alphatest),"\n");
-      //eosio::print("icdf_normal(alphatest) ",NormalCDFInverse(alphatest),"\n");
-      
       //_user.flush();
       //require_auth(_self);
       ///eosio::print( "update called.", "\n");
@@ -1585,7 +1582,7 @@ void vigor::pcts(name usern, double RM) { // percent contribution to solvency
     
 }
 
-// this methid set the expiry date of the missed payments window
+// this method set the expiry date of the missed payments window
 eosio::time_point_sec vigor::expirydate(eosio::time_point ctp){
     static const uint32_t now = ctp.sec_since_epoch();
     static const uint32_t r = now % hours(24).to_seconds();
@@ -1786,7 +1783,6 @@ void vigor::payfee(name usern) {
               uint64_t numinsurers = 0;
               asset viga;
               asset vigaremaining = asset(amta.amount + l_amta.amount, vig);
-              asset vigaremaining2 = asset(amta.amount + l_amta.amount, vig);
               for ( auto itr = _user.begin(); itr != _user.end(); ++itr )
                   if (itr->pcts > 0.0 || itr->l_pcts > 0.0 || itr->usern.value==name("finalreserve").value)
                     numinsurers += 1;
@@ -1828,16 +1824,10 @@ void vigor::payfee(name usern) {
                 auto itg = gstats.insurance.begin();  
                 while ( !found && itg++ != gstats.insurance.end() )
                   found = (itg-1)->symbol == vig;
-                if ( !found ) {
+                if ( !found ) 
                   gstats.insurance.push_back(asset(amta.amount + l_amta.amount, vig));
-                  eosio::print( "push back, asset(amta.amount + l_amta.amount, vig) ", asset(amta.amount + l_amta.amount, vig), "\n");
-                }
-                else {
-                  eosio::print( "asset(amta.amount + l_amta.amount, vig) ", asset(amta.amount + l_amta.amount, vig), "\n");
-                  eosio::print( "gstats.insurance[(itg-1) - gstats.insurance.begin()] ", gstats.insurance[(itg-1) - gstats.insurance.begin()], "\n");
+                else 
                   gstats.insurance[(itg-1) - gstats.insurance.begin()] += asset(amta.amount + l_amta.amount, vig);
-                  eosio::print( "gstats.insurance[(itg-1) - gstats.insurance.begin()] ", gstats.insurance[(itg-1) - gstats.insurance.begin()], "\n");
-                }
                 _globals.set(gstats, _self);
             }
   }
