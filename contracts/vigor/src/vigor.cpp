@@ -1,9 +1,10 @@
 #include <vigor.hpp>
-#include <boost/math/special_functions/erf.hpp>
-using boost::math::erfc_inv;
 
 void vigor::doupdate()
 {
+      //eosio::print("-1.0*std::sqrt(2.0)*erfc_inv(2.0*alphatest) ",-1.0*std::sqrt(2.0)*erfc_inv(2.0*alphatest),"\n");
+      //eosio::print("icdf_normal(alphatest) ",NormalCDFInverse(alphatest),"\n");
+      
       //_user.flush();
       //require_auth(_self);
       ///eosio::print( "update called.", "\n");
@@ -1038,15 +1039,15 @@ void vigor::stresscol(name usern) {
 
   double portVariance = portVarianceCol(usern);
 
-  double stresscol = std::log(1.0 + (((std::exp(-1.0*(std::pow(-1.0*std::sqrt(2.0)*erfc_inv(2.0*alphatest),2.0))/2.0)/(std::sqrt(2.0*M_PI)))/(1.0-alphatest)) * std::sqrt(portVariance)));
-                         
+  double stresscol = std::log(1.0 + (((std::exp(-1.0*(std::pow(NormalCDFInverse(alphatest),2.0))/2.0)/(std::sqrt(2.0*M_PI)))/(1.0-alphatest)) * std::sqrt(portVariance)));
+
   double svalueofcol = ((1.0 - stresscol) * user.valueofcol);
   double svalueofcole = std::max( 0.0,
     user.debt.amount / std::pow(10.0, 4) - ((1.0 - stresscol) * user.valueofcol)
   );
   gstats.svalueofcole += svalueofcole - user.svalueofcole; // model suggested dollar value of the sum of all insufficient collateral in a stressed market
 
-  double stresscolavg = std::log(1.0 + (((std::exp(-1.0*(std::pow(-1.0*std::sqrt(2.0)*erfc_inv(2.0*0.5),2.0))/2.0)/(std::sqrt(2.0*M_PI)))/(1.0-0.5)) * std::sqrt(portVariance)));
+  double stresscolavg = std::log(1.0 + (((std::exp(-1.0*(std::pow(NormalCDFInverse(0.5),2.0))/2.0)/(std::sqrt(2.0*M_PI)))/(1.0-0.5)) * std::sqrt(portVariance)));
   double svalueofcoleavg = std::max( 0.0,
     user.debt.amount / std::pow(10.0, 4) - ((1.0 - stresscolavg) * user.valueofcol)
   );
@@ -1075,14 +1076,14 @@ void vigor::l_stresscol(name usern) {
 
   double l_portVariance = l_portVarianceCol(usern);
  
-  double l_stresscol = std::log(1.0 + (((std::exp(-1.0*(std::pow(-1.0*std::sqrt(2.0)*erfc_inv(2.0*alphatest),2.0))/2.0)/(std::sqrt(2.0*M_PI)))/(1.0-alphatest)) * std::sqrt(l_portVariance)));
+  double l_stresscol = std::log(1.0 + (((std::exp(-1.0*(std::pow(NormalCDFInverse(alphatest),2.0))/2.0)/(std::sqrt(2.0*M_PI)))/(1.0-alphatest)) * std::sqrt(l_portVariance)));
   double l_svalueofcol = ((1.0 + l_stresscol) * user.l_valueofcol);
   double l_svalueofcole = std::max( 0.0,
     ((1.0 + l_stresscol) * user.l_valueofcol) - user.l_debt.amount / std::pow(10.0, 4)
   );
   gstats.l_svalueofcole += l_svalueofcole - user.l_svalueofcole; // model suggested dollar value of the sum of all insufficient collateral in a stressed market
 
-  double l_stresscolavg = std::log(1.0 + (((std::exp(-1.0*(std::pow(-1.0*std::sqrt(2.0)*erfc_inv(2.0*0.5),2.0))/2.0)/(std::sqrt(2.0*M_PI)))/(1.0-0.5)) * std::sqrt(l_portVariance)));
+  double l_stresscolavg = std::log(1.0 + (((std::exp(-1.0*(std::pow(NormalCDFInverse(0.5),2.0))/2.0)/(std::sqrt(2.0*M_PI)))/(1.0-0.5)) * std::sqrt(l_portVariance)));
   double l_svalueofcoleavg = std::max( 0.0,
     ((1.0 + l_stresscolavg) * user.l_valueofcol) - user.l_debt.amount / std::pow(10.0, 4)
   );
@@ -1235,11 +1236,11 @@ void vigor::stressins()
 
   double portVariance = portVarianceIns();
 
-  double stressins = std::log(1.0 + (((std::exp(-1.0*(std::pow(-1.0*std::sqrt(2.0)*erfc_inv(2.0*alphatest),2.0))/2.0)/(std::sqrt(2.0*M_PI)))/(1.0-alphatest)) * std::sqrt(portVariance)));// model suggested percentage loss that the total insurance asset portfolio would experience in a stress event.
+  double stressins = std::log(1.0 + (((std::exp(-1.0*(std::pow(NormalCDFInverse(alphatest),2.0))/2.0)/(std::sqrt(2.0*M_PI)))/(1.0-alphatest)) * std::sqrt(portVariance)));// model suggested percentage loss that the total insurance asset portfolio would experience in a stress event.
   gstats.stressins = stressins;
   gstats.svalueofins = (1.0 - stressins) * gstats.valueofins; // model suggested dollar value of the total insurance asset portfolio in a stress event.
 
-  double stressinsavg = std::log(1.0 + (((std::exp(-1.0*(std::pow(-1.0*std::sqrt(2.0)*erfc_inv(2.0*0.5),2.0))/2.0)/(std::sqrt(2.0*M_PI)))/(1.0-0.5)) * std::sqrt(portVariance))); // model suggested percentage loss that the total insurance asset portfolio would experience in a stress event.
+  double stressinsavg = std::log(1.0 + (((std::exp(-1.0*(std::pow(NormalCDFInverse(0.5),2.0))/2.0)/(std::sqrt(2.0*M_PI)))/(1.0-0.5)) * std::sqrt(portVariance))); // model suggested percentage loss that the total insurance asset portfolio would experience in a stress event.
   gstats.svalueofinsavg = (1.0 - stressinsavg) * gstats.valueofins; // model suggested dollar value of the total insurance asset portfolio on average in stressed markets
 
   gstats.l_svalueofins = (1.0 + stressins) * gstats.valueofins; // model suggested dollar value of the total insurance asset portfolio in a stress event.
@@ -1439,7 +1440,7 @@ double vigor::stressinsx(name usern) { // same as stressins, but remove the spec
     portVariancex += std::pow(iW, 2) * std::pow(iVvol, 2);
   }
 
-  double stressinsx = std::log(1.0 + (((std::exp(-1.0*(std::pow(-1.0*std::sqrt(2.0)*erfc_inv(2.0*alphatest),2.0))/2.0)/(std::sqrt(2.0*M_PI)))/(1.0-alphatest)) * std::sqrt(portVariancex))); // model suggested percentage loss that the total insurance asset portfolio (ex the specified user) would experience in a stress event.
+  double stressinsx = std::log(1.0 + (((std::exp(-1.0*(std::pow(NormalCDFInverse(alphatest),2.0))/2.0)/(std::sqrt(2.0*M_PI)))/(1.0-alphatest)) * std::sqrt(portVariancex))); // model suggested percentage loss that the total insurance asset portfolio (ex the specified user) would experience in a stress event.
   double svalueofinsx = (1.0 - stressinsx) * (gstats.valueofins  - user.valueofins); // model suggested dollar value of the total insurance asset portfolio (ex the specified user) in a stress event.
   
   return svalueofinsx;
@@ -2550,6 +2551,36 @@ void vigor::bailoutup(name usern)
       }
     }
   }
+}
+
+double vigor::RationalApproximation(double t)
+{
+    // Abramowitz and Stegun formula 26.2.23.
+    // The absolute value of the error should be less than 4.5 e-4.
+    double c[] = {2.515517, 0.802853, 0.010328};
+    double d[] = {1.432788, 0.189269, 0.001308};
+    return t - ((c[2]*t + c[1])*t + c[0]) / 
+               (((d[2]*t + d[1])*t + d[0])*t + 1.0);
+}
+
+double vigor::NormalCDFInverse(double p)
+{
+    if (p <= 0.0 || p >= 1.0)
+    {
+      eosio::print( "Invalid input argument in NormalCDFInverse, must be larger than 0 but less than 1.", "\n");
+    }
+
+    // See article above for explanation of this section.
+    if (p < 0.5)
+    {
+        // F^-1(p) = - G^-1(p)
+        return -RationalApproximation( sqrt(-2.0*log(p)) );
+    }
+    else
+    {
+        // F^-1(p) = G^-1(1-p)
+        return RationalApproximation( sqrt(-2.0*log(1-p)) );
+    }
 }
 
 extern "C" {

@@ -196,6 +196,8 @@ CONTRACT vigor : public eosio::contract {
       double l_RM();
       void reserve();
       void payback_borrowed_token(name from, asset  assetin);
+      double RationalApproximation(double t);
+      double NormalCDFInverse(double p);
       
       eosio::time_point_sec expirydate(eosio::time_point ctp);
 
