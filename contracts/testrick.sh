@@ -307,7 +307,7 @@ cleos --verbose push action dummytokensx transfer '{"from":"testbrw11111","to":"
 cleos --verbose push action eosio.token transfer '{"from":"testins11112","to":"vigor1111112","quantity":"12.0000 EOS","memo":"insurance"}' -p testins11112@active
 cleos --verbose push action dummytokensx transfer '{"from":"testins11112","to":"vigor1111112","quantity":"3000.000 IQ","memo":"insurance"}' -p testins11112@active
 
-cleos --verbose push action vigor1111112 assetout '{"usern":"testbrw11111","assetout":"41.0001 VIGOR","memo":"borrow"}' -p testbrw11111@active
+cleos --verbose push action vigor1111112 assetout '{"usern":"testbrw11111","assetout":"40.0001 VIGOR","memo":"borrow"}' -p testbrw11111@active
 cleos --verbose push action vigor1111112 assetout '{"usern":"testbrw11112","assetout":"20.0000 VIGOR","memo":"borrow"}' -p testbrw11112@active
 
 # withdraw VIG specified as precision 4 (internally it treat VIG as precision 10)
@@ -338,7 +338,7 @@ cleos --verbose get table vigor1111112 vigor1111112 user -Ltestins11112 -Utestin
 cleos --verbose get table vigor1111112 vigor1111112 user -Lfinalreserve -Ufinalreserve
 cleos --verbose get table vigor1111112 vigor1111112 globals
 
-cleos --verbose push action datapreproc2 doshock '{"shockvalue":1.2}' -p feeder111111@active
+cleos --verbose push action datapreproc2 doshock '{"shockvalue":0.1}' -p feeder111111@active
 cleos --verbose push action eosio.token transfer '{"from":"finalreserve","to":"vigor1111112","quantity":"0.0001 EOS","memo":"collateral"}' -p finalreserve@active
 
 # cleos --verbose get table vigor1111112 VIGOR stat
@@ -366,15 +366,16 @@ cleos --verbose get table vigor1111112 testbrw21111 accounts
 cleos --verbose get table vigor1111112 testbrw21112 accounts
 cleos --verbose get table vigor1111112 vigor1111112 accounts
 
-cleos --verbose push action vigor1111112 transfer '{"from":"testbrw11111","to":"testbrw21111","quantity":"37.0000 VIGOR","memo":""}' -p testbrw11111@active
+cleos --verbose push action vigor1111112 transfer '{"from":"testbrw11111","to":"testbrw21111","quantity":"36.0000 VIGOR","memo":""}' -p testbrw11111@active
 cleos --verbose push action vigor1111112 transfer '{"from":"testbrw11111","to":"testbrw21112","quantity":"4.0000 VIGOR","memo":""}' -p testbrw11111@active
 
 #deposit and withdraw stablecoin collateral
-cleos --verbose push action vigor1111112 transfer '{"from":"testbrw21111","to":"vigor1111112","quantity":"37.0000 VIGOR","memo":"collateral"}' -p testbrw21111@active
+cleos --verbose push action vigor1111112 transfer '{"from":"testbrw21111","to":"vigor1111112","quantity":"36.0000 VIGOR","memo":"collateral"}' -p testbrw21111@active
 cleos --verbose push action vigor1111112 transfer '{"from":"testbrw21112","to":"vigor1111112","quantity":"4.0000 VIGOR","memo":"collateral"}' -p testbrw21112@active
 cleos --verbose push action vigor1111112 assetout '{"usern":"testbrw21111","assetout":"1.0000 VIGOR","memo":"collateral"}' -p testbrw21111@active
 
 #deposit and withdraw to the insurance pool
+cleos --verbose push action vig111111111 transfer '{"from":"testbrw21111","to":"vigor1111112","quantity":"1000.0000 VIG","memo":"collateral"}' -p testbrw21111@active
 cleos --verbose push action eosio.token transfer '{"from":"testins21111","to":"vigor1111112","quantity":"2.0000 EOS","memo":"insurance"}' -p testins21111@active
 cleos --verbose push action dummytokensx transfer '{"from":"testins21111","to":"vigor1111112","quantity":"3000.000 IQ","memo":"insurance"}' -p testins21111@active
 cleos --verbose push action eosio.token transfer '{"from":"testbrw21111","to":"vigor1111112","quantity":"1.0000 EOS","memo":"insurance"}' -p testbrw21111@active
@@ -425,3 +426,4 @@ cleos --verbose get table vigor1111112 vigor1111112 user -Ltestins21112 -Utestin
 cleos --verbose get table vigor1111112 vigor1111112 user -Lfinalreserve -Ufinalreserve
 cleos --verbose get table vigor1111112 vigor1111112 user -Lreinvestment -Ureinvestment
 cleos --verbose get table vigor1111112 vigor1111112 globals
+
