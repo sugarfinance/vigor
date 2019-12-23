@@ -1780,7 +1780,7 @@ void vigor::payfee(name usern) {
                   gstats.insurance[(itg-1) - gstats.insurance.begin()] += asset(amta.amount + l_amta.amount, vig);
                 _globals.set(gstats, _self);
             }
-  }
+}
 
 void vigor::update(name usern) 
 {

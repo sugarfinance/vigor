@@ -177,6 +177,7 @@ CONTRACT vigor : public eosio::contract {
       void update(name usern);
       void updateglobal();
       void payfee(name usern);
+      void l_payfee(name usern);
       void bailout(name usern);
       void bailoutup(name usern);
       void pricing(name usern);
