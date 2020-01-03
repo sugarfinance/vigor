@@ -530,6 +530,10 @@
                 {
                     "name": "elapsed_days",
                     "type": "int32"
+                },
+                {
+                    "name": "accumulatepays",
+                    "type": "asset"
                 }
             ]
         }

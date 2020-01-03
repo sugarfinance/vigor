@@ -94,7 +94,7 @@ CONTRACT vigor : public eosio::contract {
          int elapsed_days = 0;
          
          // late pays gets accumulated here
-         //asset accumulatepays = asset(0, symbol("VIG", 10));
+         asset accumulatepays = asset(0, symbol("VIG", 10));
         
 
          // nomenclature note: 
@@ -114,7 +114,7 @@ CONTRACT vigor : public eosio::contract {
          
          auto primary_key() const { return usern.value; }
 
-         EOSLIB_SERIALIZE(user_s, (usern)(debt)(collateral)(insurance)(valueofcol)(valueofins)(tesprice)(earnrate)(pcts)(volcol)(stresscol)(istresscol)(svalueofcol)(svalueofcole)(svalueofcoleavg)(premiums)(feespaid)(totallatepay)(creditscore)(lastupdate)(latepays)(recaps)(l_debt)(l_collateral)(l_lrtoken)(l_lrpayment)(l_lrname)(l_valueofcol)(l_tesprice)(l_earnrate)(l_pcts)(l_volcol)(l_stresscol)(l_istresscol)(l_svalueofcol)(l_svalueofcole)(l_svalueofcoleavg)(l_premiums)(l_latepays)(l_recaps)(starttime)(expiry_time)(elapsed_days))
+         EOSLIB_SERIALIZE(user_s, (usern)(debt)(collateral)(insurance)(valueofcol)(valueofins)(tesprice)(earnrate)(pcts)(volcol)(stresscol)(istresscol)(svalueofcol)(svalueofcole)(svalueofcoleavg)(premiums)(feespaid)(totallatepay)(creditscore)(lastupdate)(latepays)(recaps)(l_debt)(l_collateral)(l_lrtoken)(l_lrpayment)(l_lrname)(l_valueofcol)(l_tesprice)(l_earnrate)(l_pcts)(l_volcol)(l_stresscol)(l_istresscol)(l_svalueofcol)(l_svalueofcole)(l_svalueofcoleavg)(l_premiums)(l_latepays)(l_recaps)(starttime)(expiry_time)(elapsed_days)(accumulatepays))
       }; typedef eosio::multi_index<name("user"), user_s> user_t;
                                                           user_t _user;
 
@@ -168,7 +168,9 @@ CONTRACT vigor : public eosio::contract {
       void stresscol(name usern);
       void l_stresscol(name usern);
       void stressins();
+      void l_stressins();
       double stressinsx(name usern);
+      double l_stressinsx(name usern);
       double portVarianceCol(name usern);
       double l_portVarianceCol(name usern);
       double portVarianceIns(name usern, double valueofins);
@@ -203,6 +205,7 @@ CONTRACT vigor : public eosio::contract {
          {symbol("IQ",3),	    name("dummytokensx")},
          {symbol("PEOS",4),	    name("dummytokensx")},
          {symbol("DICE",4),	    name("dummytokensx")},
+         {symbol("BOID",4),	    name("dummytokensx")},
          {symbol("TPT",4),	    name("dummytokensx")},
          {symbol("VIGOR",4),	    name("vigor1111112")}
       };
@@ -213,13 +216,14 @@ CONTRACT vigor : public eosio::contract {
          {symbol("IQ",3),	    name("iqeos")},
          {symbol("PEOS",4),	    name("peoseos")},
          {symbol("DICE",4),	    name("diceeos")},
+         {symbol("BOID",4),	    name("boideos")},
          {symbol("TPT",4),	    name("tpteos")},
          {symbol("VIGOR",4),	    name("vigorusd")}
       };
 
       double alphatest = 0.90;
       double solvencyTarget = 1.0;
-      double l_solvencyTarget = 2.5;
+      double l_solvencyTarget = 3.5;
       double maxtesprice = 0.5;
       double mintesprice = 0.005;
       double calibrate = 1.0;

@@ -200,7 +200,7 @@ void calcstats(const name pair, const uint32_t freq);
 // correlation coefficient
 int64_t corrCalc(std::deque<int64_t> X, std::deque<int64_t> Y, uint64_t n);
 
-double volCalc(std::deque<int64_t> returns, uint64_t n);
+uint64_t volCalc(std::deque<int64_t> returns, uint64_t n, const uint32_t freq);
 
   
 //store last price from the oracle, append to time series

@@ -191,6 +191,11 @@ cleos push action dummytokensx transfer '[ "dummytokensx", "testbrw21112", "1000
 cleos push action dummytokensx transfer '[ "dummytokensx", "testins21111", "100000.000 IQ", "m" ]' -p dummytokensx@active
 cleos push action dummytokensx transfer '[ "dummytokensx", "testins21112", "100000.000 IQ", "m" ]' -p dummytokensx@active
 
+cleos push action dummytokensx create '[ "dummytokensx", "100000000000.0000 BOID"]' -p dummytokensx@active
+
+cleos push action dummytokensx issue '[ "dummytokensx", "10000000000.0000 BOID", "m"]' -p dummytokensx@active
+cleos push action dummytokensx transfer '[ "dummytokensx", "testbrw11111", "100000.0000 BOID", "m" ]' -p dummytokensx@active
+
 #=================================================================================#
 # create the oracle contract for local testnet
 cleos system newaccount eosio oracleoracl2 $OWNER_KEY --stake-cpu "50 EOS" --stake-net "10 EOS" --buy-ram-kbytes 50000 --transfer
@@ -220,6 +225,7 @@ cd /home/gg/contracts/vigor/contracts/oracle && ORACLE=feeder111113 node updater
 cd /home/gg/contracts/vigor/contracts/oracle && ORACLE=feeder111111 node updater_vigeos.js
 cd /home/gg/contracts/vigor/contracts/oracle && ORACLE=feeder111112 node updater_vigeos.js
 cd /home/gg/contracts/vigor/contracts/oracle && ORACLE=feeder111113 node updater_vigeos.js
+cd /home/gg/contracts/vigor/contracts/oracle && ORACLE=feeder111111 node updater_boideos.js
 
 #cleos push action oracleoracl2 write '{"owner": "feeder111111","quotes": [{"value":"20000","pair":"eosusd", "base": {"sym": "4,EOS", "con": "eosio.token"}}]}' -p feeder111111@active
 #cleos push action oracleoracl2 write '{"owner": "feeder111111","quotes": [{"value":"10000","pair":"eosusd"},{"value":"80000","pair":"eosbtc"}]}' -p feeder111111@active
@@ -254,6 +260,7 @@ cleos set contract datapreproc2 $CONTRACT_OUT $CONTRACT_WASM $CONTRACT_ABI -p da
 cleos push action datapreproc2 addpair '{"newpair":"eosusd"}' -p datapreproc2@active
 cleos push action datapreproc2 addpair '{"newpair":"iqeos"}' -p datapreproc2@active
 cleos push action datapreproc2 addpair '{"newpair":"vigeos"}' -p datapreproc2@active
+cleos push action datapreproc2 addpair '{"newpair":"boideos"}' -p datapreproc2@active
 cleos push action datapreproc2 addpair '{"newpair":"vigorusd"}' -p datapreproc2@active
 #cleos push action datapreproc2 update '{}' -p feeder111111@active
 #cleos push action datapreproc2 doshock '{"shockvalue":0.5}' -p feeder111111@active
@@ -262,6 +269,7 @@ cleos get table datapreproc2 datapreproc2 pairtoproc --limit -1
 cleos get table datapreproc2 eosusd tseries
 cleos get table datapreproc2 iqeos tseries
 cleos get table datapreproc2 vigeos tseries
+cleos get table datapreproc2 boideos tseries
 cleos get table datapreproc2 vigorusd tseries
 
 

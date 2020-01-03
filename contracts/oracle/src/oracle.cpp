@@ -305,6 +305,17 @@
       o.quoted_precision = 6;
     });
 
+    pairs.emplace(_self, [&](auto& o) {
+      o.aname = name("boideos");
+      o.base_symbol = symbol("BOID",4);
+      o.base_type = asset_type::eosio_token;
+      o.base_contract = name("boidcomtoken");
+      o.quote_symbol = symbol("EOS",4);
+      o.quote_type = asset_type::eosio_token;
+      o.quote_contract = name("eosio.token");
+      o.quoted_precision = 7;
+    });
+
   }
 
   //Clear all data

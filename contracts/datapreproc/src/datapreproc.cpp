@@ -178,7 +178,7 @@ void datapreproc::averageVol(name aname){
     uint64_t vol5 = itr->vol;
     itr = store.find(one_day);
     uint64_t vol6 = itr->vol;
-    uint64_t vol = (uint64_t)(0.1*(double)vol1+0.1*(double)vol2+0.1*(double)vol3+0.1*(double)vol4+0.1*(double)vol5+0.5*(double)vol6);
+    uint64_t vol = (uint64_t)(0.1*(double)vol1+0.1*(double)vol2+0.1*(double)vol3+0.1*(double)vol4+0.2*(double)vol5+0.4*(double)vol6);
           time_point ctime = current_time_point();
           shocktable shockt = _shocks.get();
           double shock = shockt.shock;
@@ -225,7 +225,7 @@ void datapreproc::averageCor(name aname){
       obj = store.get(one_day);
       std::map <symbol, int64_t> m6 = obj.correlation_matrix;
       int64_t c6 = m6[it.first];
-      int64_t corr = (int64_t)(0.1*(double)c1+0.1*(double)c2+0.1*(double)c3+0.1*(double)c4+0.1*(double)c5+0.5*(double)c6);
+      int64_t corr = (int64_t)(0.1*(double)c1+0.1*(double)c2+0.1*(double)c3+0.1*(double)c4+0.2*(double)c5+0.4*(double)c6);
       time_point ctime = current_time_point();
       if (aname.value == name("vigorusd").value)
         corr = 0.0;
@@ -254,8 +254,8 @@ void datapreproc::calcstats(const name pair, const uint32_t freq){
             const auto& itrref = *itr;
             auto last = store.get(freq);
             uint64_t vol = defaultVol;
-                if (size(last.price)>5)
-                  vol = (uint64_t)(volScale.at(freq)*volCalc(last.returns, sizeof(last.returns)));
+                if (last.price.size()>5)
+                  vol = volCalc(last.returns, last.returns.size(), freq);
                 store.modify( itrref, _self, [&]( auto& s ) {
                   s.vol = vol;
                 });
@@ -271,8 +271,8 @@ void datapreproc::calcstats(const name pair, const uint32_t freq){
                   if (jtr != storej.end()) {
                     auto lastj = storej.get(freq);
                     int64_t corr = defaultCorr;
-                    if (size(lastj.price)==size(last.price) && size(last.price)>5)
-                      corr = corrCalc(last.returns, lastj.returns, sizeof(last.returns));
+                    if (lastj.price.size()==last.price.size() && last.price.size()>5)
+                      corr = corrCalc(last.returns, lastj.returns, last.returns.size());
                     store.modify( itrref, _self, [&]( auto& s ) {
                       s.correlation_matrix[jt->base_symbol] = corr;
                     });
@@ -309,7 +309,7 @@ int64_t datapreproc::corrCalc(std::deque<int64_t> X, std::deque<int64_t> Y, uint
     return corr;
 } 
 
-double datapreproc::volCalc(std::deque<int64_t> returns, uint64_t n) {
+uint64_t datapreproc::volCalc(std::deque<int64_t> returns, uint64_t n, const uint32_t freq) {
 
      double variance = 0.0;
      double t = returns[0]/returnsPrecision;
@@ -319,13 +319,12 @@ double datapreproc::volCalc(std::deque<int64_t> returns, uint64_t n) {
           double diff = ((i + 1) * returns[i]/returnsPrecision) - t;
          
           variance += (diff * diff) / ((i + 1) *i);
+
      }
-     double vol;
      if ((variance / (n - 1)) == 0.0)
-        vol = defaultVol;
+        return defaultVol;
      else
-        vol = (double)(returnsPrecision*sqrt(variance / (n - 1)));
-     return vol;
+        return (uint64_t)(volScale.at(freq)*(returnsPrecision*sqrt(variance / (n - 1))));
 }
 
   
