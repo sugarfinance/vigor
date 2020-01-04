@@ -1782,6 +1782,7 @@ void vigor::payfee(name usern) {
             }
 }
 
+
 void vigor::update(name usern) 
 {
   auto &user = _user.get(usern.value, "User not found1");
