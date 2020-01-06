@@ -1733,7 +1733,7 @@ void vigor::payfee(name usern) {
                         //NO_VIG_AND_CLOCK_HAS_ALREADY_STARTED;
                         //MISSED_PAYMENTS;
                       _user.modify(useritr, _self, [&]( auto& modified_user) {
-                            modified_user.latepays = amta.amount + l_amta.amount;
+                            modified_user.latepays += amta.amount + l_amta.amount;
                       }); 
                      }
                      else if(user.starttime >= user.expiry_time)
